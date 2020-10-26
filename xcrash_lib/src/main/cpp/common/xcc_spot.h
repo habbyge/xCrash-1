@@ -37,8 +37,7 @@ extern "C" {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
 
-typedef struct
-{
+typedef struct {
     //set when crashed
     pid_t        crash_tid;
     siginfo_t    siginfo;

@@ -72,16 +72,16 @@ static size_t xc_fallback_get_signal(char *buf, size_t len, siginfo_t *si) {
 
     //from
     char sender_desc[64] = "";
-    if(xcc_util_signal_has_sender(si, xc_common_process_id))
-        xcc_fmt_snprintf(sender_desc, sizeof(sender_desc), " from pid %d, uid %d", si->si_pid, si->si_uid);
+    if (xcc_util_signal_has_sender(si, xc_common_process_id))
+        xcc_fmt_snprintf(sender_desc, sizeof(sender_desc),
+                " from pid %d, uid %d", si->si_pid, si->si_uid);
 
     return xcc_fmt_snprintf(buf, len, "signal %d (%s), code %d (%s%s), fault addr %s\n",
                             si->si_signo, xcc_util_get_signame(si),
                             si->si_code, xcc_util_get_sigcodename(si), sender_desc, addr_desc);
 }
 
-static size_t xc_fallback_get_regs(char *buf, size_t len, ucontext_t *uc)
-{
+static size_t xc_fallback_get_regs(char* buf, size_t len, ucontext_t* uc) {
 #if defined(__arm__)
     return xcc_fmt_snprintf(buf, len, 
                             "    r0  %08x  r1  %08x  r2  %08x  r3  %08x\n"
@@ -189,14 +189,12 @@ static size_t xc_fallback_get_regs(char *buf, size_t len, ucontext_t *uc)
 #endif
 }
 
-static size_t xc_fallback_get_backtrace(char *buf, size_t len, siginfo_t *si, ucontext_t *uc)
-{
+static size_t xc_fallback_get_backtrace(char* buf, size_t len, siginfo_t* si, ucontext_t* uc) {
     size_t used = 0;
 
     used += xcc_fmt_snprintf(buf + used, len - used, "backtrace:\n");
     used += xcc_unwind_get(xc_common_api_level, si, uc, buf + used, len - used);
-    if(used >= len - 1)
-    {
+    if (used >= len - 1) {
         buf[len - 3] = '\n';
         buf[len - 2] = '\0';
         used = len - 2;
@@ -205,13 +203,13 @@ static size_t xc_fallback_get_backtrace(char *buf, size_t len, siginfo_t *si, uc
     return used;
 }
 
-size_t xc_fallback_get_emergency(siginfo_t *si,
+size_t xc_fallback_get_emergency(siginfo_t* si,
                                  ucontext_t *uc,
                                  pid_t tid,
                                  uint64_t crash_time,
-                                 char *emergency,
-                                 size_t emergency_len)
-{
+                                 char* emergency,
+                                 size_t emergency_len) {
+
     size_t used = xcc_util_get_dump_header(emergency, emergency_len,
                                            XCC_UTIL_CRASH_TYPE_NATIVE,
                                            xc_common_time_zone,
@@ -235,28 +233,36 @@ size_t xc_fallback_get_emergency(siginfo_t *si,
 }
 
 int xc_fallback_record(int log_fd,
-                       char *emergency,
+                       char* emergency,
                        unsigned int logcat_system_lines,
                        unsigned int logcat_events_lines,
                        unsigned int logcat_main_lines,
                        int dump_fds,
-                       int dump_network_info)
-{
+                       int dump_network_info) {
+
     int r;
 
-    if(log_fd < 0) return XCC_ERRNO_INVAL;
+    if (log_fd < 0) return XCC_ERRNO_INVAL;
     
-    if(0 != (r = xcc_util_write_str(log_fd, emergency))) return r;
+    if (0 != (r = xcc_util_write_str(log_fd, emergency)))
+        return r;
     
     //If we wrote the emergency info successfully, we don't need to return it from callback again.
     emergency[0] = '\0';
     
-    if(0 != (r = xcc_util_record_logcat(log_fd, xc_common_process_id, xc_common_api_level, logcat_system_lines, logcat_events_lines, logcat_main_lines))) return r;
-    if(dump_fds)
+    if (0 != (r = xcc_util_record_logcat(log_fd, xc_common_process_id,
+            xc_common_api_level, logcat_system_lines,
+            logcat_events_lines, logcat_main_lines))) {
+        return r;
+    }
+
+    if (dump_fds)
         if(0 != (r = xcc_util_record_fds(log_fd, xc_common_process_id))) return r;
-    if(dump_network_info)
-        if(0 != (r = xcc_util_record_network_info(log_fd, xc_common_process_id, xc_common_api_level))) return r;
-    if(0 != (r = xcc_meminfo_record(log_fd, xc_common_process_id))) return r;
+    if (dump_network_info)
+        if (0 != (r = xcc_util_record_network_info(log_fd, xc_common_process_id, xc_common_api_level)))
+            return r;
+    if (0 != (r = xcc_meminfo_record(log_fd, xc_common_process_id)))
+        return r;
     
     return 0;
 }

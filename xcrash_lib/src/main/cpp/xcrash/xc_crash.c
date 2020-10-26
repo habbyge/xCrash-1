@@ -74,14 +74,14 @@ static char            *xc_crash_emergency;
 
 //the log file
 static int              xc_crash_prepared_fd = -1;
-static int              xc_crash_log_fd  = -1;
-static int              xc_crash_log_from_placeholder;
-static char             xc_crash_log_pathname[1024] = "\0";
+static int              xc_crash_log_fd  = -1; // Crash日志文件的文件描述符
+static int              xc_crash_log_from_placeholder; // TODO: 不知是干啥的......
+static char             xc_crash_log_pathname[1024] = "\0"; // Crash 日志文件名
 
 //the crash
-static pid_t            xc_crash_tid = 0;
+static pid_t            xc_crash_tid = 0; // 发生Crash的线程id
 static int              xc_crash_dump_java_stacktrace = 0; //try to dump java stacktrace in java layer
-static uint64_t         xc_crash_time = 0;
+static uint64_t         xc_crash_time = 0; // 发生Crash的时间戳
 
 //callback
 static jmethodID        xc_crash_cb_method = NULL;
@@ -157,7 +157,7 @@ static int xc_crash_exec_dumper(void *arg) {
     //create args pipe
     int pipefd[2];
     errno = 0;
-    if(0 != pipe2(pipefd, O_CLOEXEC)) {
+    if (0 != pipe2(pipefd, O_CLOEXEC)) {
         xcc_util_write_format_safe(xc_crash_log_fd,
                 XC_CRASH_ERR_TITLE"create args pipe failed, errno=%d\n\n", errno);
         return 92;
@@ -178,7 +178,7 @@ static int xc_crash_exec_dumper(void *arg) {
                           xc_crash_spot.app_version_len +
                           xc_crash_spot.dump_all_threads_allowlist_len);
     errno = 0;
-    if(fcntl(pipefd[1], F_SETPIPE_SZ, write_len) < write_len) {
+    if (fcntl(pipefd[1], F_SETPIPE_SZ, write_len) < write_len) {
         xcc_util_write_format_safe(xc_crash_log_fd,
                 XC_CRASH_ERR_TITLE"set args pipe size failed, errno=%d\n\n", errno);
         return 93;
@@ -186,20 +186,21 @@ static int xc_crash_exec_dumper(void *arg) {
 
     //write args to pipe
     struct iovec iovs[12] = {
-        {.iov_base = &xc_crash_spot,                      .iov_len = sizeof(xcc_spot_t)},
-        {.iov_base = xc_crash_log_pathname,               .iov_len = xc_crash_spot.log_pathname_len},
-        {.iov_base = xc_common_os_version,                .iov_len = xc_crash_spot.os_version_len},
-        {.iov_base = xc_common_kernel_version,            .iov_len = xc_crash_spot.kernel_version_len},
-        {.iov_base = xc_common_abi_list,                  .iov_len = xc_crash_spot.abi_list_len},
-        {.iov_base = xc_common_manufacturer,              .iov_len = xc_crash_spot.manufacturer_len},
-        {.iov_base = xc_common_brand,                 .iov_len = xc_crash_spot.brand_len},
-        {.iov_base = xc_common_model,                 .iov_len = xc_crash_spot.model_len},
-        {.iov_base = xc_common_build_fingerprint,     .iov_len = xc_crash_spot.build_fingerprint_len},
-        {.iov_base = xc_common_app_id,                .iov_len = xc_crash_spot.app_id_len},
-        {.iov_base = xc_common_app_version,           .iov_len = xc_crash_spot.app_version_len},
+        {.iov_base = &xc_crash_spot,              .iov_len = sizeof(xcc_spot_t)},
+        {.iov_base = xc_crash_log_pathname,       .iov_len = xc_crash_spot.log_pathname_len},
+        {.iov_base = xc_common_os_version,        .iov_len = xc_crash_spot.os_version_len},
+        {.iov_base = xc_common_kernel_version,    .iov_len = xc_crash_spot.kernel_version_len},
+        {.iov_base = xc_common_abi_list,          .iov_len = xc_crash_spot.abi_list_len},
+        {.iov_base = xc_common_manufacturer,      .iov_len = xc_crash_spot.manufacturer_len},
+        {.iov_base = xc_common_brand,             .iov_len = xc_crash_spot.brand_len},
+        {.iov_base = xc_common_model,             .iov_len = xc_crash_spot.model_len},
+        {.iov_base = xc_common_build_fingerprint, .iov_len = xc_crash_spot.build_fingerprint_len},
+        {.iov_base = xc_common_app_id,            .iov_len = xc_crash_spot.app_id_len},
+        {.iov_base = xc_common_app_version,       .iov_len = xc_crash_spot.app_version_len},
         {.iov_base = xc_crash_dump_all_threads_allowlist,
          .iov_len = xc_crash_spot.dump_all_threads_allowlist_len}
     };
+
     int iovs_cnt = (0 == xc_crash_spot.dump_all_threads_allowlist_len ? 11 : 12);
     errno = 0;
     ssize_t ret = XCC_UTIL_TEMP_FAILURE_RETRY(writev(pipefd[1], iovs, iovs_cnt));
@@ -316,7 +317,7 @@ static void *xc_crash_callback_thread(void *arg) {
         goto end;
 
     //prepare callback parameters
-    if(NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname))) goto end;
+    if (NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname))) goto end;
     if('\0' != xc_crash_emergency[0]) {
         if(NULL == (j_emergency = (*env)->NewStringUTF(env, xc_crash_emergency))) goto end;
     }
@@ -360,65 +361,69 @@ static void xc_crash_callback() {
 }
 
 static int xc_crash_check_backtrace_valid() {
-    int    fd;
-    char   line[512];
+    int fd;
+    char line[512];
     size_t i = 0;
-    int    r = 0;
+    int r = 0;
     
-    if((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_crash_log_pathname, O_RDONLY | O_CLOEXEC))) < 0) {
-        if(xc_crash_prepared_fd >= 0) {
+    if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_crash_log_pathname, O_RDONLY | O_CLOEXEC))) < 0) {
+        if (xc_crash_prepared_fd >= 0) {
             close(xc_crash_prepared_fd);
             xc_crash_prepared_fd = -1;
         }
-        if((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_crash_log_pathname, O_RDONLY | O_CLOEXEC))) < 0)
+        if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_crash_log_pathname, O_RDONLY | O_CLOEXEC))) < 0)
             return 0; //failed
     }
     
-    while(NULL != xcc_util_gets(line, sizeof(line), fd)) {
-        if(0 == memcmp(line, "backtrace:\n", 11)) {
+    while (NULL != xcc_util_gets(line, sizeof(line), fd)) {
+        if (0 == memcmp(line, "backtrace:\n", 11)) {
             //check the next line
-            if(NULL != xcc_util_gets(line, sizeof(line), fd) && 0 == memcmp(line, "    #00 pc ", 11))
+            if (NULL != xcc_util_gets(line, sizeof(line), fd) && 0 == memcmp(line, "    #00 pc ", 11))
                 r = 1; //we found the backtrace
             break;
         }
-        if(i++ > 200) //check the top 200 lines at most
+        if (i++ > 200) //check the top 200 lines at most
             break;
     }
 
-    if(fd >= 0) close(fd);
+    if (fd >= 0)
+        close(fd);
     return r;    
 }
 
-static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
+static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     struct timespec crash_tp;
     int             restore_orig_ptracer = 0;
     int             restore_orig_dumpable = 0;
-    int             orig_dumpable = 0;
+    int orig_dumpable;
     int             dump_ok = 0;
 
-    (void)sig;
+    (void) sig;
 
     pthread_mutex_lock(&xc_crash_mutex);
 
-    //only once
-    if(xc_common_native_crashed) goto exit;
+    // only once
+    if (xc_common_native_crashed)
+        goto exit;
     xc_common_native_crashed = 1;
 
-    //restore the original/default signal handler
-    if(xc_crash_rethrow) {
-        if(0 != xcc_signal_crash_unregister()) goto exit;
+    // restore the original/default signal handler 恢复原始或默认的信号处理器
+    if (xc_crash_rethrow) {
+        if(0 != xcc_signal_crash_unregister())
+            goto exit;
     } else {
-        if(0 != xcc_signal_crash_ignore()) goto exit;
+        if (0 != xcc_signal_crash_ignore())
+            goto exit;
     }
 
-    //save crash time
+    // save crash time 保存发生crash的时间戳
     clock_gettime(CLOCK_REALTIME, &crash_tp);
-    xc_crash_time = (uint64_t)(crash_tp.tv_sec) * 1000 * 1000 + (uint64_t)crash_tp.tv_nsec / 1000;
+    xc_crash_time = (uint64_t) (crash_tp.tv_sec) * 1000 * 1000 + (uint64_t) crash_tp.tv_nsec / 1000;
 
-    //save crashed thread ID
+    // save crashed thread ID 保存发生Crash的线程id
     xc_crash_tid = gettid();
     
-    //create and open log file
+    // create and open log file
     if ((xc_crash_log_fd = xc_common_open_crash_log(xc_crash_log_pathname,
             sizeof(xc_crash_log_pathname), &xc_crash_log_from_placeholder)) < 0) {
         goto end;
@@ -434,8 +439,10 @@ static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
     //    goto end;
     //}
 
-    //set dumpable
-    orig_dumpable = prctl(PR_GET_DUMPABLE);
+    // set dumpable，这个系统调用指令是为进程制定而设计的，明确的选择取决于option，例如：为进程或线程执行名字
+    // PR_GET_DUMPABLEL (Since Linux 2.4)Return(as the function result)the current state of the
+    // calling process’s dumpable flag.
+    orig_dumpable = prctl(PR_GET_DUMPABLE); // 返回处理器标志dumpable
     errno = 0;
     if(0 != prctl(PR_SET_DUMPABLE, 1)) {
         xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
@@ -486,11 +493,13 @@ static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
 
     //the crash dumper process should have written a lot of logs,
     //so we need to seek to the end of log file
-    if(xc_crash_log_from_placeholder) {
-        if((xc_crash_log_fd = xc_common_seek_to_content_end(xc_crash_log_fd)) < 0) goto end;
+    if (xc_crash_log_from_placeholder) {
+        if ((xc_crash_log_fd = xc_common_seek_to_content_end(xc_crash_log_fd)) < 0) {
+            goto end;
+        }
     }
     
-    if(-1 == wait_r) {
+    if (-1 == wait_r) {
         xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                 "waitpid failed, errno=%d\n\n", errno);
         goto end;
@@ -509,26 +518,31 @@ static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
             //terminated by a signal
             xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                     "child terminated by a signal(%d)\n\n", WTERMSIG(status));
+
             goto end;
         } else {
             xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                     "child terminated with other error status(%d), dumper=%s\n\n",
                     status, xc_crash_dumper_pathname);
+
             goto end;
         }
     }
 
-    //check the backtrace
-    if(!xc_crash_check_backtrace_valid()) goto end;
+    // check the backtrace
+    if (!xc_crash_check_backtrace_valid())
+        goto end;
     
     dump_ok = 1;
 
  end:
-    //restore dumpable
-    if(restore_orig_dumpable) prctl(PR_SET_DUMPABLE, orig_dumpable);
+    // restore dumpable
+    if (restore_orig_dumpable)
+        prctl(PR_SET_DUMPABLE, orig_dumpable);
 
     //restore traceable
-    if(restore_orig_ptracer) prctl(PR_SET_PTRACER, 0);
+    if (restore_orig_ptracer)
+        prctl(PR_SET_PTRACER, 0);
 
     //fallback
     if (!dump_ok) {
@@ -554,7 +568,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
         }
     }
 
-    if(xc_crash_log_fd >= 0) {
+    if (xc_crash_log_fd >= 0) {
         //record java stacktrace
         xc_xcrash_record_java_stacktrace();
         
@@ -566,7 +580,8 @@ static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
     //JNI callback
     xc_crash_callback();
 
-    if(0 != xcc_signal_crash_queue(si)) goto exit;
+    if (0 != xcc_signal_crash_queue(si))
+        goto exit;
     
     pthread_mutex_unlock(&xc_crash_mutex);
     return;
@@ -576,35 +591,46 @@ static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) {
     _exit(1);
 }
 
-static void xc_crash_init_dump_all_threads_allowlist(const char **allowlist, size_t allowlist_len) {
-    size_t  i, len;
-    size_t  encoded_len, total_encoded_len = 0, cur_encoded_len = 0;
-    char   *total_encoded_allowlist, *tmp;
+static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, size_t allowlist_len) {
+    size_t i;
+    size_t len;
+    size_t encoded_len;
+    size_t total_encoded_len = 0;
+    size_t cur_encoded_len = 0;
+    char* total_encoded_allowlist;
+    char* tmp;
     
-    if(NULL == allowlist || 0 == allowlist_len) return;
+    if (NULL == allowlist || 0 == allowlist_len)
+        return;
 
     //get total encoded length
-    for(i = 0; i < allowlist_len; i++) {
-        if(NULL == allowlist[i]) continue;
+    for (i = 0; i < allowlist_len; i++) {
+        if (NULL == allowlist[i])
+            continue;
         len = strlen(allowlist[i]);
-        if(0 == len) continue;
+        if (0 == len)
+            continue;
         total_encoded_len += xcc_b64_encode_max_len(len);
     }
-    if(0 == total_encoded_len) return;
+    if (0 == total_encoded_len)
+        return;
     total_encoded_len += allowlist_len; //separator ('|')
     total_encoded_len += 1; //terminating null byte ('\0')
 
     //alloc encode buffer
-    if(NULL == (total_encoded_allowlist = calloc(1, total_encoded_len))) return;
+    if (NULL == (total_encoded_allowlist = calloc(1, total_encoded_len)))
+        return;
 
     //to base64 encode each allowlist item
-    for(i = 0; i < allowlist_len; i++) {
-        if(NULL == allowlist[i]) continue;
+    for (i = 0; i < allowlist_len; i++) {
+        if (NULL == allowlist[i])
+            continue;
         len = strlen(allowlist[i]);
-        if(0 == len) continue;
+        if (0 == len)
+            continue;
 
-        if(NULL != (tmp = xcc_b64_encode((const uint8_t *)(allowlist[i]), len, &encoded_len))) {
-            if(cur_encoded_len + encoded_len + 1 >= total_encoded_len)
+        if (NULL != (tmp = xcc_b64_encode((const uint8_t *)(allowlist[i]), len, &encoded_len))) {
+            if (cur_encoded_len + encoded_len + 1 >= total_encoded_len)
                 return; //impossible
             
             memcpy(total_encoded_allowlist + cur_encoded_len, tmp, encoded_len);
@@ -617,12 +643,12 @@ static void xc_crash_init_dump_all_threads_allowlist(const char **allowlist, siz
         }
     }
 
-    if(cur_encoded_len > 0 && '|' == total_encoded_allowlist[cur_encoded_len - 1]) {
+    if (cur_encoded_len > 0 && '|' == total_encoded_allowlist[cur_encoded_len - 1]) {
         total_encoded_allowlist[cur_encoded_len - 1] = '\0';
         cur_encoded_len -= 1;
     }
 
-    if(0 == cur_encoded_len) {
+    if (0 == cur_encoded_len) {
         free(total_encoded_allowlist);
         return;
     }
@@ -707,14 +733,18 @@ int xc_crash_init(JNIEnv *env,
     xc_crash_spot.build_fingerprint_len = strlen(xc_common_build_fingerprint);
     xc_crash_spot.app_id_len = strlen(xc_common_app_id);
     xc_crash_spot.app_version_len = strlen(xc_common_app_version);
-    xc_crash_init_dump_all_threads_allowlist(dump_all_threads_allowlist, dump_all_threads_allowlist_len);
+
+    xc_crash_init_dump_all_threads_allowlist(
+            dump_all_threads_allowlist,
+            dump_all_threads_allowlist_len);
 
     //for clone and fork
 #ifndef __i386__
     if(NULL == (xc_crash_child_stack = calloc(XC_CRASH_CHILD_STACK_LEN, 1))) return XCC_ERRNO_NOMEM;
     xc_crash_child_stack = (void *)(((uint8_t *)xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
 #else
-    if(0 != pipe2(xc_crash_child_notifier, O_CLOEXEC)) return XCC_ERRNO_SYS;
+    if (0 != pipe2(xc_crash_child_notifier, O_CLOEXEC))
+        return XCC_ERRNO_SYS;
 #endif
     
     //register signal handler

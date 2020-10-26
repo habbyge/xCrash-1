@@ -75,8 +75,8 @@ static jint xc_jni_init(JNIEnv       *env,
                         jint          trace_logcat_events_lines,
                         jint          trace_logcat_main_lines,
                         jboolean      trace_dump_fds,
-                        jboolean      trace_dump_network_info)
-{
+                        jboolean      trace_dump_network_info) {
+
     int              r_crash                                = XCC_ERRNO_JNI;
     int              r_trace                                = XCC_ERRNO_JNI;
     
@@ -104,7 +104,7 @@ static jint xc_jni_init(JNIEnv       *env,
     if(xc_jni_inited) return XCC_ERRNO_JNI;
     xc_jni_inited = 1;
 
-    if(!env || !(*env) || (!crash_enable && ! trace_enable) || api_level < 0 ||
+    if (!env || !(*env) || (!crash_enable && ! trace_enable) || api_level < 0 ||
        !os_version || !abi_list || !manufacturer || !brand || !model || !build_fingerprint ||
        !app_id || !app_version || !app_lib_dir || !log_dir ||
        crash_logcat_system_lines < 0 || crash_logcat_events_lines < 0 || crash_logcat_main_lines < 0 ||
@@ -112,19 +112,29 @@ static jint xc_jni_init(JNIEnv       *env,
        trace_logcat_system_lines < 0 || trace_logcat_events_lines < 0 || trace_logcat_main_lines < 0)
         return XCC_ERRNO_INVAL;
 
-    if(NULL == (c_os_version        = (*env)->GetStringUTFChars(env, os_version,        0))) goto clean;
-    if(NULL == (c_abi_list          = (*env)->GetStringUTFChars(env, abi_list,          0))) goto clean;
-    if(NULL == (c_manufacturer      = (*env)->GetStringUTFChars(env, manufacturer,      0))) goto clean;
-    if(NULL == (c_brand             = (*env)->GetStringUTFChars(env, brand,             0))) goto clean;
-    if(NULL == (c_model             = (*env)->GetStringUTFChars(env, model,             0))) goto clean;
-    if(NULL == (c_build_fingerprint = (*env)->GetStringUTFChars(env, build_fingerprint, 0))) goto clean;
-    if(NULL == (c_app_id            = (*env)->GetStringUTFChars(env, app_id,            0))) goto clean;
-    if(NULL == (c_app_version       = (*env)->GetStringUTFChars(env, app_version,       0))) goto clean;
-    if(NULL == (c_app_lib_dir       = (*env)->GetStringUTFChars(env, app_lib_dir,       0))) goto clean;
-    if(NULL == (c_log_dir           = (*env)->GetStringUTFChars(env, log_dir,           0))) goto clean;
+    if (NULL == (c_os_version        = (*env)->GetStringUTFChars(env, os_version,        0)))
+        goto clean;
+    if (NULL == (c_abi_list          = (*env)->GetStringUTFChars(env, abi_list,          0)))
+        goto clean;
+    if (NULL == (c_manufacturer      = (*env)->GetStringUTFChars(env, manufacturer,      0)))
+        goto clean;
+    if (NULL == (c_brand             = (*env)->GetStringUTFChars(env, brand,             0)))
+        goto clean;
+    if (NULL == (c_model             = (*env)->GetStringUTFChars(env, model,             0)))
+        goto clean;
+    if (NULL == (c_build_fingerprint = (*env)->GetStringUTFChars(env, build_fingerprint, 0)))
+        goto clean;
+    if (NULL == (c_app_id            = (*env)->GetStringUTFChars(env, app_id,            0)))
+        goto clean;
+    if (NULL == (c_app_version       = (*env)->GetStringUTFChars(env, app_version,       0)))
+        goto clean;
+    if (NULL == (c_app_lib_dir       = (*env)->GetStringUTFChars(env, app_lib_dir,       0)))
+        goto clean;
+    if (NULL == (c_log_dir           = (*env)->GetStringUTFChars(env, log_dir,           0)))
+        goto clean;
 
     //common init
-    if(0 != xc_common_init((int)api_level, 
+    if (0 != xc_common_init((int) api_level,
                            c_os_version,
                            c_abi_list,
                            c_manufacturer,
@@ -139,28 +149,26 @@ static jint xc_jni_init(JNIEnv       *env,
     r_crash = 0;
     r_trace = 0;
     
-    if(crash_enable)
-    {
+    if (crash_enable) {
         r_crash = XCC_ERRNO_JNI;
         
-        if(crash_dump_all_threads_allowlist)
-        {
+        if (crash_dump_all_threads_allowlist) {
             len = (size_t)(*env)->GetArrayLength(env, crash_dump_all_threads_allowlist);
-            if(len > 0)
-            {
-                if(NULL != (c_crash_dump_all_threads_allowlist = calloc(len, sizeof(char *))))
-                {
+            if (len > 0) {
+                if (NULL != (c_crash_dump_all_threads_allowlist = calloc(len, sizeof(char *)))) {
                     c_crash_dump_all_threads_allowlist_len = len;
-                    for(i = 0; i < len; i++)
-                    {
-                        tmp_str = (jstring)((*env)->GetObjectArrayElement(env, crash_dump_all_threads_allowlist, (jsize)i));
-                        c_crash_dump_all_threads_allowlist[i] = (tmp_str ? (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
+                    for(i = 0; i < len; i++) {
+                        tmp_str = (jstring)((*env)->GetObjectArrayElement(env,
+                                crash_dump_all_threads_allowlist, (jsize)i));
+
+                        c_crash_dump_all_threads_allowlist[i] =
+                                (tmp_str ? (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
                     }
                 }
             }
         }
 
-        //crash init
+        // crash init
         r_crash = xc_crash_init(env,
                                 crash_rethrow ? 1 : 0,
                                 (unsigned int)crash_logcat_system_lines,
@@ -176,8 +184,7 @@ static jint xc_jni_init(JNIEnv       *env,
                                 c_crash_dump_all_threads_allowlist_len);
     }
     
-    if(trace_enable)
-    {
+    if (trace_enable) {
         //trace init
         r_trace = xc_trace_init(env,
                             trace_rethrow ? 1 : 0,
@@ -189,24 +196,36 @@ static jint xc_jni_init(JNIEnv       *env,
     }
     
  clean:
-    if(os_version        && c_os_version)        (*env)->ReleaseStringUTFChars(env, os_version,        c_os_version);
-    if(abi_list          && c_abi_list)          (*env)->ReleaseStringUTFChars(env, abi_list,          c_abi_list);
-    if(manufacturer      && c_manufacturer)      (*env)->ReleaseStringUTFChars(env, manufacturer,      c_manufacturer);
-    if(brand             && c_brand)             (*env)->ReleaseStringUTFChars(env, brand,             c_brand);
-    if(model             && c_model)             (*env)->ReleaseStringUTFChars(env, model,             c_model);
-    if(build_fingerprint && c_build_fingerprint) (*env)->ReleaseStringUTFChars(env, build_fingerprint, c_build_fingerprint);
-    if(app_id            && c_app_id)            (*env)->ReleaseStringUTFChars(env, app_id,            c_app_id);
-    if(app_version       && c_app_version)       (*env)->ReleaseStringUTFChars(env, app_version,       c_app_version);
-    if(app_lib_dir       && c_app_lib_dir)       (*env)->ReleaseStringUTFChars(env, app_lib_dir,       c_app_lib_dir);
-    if(log_dir           && c_log_dir)           (*env)->ReleaseStringUTFChars(env, log_dir,           c_log_dir);
+    if (os_version        && c_os_version)
+        (*env)->ReleaseStringUTFChars(env, os_version,        c_os_version);
+    if (abi_list          && c_abi_list)
+        (*env)->ReleaseStringUTFChars(env, abi_list,          c_abi_list);
+    if (manufacturer      && c_manufacturer)
+        (*env)->ReleaseStringUTFChars(env, manufacturer,      c_manufacturer);
+    if (brand             && c_brand)
+        (*env)->ReleaseStringUTFChars(env, brand,             c_brand);
+    if (model             && c_model)
+        (*env)->ReleaseStringUTFChars(env, model,             c_model);
+    if (build_fingerprint && c_build_fingerprint)
+        (*env)->ReleaseStringUTFChars(env, build_fingerprint, c_build_fingerprint);
+    if (app_id            && c_app_id)
+        (*env)->ReleaseStringUTFChars(env, app_id,            c_app_id);
+    if (app_version       && c_app_version)
+        (*env)->ReleaseStringUTFChars(env, app_version,       c_app_version);
+    if (app_lib_dir       && c_app_lib_dir)
+        (*env)->ReleaseStringUTFChars(env, app_lib_dir,       c_app_lib_dir);
+    if (log_dir           && c_log_dir)
+        (*env)->ReleaseStringUTFChars(env, log_dir,           c_log_dir);
 
-    if(crash_dump_all_threads_allowlist && NULL != c_crash_dump_all_threads_allowlist)
-    {
-        for(i = 0; i < c_crash_dump_all_threads_allowlist_len; i++)
-        {
-            tmp_str = (jstring)((*env)->GetObjectArrayElement(env, crash_dump_all_threads_allowlist, (jsize)i));
+    if (crash_dump_all_threads_allowlist && NULL != c_crash_dump_all_threads_allowlist) {
+        for (i = 0; i < c_crash_dump_all_threads_allowlist_len; i++) {
+            tmp_str = (jstring)((*env)->GetObjectArrayElement(env,
+                    crash_dump_all_threads_allowlist, (jsize)i));
+
             tmp_c_str = c_crash_dump_all_threads_allowlist[i];
-            if(tmp_str && NULL != tmp_c_str) (*env)->ReleaseStringUTFChars(env, tmp_str, tmp_c_str);
+            if (tmp_str && NULL != tmp_c_str) {
+                (*env)->ReleaseStringUTFChars(env, tmp_str, tmp_c_str);
+            }
         }
         free(c_crash_dump_all_threads_allowlist);
     }
@@ -214,16 +233,14 @@ static jint xc_jni_init(JNIEnv       *env,
     return (0 == r_crash && 0 == r_trace) ? 0 : XCC_ERRNO_JNI;
 }
 
-static void xc_jni_notify_java_crashed(JNIEnv *env, jobject thiz)
-{
+static void xc_jni_notify_java_crashed(JNIEnv *env, jobject thiz) {
     (void)env;
     (void)thiz;
 
     xc_common_java_crashed = 1;
 }
 
-static void xc_jni_test_crash(JNIEnv *env, jobject thiz, jint run_in_new_thread)
-{
+static void xc_jni_test_crash(JNIEnv *env, jobject thiz, jint run_in_new_thread) {
     (void)env;
     (void)thiz;
 
@@ -266,7 +283,7 @@ static JNINativeMethod xc_jni_methods[] = {
         "Z"
         ")"
         "I",
-        (void *)xc_jni_init
+        (void *) xc_jni_init
     },
     {
         "nativeNotifyJavaCrashed",
@@ -285,20 +302,25 @@ static JNINativeMethod xc_jni_methods[] = {
     }
 };
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
-{
-    JNIEnv *env;
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+    JNIEnv* env;
     jclass  cls;
 
-    (void)reserved;
+    (void) reserved;
 
-    if(NULL == vm) return -1;
+    if (NULL == vm)
+        return -1;
     
     //register JNI methods
-    if(JNI_OK != (*vm)->GetEnv(vm, (void**)&env, XC_JNI_VERSION)) return -1;
-    if(NULL == env || NULL == *env) return -1;
-    if(NULL == (cls = (*env)->FindClass(env, XC_JNI_CLASS_NAME))) return -1;
-    if((*env)->RegisterNatives(env, cls, xc_jni_methods, sizeof(xc_jni_methods) / sizeof(xc_jni_methods[0]))) return -1;
+    if (JNI_OK != (*vm)->GetEnv(vm, (void**)&env, XC_JNI_VERSION))
+        return -1;
+    if (NULL == env || NULL == *env) return -1;
+    if (NULL == (cls = (*env)->FindClass(env, XC_JNI_CLASS_NAME)))
+        return -1;
+    if ((*env)->RegisterNatives(env, cls, xc_jni_methods,
+            sizeof(xc_jni_methods) / sizeof(xc_jni_methods[0]))) {
+        return -1;
+    }
 
     xc_common_set_vm(vm, env, cls);
 

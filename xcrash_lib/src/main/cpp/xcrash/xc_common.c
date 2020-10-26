@@ -81,8 +81,7 @@ sig_atomic_t  xc_common_java_crashed      = 0;
 static int    xc_common_crash_prepared_fd = -1;
 static int    xc_common_trace_prepared_fd = -1;
 
-static void xc_common_open_prepared_fd(int is_crash)
-{
+static void xc_common_open_prepared_fd(int is_crash) {
     int fd = (is_crash ? xc_common_crash_prepared_fd : xc_common_trace_prepared_fd);
     if(fd >= 0) return;
     
@@ -94,14 +93,14 @@ static void xc_common_open_prepared_fd(int is_crash)
         xc_common_trace_prepared_fd = fd;
 }
 
-static int xc_common_close_prepared_fd(int is_crash)
-{
+static int xc_common_close_prepared_fd(int is_crash) {
     int fd = (is_crash ? xc_common_crash_prepared_fd : xc_common_trace_prepared_fd);
-    if(fd < 0) return XCC_ERRNO_FD;
+    if (fd < 0)
+        return XCC_ERRNO_FD;
     
     close(fd);
 
-    if(is_crash)
+    if (is_crash)
         xc_common_crash_prepared_fd = -1;
     else
         xc_common_trace_prepared_fd = -1;
@@ -109,8 +108,7 @@ static int xc_common_close_prepared_fd(int is_crash)
     return 0;
 }
 
-void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls)
-{
+void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls) {
     xc_common_vm = vm;
 
     xc_common_cb_class = (*env)->NewGlobalRef(env, cls);
@@ -122,31 +120,29 @@ void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls)
 }
 
 int xc_common_init(int         api_level,
-                   const char *os_version,
-                   const char *abi_list,
-                   const char *manufacturer,
-                   const char *brand,
-                   const char *model,
-                   const char *build_fingerprint,
-                   const char *app_id,
-                   const char *app_version,
-                   const char *app_lib_dir,
-                   const char *log_dir)
-{
+                   const char* os_version,
+                   const char* abi_list,
+                   const char* manufacturer,
+                   const char* brand,
+                   const char* model,
+                   const char* build_fingerprint,
+                   const char* app_id,
+                   const char* app_version,
+                   const char* app_lib_dir,
+                   const char* log_dir) {
+
     int             r = 0;
     struct timeval  tv;
     struct tm       tm;
     char            buf[256];
-    char           *kernel_version;
-    char           *process_name;
+    char* kernel_version;
+    char* process_name;
 
 #define XC_COMMON_DUP_STR(v) do {                                       \
         if(NULL == v || 0 == strlen(v))                                 \
             xc_common_##v = "unknown";                                  \
-        else                                                            \
-        {                                                               \
-            if(NULL == (xc_common_##v = strdup(v)))                     \
-            {                                                           \
+        else {                                                          \
+            if (NULL == (xc_common_##v = strdup(v))) {                  \
                 r = XCC_ERRNO_NOMEM;                                    \
                 goto err;                                               \
             }                                                           \
@@ -161,11 +157,13 @@ int xc_common_init(int         api_level,
     } while (0)
 
     //save start time
-    if(0 != gettimeofday(&tv, NULL)) return XCC_ERRNO_SYS;
+    if (0 != gettimeofday(&tv, NULL))
+        return XCC_ERRNO_SYS;
     xc_common_start_time = (uint64_t)(tv.tv_sec) * 1000 * 1000 + (uint64_t)tv.tv_usec;
  
     //save time zone
-    if(NULL == localtime_r((time_t*)(&(tv.tv_sec)), &tm)) return XCC_ERRNO_SYS;
+    if (NULL == localtime_r((time_t*)(&(tv.tv_sec)), &tm))
+        return XCC_ERRNO_SYS;
     xc_common_time_zone = tm.tm_gmtoff;
 
     //save common info
@@ -186,21 +184,21 @@ int xc_common_init(int         api_level,
     kernel_version = buf;
     XC_COMMON_DUP_STR(kernel_version);
 
-    //save process id and process name
+    // save process id and process name
     xc_common_process_id = getpid();
     xcc_util_get_process_name(xc_common_process_id, buf, sizeof(buf));
     process_name = buf;
     XC_COMMON_DUP_STR(process_name);
 
     //to /dev/null
-    if((xc_common_fd_null = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR))) < 0)
-    {
+    if ((xc_common_fd_null = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR))) < 0) {
         r = XCC_ERRNO_SYS;
         goto err;
     }
 
     //check or create log directory
-    if(0 != (r = xc_util_mkdirs(log_dir))) goto err;
+    if (0 != (r = xc_util_mkdirs(log_dir)))
+        goto err;
 
     //create prepared FD for FD exhausted case
     xc_common_open_prepared_fd(1);
@@ -226,44 +224,46 @@ int xc_common_init(int         api_level,
 }
 
 static int xc_common_open_log(int is_crash, uint64_t timestamp,
-                              char *pathname, size_t pathname_len, int *from_placeholder)
-{
+                              char* pathname, size_t pathname_len,
+                              int* from_placeholder) {
+
     int                fd = -1;
     char               buf[512];
     char               placeholder_pathname[1024];
     long               n, i;
-    xcc_util_dirent_t *ent;
+    xcc_util_dirent_t* ent;
 
     xcc_fmt_snprintf(pathname, pathname_len, "%s/"XC_COMMON_LOG_PREFIX"_%020"PRIu64"_%s__%s%s",
                      xc_common_log_dir, timestamp, xc_common_app_version, xc_common_process_name,
                      is_crash ? XC_COMMON_LOG_SUFFIX_CRASH : XC_COMMON_LOG_SUFFIX_TRACE);
 
     //open dir
-    if((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0)
-    {
+    if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0) {
         //try again with the prepared fd
-        if(0 != xc_common_close_prepared_fd(is_crash)) goto create_new_file;
-        if((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0) goto create_new_file;
+        if (0 != xc_common_close_prepared_fd(is_crash))
+            goto create_new_file;
+        if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0)
+            goto create_new_file;
     }
 
     //try to rename a placeholder file and open it
-    while((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd, buf, sizeof(buf))) > 0)
-    {
-        for(i = 0; i < n; i += ent->d_reclen)
-        {
+    while ((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd, buf, sizeof(buf))) > 0) {
+        for (i = 0; i < n; i += ent->d_reclen) {
             ent = (xcc_util_dirent_t *)(buf + i);
             
             // placeholder_01234567890123456789.clean.xcrash
             // file name length: 45
-            if(45 == strlen(ent->d_name) &&
-               0 == memcmp(ent->d_name, XC_COMMON_PLACEHOLDER_PREFIX"_", 12) &&
-               0 == memcmp(ent->d_name + 32, XC_COMMON_PLACEHOLDER_SUFFIX, 13))
-            {
-                xcc_fmt_snprintf(placeholder_pathname, sizeof(placeholder_pathname), "%s/%s", xc_common_log_dir, ent->d_name);
-                if(0 == rename(placeholder_pathname, pathname))
-                {
+            if (45 == strlen(ent->d_name) &&
+                    0 == memcmp(ent->d_name, XC_COMMON_PLACEHOLDER_PREFIX"_", 12) &&
+                    0 == memcmp(ent->d_name + 32, XC_COMMON_PLACEHOLDER_SUFFIX, 13)) {
+
+                xcc_fmt_snprintf(placeholder_pathname, sizeof(placeholder_pathname),
+                        "%s/%s", xc_common_log_dir, ent->d_name);
+
+                if (0 == rename(placeholder_pathname, pathname)) {
                     close(fd);
-                    if(NULL != from_placeholder) *from_placeholder = 1;
+                    if (NULL != from_placeholder)
+                        *from_placeholder = 1;
                     return XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname, XC_COMMON_OPEN_FILE_FLAGS));
                 }
             }
@@ -275,68 +275,61 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
  create_new_file:
     if(NULL != from_placeholder) *from_placeholder = 0;
     
-    if((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname, XC_COMMON_OPEN_NEW_FILE_FLAGS, XC_COMMON_OPEN_NEW_FILE_MODE))) >= 0) return fd;
+    if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname,
+            XC_COMMON_OPEN_NEW_FILE_FLAGS,
+            XC_COMMON_OPEN_NEW_FILE_MODE))) >= 0)
+        return fd;
 
     //try again with the prepared fd
-    if(0 != xc_common_close_prepared_fd(is_crash)) return -1;
-    return XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname, XC_COMMON_OPEN_NEW_FILE_FLAGS, XC_COMMON_OPEN_NEW_FILE_MODE));
+    if (0 != xc_common_close_prepared_fd(is_crash))
+        return -1;
+    return XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname,
+            XC_COMMON_OPEN_NEW_FILE_FLAGS,
+            XC_COMMON_OPEN_NEW_FILE_MODE));
 }
 
-static void xc_common_close_log(int fd, int is_crash)
-{
+static void xc_common_close_log(int fd, int is_crash) {
     close(fd);
     xc_common_open_prepared_fd(is_crash);
 }
 
-int xc_common_open_crash_log(char *pathname, size_t pathname_len, int *from_placeholder)
-{
+int xc_common_open_crash_log(char *pathname, size_t pathname_len, int *from_placeholder) {
     return xc_common_open_log(1, xc_common_start_time, pathname, pathname_len, from_placeholder);
 }
 
-int xc_common_open_trace_log(char *pathname, size_t pathname_len, uint64_t trace_time)
-{
+int xc_common_open_trace_log(char *pathname, size_t pathname_len, uint64_t trace_time) {
     return xc_common_open_log(0, trace_time, pathname, pathname_len, NULL);
 }
 
-void xc_common_close_crash_log(int fd)
-{
+void xc_common_close_crash_log(int fd) {
     xc_common_close_log(fd, 1);
 }
 
-void xc_common_close_trace_log(int fd)
-{
+void xc_common_close_trace_log(int fd) {
     xc_common_close_log(fd, 0);
 }
 
-int xc_common_seek_to_content_end(int fd)
-{
+int xc_common_seek_to_content_end(int fd) {
     uint8_t buf[1024];
     ssize_t readed, n;
     off_t   offset = 0;
 
     //placeholder file
-    if(lseek(fd, 0, SEEK_SET) < 0) goto err;
-    while(1)
-    {
+    if (lseek(fd, 0, SEEK_SET) < 0)
+        goto err;
+    while (1) {
         readed = XCC_UTIL_TEMP_FAILURE_RETRY(read(fd, buf, sizeof(buf)));
-        if(readed < 0)
-        {
+        if(readed < 0) {
             goto err;
-        }
-        else if(0 == readed)
-        {
+        } else if(0 == readed) {
             if(lseek(fd, 0, SEEK_END) < 0) goto err;
             return fd;
-        }
-        else
-        {
-            for(n = readed; n > 0; n--)
-            {
+        } else {
+            for(n = readed; n > 0; n--) {
                 if(0 != buf[n - 1]) break;
             }
             offset += (off_t)n;
-            if(n < readed)
-            {
+            if(n < readed) {
                 if(lseek(fd, offset, SEEK_SET) < 0) goto err;
                 return fd;
             }

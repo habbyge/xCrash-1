@@ -108,10 +108,10 @@ static xcc_signal_crash_info_t xcc_signal_crash_info[] = {
     {.signum = SIGABRT},  // abort发出的信号(用户态进程发出的)
     {.signum = SIGBUS},   // 非法内存访问，错误的物理设备地址访问(kernel发出的信号)
     {.signum = SIGFPE},   // 浮点异常，除数为零(kernel发出的信号)
-    {.signum = SIGILL},   // kill信号，无法识别的CPU指令(kernel发出的信号)
+    {.signum = SIGILL},   // 非法指令，无法识别的CPU指令(kernel发出的信号)
     {.signum = SIGSEGV},  // 无效内存访问(段错误)，错误的虚拟内存地址访问(kernel发出的信号)
     {.signum = SIGTRAP},  // 断点或陷阱指令
-    {.signum = SIGSYS},   // 无法识别的系统调用(system call)(kernel发出的信号)
+    {.signum = SIGSYS},   // 系统调用异常，无法识别的系统调用(system call)(kernel发出的信号)
     {.signum = SIGSTKFLT} // 栈溢出
 };
 
