@@ -53,8 +53,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
 
-static size_t xc_fallback_get_process_thread(char *buf, size_t len, pid_t tid)
-{
+static size_t xc_fallback_get_process_thread(char *buf, size_t len, pid_t tid) {
     char  tname[64];
     
     xcc_util_get_thread_name(tid, tname, sizeof(tname));
@@ -63,8 +62,7 @@ static size_t xc_fallback_get_process_thread(char *buf, size_t len, pid_t tid)
                             xc_common_process_id, tid, tname, xc_common_process_name);
 }
 
-static size_t xc_fallback_get_signal(char *buf, size_t len, siginfo_t *si)
-{
+static size_t xc_fallback_get_signal(char *buf, size_t len, siginfo_t *si) {
     //fault addr
     char addr_desc[64];
     if(xcc_util_signal_has_si_addr(si))
