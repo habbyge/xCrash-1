@@ -37,7 +37,7 @@ extern "C" {
 // tombstone_01234567890123456789_appversion__processname.native.xcrash
 // tombstone_01234567890123456789_appversion__processname.trace.xcrash
 // placeholder_01234567890123456789.clean.xcrash
-#define XC_COMMON_LOG_PREFIX           "tombstone"
+#define XC_COMMON_LOG_PREFIX           "tombstone" // Crash文件，即是：墓碑文件格式
 #define XC_COMMON_LOG_PREFIX_LEN       9
 #define XC_COMMON_LOG_SUFFIX_CRASH     ".native.xcrash"
 #define XC_COMMON_LOG_SUFFIX_TRACE     ".trace.xcrash"

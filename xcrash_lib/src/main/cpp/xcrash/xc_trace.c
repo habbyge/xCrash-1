@@ -178,15 +178,14 @@ static int xc_trace_logs_filter(const struct dirent *entry)
     return 1;
 }
 
-static int xc_trace_logs_clean(void)
-{
-    struct dirent **entry_list;
+static int xc_trace_logs_clean(void) {
+    struct dirent** entry_list;
     char            pathname[1024];
     int             n, i, r = 0;
 
-    if(0 > (n = scandir(xc_common_log_dir, &entry_list, xc_trace_logs_filter, alphasort))) return XCC_ERRNO_SYS;
-    for(i = 0; i < n; i++)
-    {
+    if (0 > (n = scandir(xc_common_log_dir, &entry_list, xc_trace_logs_filter, alphasort)))
+        return XCC_ERRNO_SYS;
+    for(i = 0; i < n; i++) {
         snprintf(pathname, sizeof(pathname), "%s/%s", xc_common_log_dir, entry_list[i]->d_name);
         if(0 != unlink(pathname)) r = XCC_ERRNO_SYS;
     }
@@ -194,8 +193,7 @@ static int xc_trace_logs_clean(void)
     return r;
 }
 
-static int xc_trace_write_header(int fd, uint64_t trace_time)
-{
+static int xc_trace_write_header(int fd, uint64_t trace_time) {
     int  r;
     char buf[1024];
     

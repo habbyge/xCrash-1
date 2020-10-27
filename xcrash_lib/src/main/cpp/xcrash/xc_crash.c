@@ -317,14 +317,15 @@ static void *xc_crash_callback_thread(void *arg) {
         goto end;
 
     //prepare callback parameters
-    if (NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname))) goto end;
-    if('\0' != xc_crash_emergency[0]) {
+    if (NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname)))
+        goto end;
+    if ('\0' != xc_crash_emergency[0]) {
         if(NULL == (j_emergency = (*env)->NewStringUTF(env, xc_crash_emergency))) goto end;
     }
     j_dump_java_stacktrace = (xc_crash_dump_java_stacktrace ? JNI_TRUE : JNI_FALSE);
-    if(j_dump_java_stacktrace) {
+    if (j_dump_java_stacktrace) {
         j_is_main_thread = (xc_common_process_id == xc_crash_tid ? JNI_TRUE : JNI_FALSE);
-        if(!j_is_main_thread) {
+        if (!j_is_main_thread) {
             xcc_util_get_thread_name(xc_crash_tid, c_thread_name, sizeof(c_thread_name));
             if(NULL == (j_thread_name = (*env)->NewStringUTF(env, c_thread_name))) goto end;
         }
@@ -423,7 +424,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     // save crashed thread ID 保存发生Crash的线程id
     xc_crash_tid = gettid();
     
-    // create and open log file TODO: ing......
+    // create and open log file TODO: ing...... 如何打开一个crash日志文件
     if ((xc_crash_log_fd = xc_common_open_crash_log(xc_crash_log_pathname,
             sizeof(xc_crash_log_pathname), &xc_crash_log_from_placeholder)) < 0) {
         goto end;
