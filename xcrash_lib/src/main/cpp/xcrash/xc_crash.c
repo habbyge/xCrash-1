@@ -423,7 +423,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     // save crashed thread ID 保存发生Crash的线程id
     xc_crash_tid = gettid();
     
-    // create and open log file
+    // create and open log file TODO: ing......
     if ((xc_crash_log_fd = xc_common_open_crash_log(xc_crash_log_pathname,
             sizeof(xc_crash_log_pathname), &xc_crash_log_from_placeholder)) < 0) {
         goto end;
@@ -432,8 +432,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     //check privilege-restricting mode
     //https://www.kernel.org/doc/Documentation/prctl/no_new_privs.txt
     //errno = 0;
-    //if(1 == prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0))
-    //{
+    //if (1 == prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0)) {
     //    xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
     //          "get NO_NEW_PRIVS failed, errno=%d\n\n", errno);
     //    goto end;

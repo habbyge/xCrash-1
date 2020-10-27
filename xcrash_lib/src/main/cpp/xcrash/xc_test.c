@@ -41,8 +41,7 @@
 #define XC_TEST_LOG(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, "xcrash", fmt, ##__VA_ARGS__)
 #define XC_TEST_ABORT_MSG     "abort message for xCrash internal testing"
 
-static void xc_test_set_abort_msg()
-{
+static void xc_test_set_abort_msg() {
     xc_dl_t                           *libc          = NULL;
     xcc_util_libc_set_abort_message_t  set_abort_msg = NULL;
 
@@ -58,8 +57,7 @@ static void xc_test_set_abort_msg()
 
 #pragma clang optimize off
 
-int xc_test_call_4(int v)
-{
+int xc_test_call_4(int v) {
     int *a = NULL;
 
     xc_test_set_abort_msg();
@@ -71,20 +69,17 @@ int xc_test_call_4(int v)
     return v;
 }
 
-int xc_test_call_3(int v)
-{
+int xc_test_call_3(int v) {
     int r = xc_test_call_4(v + 1);
     return r;
 }
 
-int xc_test_call_2(int v)
-{
+int xc_test_call_2(int v) {
     int r = xc_test_call_3(v + 1);
     return r;
 }
 
-void xc_test_call_1(void)
-{
+void xc_test_call_1(void) {
     int r = xc_test_call_2(1);
     r = 0;
 }
@@ -116,14 +111,13 @@ static void *xc_test_keep_logging(void *arg)
     return NULL;
 }
 
-void xc_test_crash(int run_in_new_thread)
-{
+void xc_test_crash(int run_in_new_thread) {
     pthread_t tid;
     
     pthread_create(&tid, NULL, &xc_test_keep_logging, NULL);
     usleep(1000 * 10);
 
-    if(run_in_new_thread)
+    if (run_in_new_thread)
         pthread_create(&tid, NULL, &xc_test_new_thread, NULL);
     else
         xc_test_call_1();

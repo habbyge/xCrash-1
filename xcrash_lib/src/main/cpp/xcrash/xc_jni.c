@@ -234,15 +234,15 @@ static jint xc_jni_init(JNIEnv       *env,
 }
 
 static void xc_jni_notify_java_crashed(JNIEnv *env, jobject thiz) {
-    (void)env;
-    (void)thiz;
+    (void) env;
+    (void) thiz;
 
     xc_common_java_crashed = 1;
 }
 
 static void xc_jni_test_crash(JNIEnv *env, jobject thiz, jint run_in_new_thread) {
-    (void)env;
-    (void)thiz;
+    (void) env;
+    (void) thiz;
 
     xc_test_crash(run_in_new_thread);
 }
@@ -312,9 +312,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
         return -1;
     
     //register JNI methods
-    if (JNI_OK != (*vm)->GetEnv(vm, (void**)&env, XC_JNI_VERSION))
+    if (JNI_OK != (*vm)->GetEnv(vm, (void**) &env, XC_JNI_VERSION))
         return -1;
-    if (NULL == env || NULL == *env) return -1;
+    if (NULL == env || NULL == *env)
+        return -1;
     if (NULL == (cls = (*env)->FindClass(env, XC_JNI_CLASS_NAME)))
         return -1;
     if ((*env)->RegisterNatives(env, cls, xc_jni_methods,

@@ -51,26 +51,26 @@
 
 //system info
 int           xc_common_api_level         = 0;
-char         *xc_common_os_version        = NULL;
-char         *xc_common_abi_list          = NULL;
-char         *xc_common_manufacturer      = NULL;
-char         *xc_common_brand             = NULL;
-char         *xc_common_model             = NULL;
-char         *xc_common_build_fingerprint = NULL;
-char         *xc_common_kernel_version    = NULL;
+char*         xc_common_os_version        = NULL;
+char*         xc_common_abi_list          = NULL;
+char*         xc_common_manufacturer      = NULL;
+char*         xc_common_brand             = NULL;
+char*         xc_common_model             = NULL;
+char*         xc_common_build_fingerprint = NULL;
+char*         xc_common_kernel_version    = NULL;
 long          xc_common_time_zone         = 0;
 
 //app info
-char         *xc_common_app_id            = NULL;
-char         *xc_common_app_version       = NULL;
-char         *xc_common_app_lib_dir       = NULL;
-char         *xc_common_log_dir           = NULL;
+char*         xc_common_app_id            = NULL;
+char*         xc_common_app_version       = NULL;
+char*         xc_common_app_lib_dir       = NULL;
+char*         xc_common_log_dir           = NULL;
 
 //process info
 pid_t         xc_common_process_id        = 0;
-char         *xc_common_process_name      = NULL;
+char*         xc_common_process_name      = NULL;
 uint64_t      xc_common_start_time        = 0;
-JavaVM       *xc_common_vm                = NULL;
+JavaVM*       xc_common_vm                = NULL;
 jclass        xc_common_cb_class          = NULL;
 int           xc_common_fd_null           = -1;
 
@@ -83,27 +83,31 @@ static int    xc_common_trace_prepared_fd = -1;
 
 static void xc_common_open_prepared_fd(int is_crash) {
     int fd = (is_crash ? xc_common_crash_prepared_fd : xc_common_trace_prepared_fd);
-    if(fd >= 0) return;
+    if(fd >= 0)
+        return;
     
     fd = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR));
     
-    if(is_crash)
+    if (is_crash) {
         xc_common_crash_prepared_fd = fd;
-    else
+    } else {
         xc_common_trace_prepared_fd = fd;
+    }
 }
 
 static int xc_common_close_prepared_fd(int is_crash) {
     int fd = (is_crash ? xc_common_crash_prepared_fd : xc_common_trace_prepared_fd);
-    if (fd < 0)
+    if (fd < 0) {
         return XCC_ERRNO_FD;
+    }
     
     close(fd);
 
-    if (is_crash)
+    if (is_crash) {
         xc_common_crash_prepared_fd = -1;
-    else
+    } else {
         xc_common_trace_prepared_fd = -1;
+    }
 
     return 0;
 }
@@ -139,7 +143,7 @@ int xc_common_init(int         api_level,
     char* process_name;
 
 #define XC_COMMON_DUP_STR(v) do {                                       \
-        if(NULL == v || 0 == strlen(v))                                 \
+        if (NULL == v || 0 == strlen(v))                                \
             xc_common_##v = "unknown";                                  \
         else {                                                          \
             if (NULL == (xc_common_##v = strdup(v))) {                  \
