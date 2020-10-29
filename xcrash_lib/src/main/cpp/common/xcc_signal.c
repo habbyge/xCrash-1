@@ -102,6 +102,21 @@ typedef struct {
  * 多次相同的信号, 进程只能收到一次. 信号值取值区间为1~31；可靠信号: 也称为实时信号，支持排队, 信号不会丢失, 发多
  * 少次, 就可以收到多少次. 信号值取值区间为32~64
  *
+ * (https://blog.csdn.net/u010168781/article/details/84667052)
+ * Native Crash处理原理:
+ * 1、原理
+ * 在堆中为信号处理函数分配一块区域，作为该函数的栈使用，当系统默认的栈空间用尽时，调用信号处理函数使用的栈是在堆中分
+ * 配的空间，而不是系统默认的栈中，所以它仍旧可以继续工作，执行崩溃处理程序。
+ * 崩溃处理使用的LSM（Linux security module)Linux安全模块中yama部分,（函数：prctl(PR_SET_PTRACER…）。Yama主
+ * 要是对Ptrace函数调用进行访问控制。Ptrace是一个系统调用，它提供了一种方法来让‘父’进程可以观察和控制其它进程的执行，
+ * 检查和改变其核心映像以及寄存器。主要用来实现断点调试和系统调用跟踪。利用ptrace函数，不仅可以劫持另一个进程的调用，
+ * 修改系统函数调用和改变返回值，而且可以向另一个函数注入代码，修改eip，进入自己的逻辑。这个函数广泛用于调试和信号跟
+ * 踪工具。所以说，对ptrace函数进行访问控制还是很有必要的。
+ *
+ * prctl(PR_SET_PTRACER涉及到LSM（Linux security module)Linux安全模块中yama部分。
+ * Yama主要是对Ptrace函数调用进行访问控制，利用ptrace函数，不仅可以劫持另一个进程的调用，修改系统函数调用和改变返回
+ * 值，而且可以向另一个函数注入代码，修改eip，进入自己的逻辑。这个函数广泛用于调试和信号跟踪工具。
+ * TODO: 这里继续......ing......
  */
 static xcc_signal_crash_info_t xcc_signal_crash_info[] = {
     // 调用abort()/kill()/tkill()/tgkill()自杀，或被其他进程通过kill()/tkill()/tgkill()他杀
@@ -121,6 +136,7 @@ static xcc_signal_crash_info_t xcc_signal_crash_info[] = {
 int xcc_signal_crash_register(void (*handler)(int, siginfo_t*, void*)) {
     stack_t ss;
 
+    // 为SIGSEGV信号处理程序设置一个替代堆栈。当发生无效内存访问等段错误时，也能够处理SIGSEGV。
     if (NULL == (ss.ss_sp = calloc(1, XCC_SIGNAL_CRASH_STACK_SIZE))) {
         return XCC_ERRNO_NOMEM;
     }
@@ -156,7 +172,7 @@ int xcc_signal_crash_register(void (*handler)(int, siginfo_t*, void*)) {
     // bit都置1，即将所有信号加入至信号集
     sigfillset(&act.sa_mask);
     act.sa_sigaction = handler;
-    act.sa_flags = SA_RESTART | SA_SIGINFO | SA_ONSTACK;
+    act.sa_flags = SA_RESTART | SA_SIGINFO | SA_ONSTACK; // 信号处理函数在堆上运行，而不是在栈上
     
     size_t i;
     for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {

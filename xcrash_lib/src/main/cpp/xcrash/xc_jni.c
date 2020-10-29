@@ -112,7 +112,7 @@ static jint xc_jni_init(JNIEnv       *env,
        trace_logcat_system_lines < 0 || trace_logcat_events_lines < 0 || trace_logcat_main_lines < 0)
         return XCC_ERRNO_INVAL;
 
-    if (NULL == (c_os_version        = (*env)->GetStringUTFChars(env, os_version,        0)))
+    if (NULL == (c_os_version = (*env)->GetStringUTFChars(env, os_version, 0)))
         goto clean;
     if (NULL == (c_abi_list          = (*env)->GetStringUTFChars(env, abi_list,          0)))
         goto clean;
@@ -283,14 +283,14 @@ static JNINativeMethod xc_jni_methods[] = {
         "Z"
         ")"
         "I",
-        (void *) xc_jni_init
+        (void*) xc_jni_init
     },
     {
         "nativeNotifyJavaCrashed",
         "("
         ")"
         "V",
-        (void *)xc_jni_notify_java_crashed
+        (void*) xc_jni_notify_java_crashed
     },
     {
         "nativeTestCrash",
@@ -298,7 +298,7 @@ static JNINativeMethod xc_jni_methods[] = {
         "I"
         ")"
         "V",
-        (void *)xc_jni_test_crash
+        (void*) xc_jni_test_crash
     }
 };
 

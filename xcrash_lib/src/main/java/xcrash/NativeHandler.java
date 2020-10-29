@@ -103,7 +103,8 @@ class NativeHandler {
         this.anrEnable = anrEnable;
         this.anrCheckProcessState = anrCheckProcessState;
         this.anrCallback = anrCallback;
-        this.anrTimeoutMs = anrRethrow ? 15 * 1000 : 30 * 1000; //setting rethrow to "false" is NOT recommended
+        //setting rethrow to "false" is NOT recommended
+        this.anrTimeoutMs = anrRethrow ? 15 * 1000 : 30 * 1000;
 
         //init native lib
         try {
@@ -166,7 +167,9 @@ class NativeHandler {
         try {
             for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
                 Thread thd = entry.getKey();
-                if ((isMainThread && thd.getName().equals("main")) || (!isMainThread && thd.getName().contains(threadName))) {
+                if ((isMainThread && thd.getName().equals("main")) ||
+                        (!isMainThread && thd.getName().contains(threadName))) {
+
                     StringBuilder sb = new StringBuilder();
                     for (StackTraceElement element : entry.getValue()) {
                         sb.append("    at ").append(element.toString()).append("\n");
@@ -181,8 +184,9 @@ class NativeHandler {
     }
 
     // do NOT obfuscate this method
-    @SuppressWarnings("unused")
-    private static void crashCallback(String logPath, String emergency, boolean dumpJavaStacktrace, boolean isMainThread, String threadName) {
+    private static void crashCallback(String logPath, String emergency,
+                                      boolean dumpJavaStacktrace,
+                                      boolean isMainThread, String threadName) {
 
         if (!TextUtils.isEmpty(logPath)) {
 
@@ -198,7 +202,8 @@ class NativeHandler {
             TombstoneManager.appendSection(logPath, "memory info", Util.getProcessMemoryInfo());
 
             //append background / foreground
-            TombstoneManager.appendSection(logPath, "foreground", ActivityMonitor.getInstance().isApplicationForeground() ? "yes" : "no");
+            TombstoneManager.appendSection(logPath, "foreground",
+                    ActivityMonitor.getInstance().isApplicationForeground() ? "yes" : "no");
         }
 
         ICrashCallback callback = NativeHandler.getInstance().crashCallback;
@@ -226,11 +231,14 @@ class NativeHandler {
         TombstoneManager.appendSection(logPath, "memory info", Util.getProcessMemoryInfo());
 
         //append background / foreground
-        TombstoneManager.appendSection(logPath, "foreground", ActivityMonitor.getInstance().isApplicationForeground() ? "yes" : "no");
+        TombstoneManager.appendSection(logPath, "foreground",
+                ActivityMonitor.getInstance().isApplicationForeground() ? "yes" : "no");
 
         //check process ANR state
         if (NativeHandler.getInstance().anrCheckProcessState) {
-            if (!Util.checkProcessAnrState(NativeHandler.getInstance().ctx, NativeHandler.getInstance().anrTimeoutMs)) {
+            if (!Util.checkProcessAnrState(NativeHandler.getInstance().ctx,
+                    NativeHandler.getInstance().anrTimeoutMs)) {
+
                 FileManager.getInstance().recycleLogFile(new File(logPath));
                 return; //not an ANR
             }
@@ -242,7 +250,9 @@ class NativeHandler {
         }
 
         //rename trace log file to ANR log file
-        String anrLogPath = logPath.substring(0, logPath.length() - Util.traceLogSuffix.length()) + Util.anrLogSuffix;
+        String anrLogPath = logPath.substring(0, logPath.length() -
+                Util.traceLogSuffix.length()) + Util.anrLogSuffix;
+
         File traceFile = new File(logPath);
         File anrFile = new File(anrLogPath);
         if (!traceFile.renameTo(anrFile)) {

@@ -29,8 +29,7 @@ typedef
   #endif
   CPpmd7_Context_Ref;
 
-typedef struct CPpmd7_Context_
-{
+typedef struct CPpmd7_Context_ {
   UInt16 NumStats;
   UInt16 SummFreq;
   CPpmd_State_Ref Stats;
@@ -39,8 +38,7 @@ typedef struct CPpmd7_Context_
 
 #define Ppmd7Context_OneState(p) ((CPpmd_State *)&(p)->SummFreq)
 
-typedef struct
-{
+typedef struct {
   CPpmd7_Context *MinContext, *MaxContext;
   CPpmd_State *FoundState;
   unsigned OrderFall, InitEsc, PrevSuccess, MaxOrder, HiBitsFlag;
@@ -99,15 +97,13 @@ CPpmd_See *Ppmd7_MakeEscFreq(CPpmd7 *p, unsigned numMasked, UInt32 *scale);
 
 typedef struct IPpmd7_RangeDec IPpmd7_RangeDec;
 
-struct IPpmd7_RangeDec
-{
+struct IPpmd7_RangeDec {
   UInt32 (*GetThreshold)(const IPpmd7_RangeDec *p, UInt32 total);
   void (*Decode)(const IPpmd7_RangeDec *p, UInt32 start, UInt32 size);
   UInt32 (*DecodeBit)(const IPpmd7_RangeDec *p, UInt32 size0);
 };
 
-typedef struct
-{
+typedef struct {
   IPpmd7_RangeDec vt;
   UInt32 Range;
   UInt32 Code;
@@ -123,8 +119,7 @@ int Ppmd7_DecodeSymbol(CPpmd7 *p, const IPpmd7_RangeDec *rc);
 
 /* ---------- Encode ---------- */
 
-typedef struct
-{
+typedef struct {
   UInt64 Low;
   UInt32 Range;
   Byte Cache;

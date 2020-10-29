@@ -154,7 +154,7 @@ int xc_common_init(int         api_level,
     } while (0)
 
 #define XC_COMMON_FREE_STR(v) do {                                      \
-        if(NULL != xc_common_##v) {                                     \
+        if (NULL != xc_common_##v) {                                    \
             free(xc_common_##v);                                        \
             xc_common_##v = NULL;                                       \
         }                                                               \

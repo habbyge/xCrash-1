@@ -1,3 +1,4 @@
+#pragma clang diagnostic push
 // Copyright (c) 2020-present, HexHacking Team. All rights reserved.
 // Copyright (c) 2019, iQIYI, Inc. All rights reserved.
 //
@@ -97,10 +98,13 @@ static int              xc_crash_child_notifier[2];
 #endif
 
 //info passed to the dumper process
-static xcc_spot_t       xc_crash_spot;
-static char            *xc_crash_dump_all_threads_allowlist = NULL;
+static xcc_spot_t xc_crash_spot; // 发生crash的点信息
+static char* xc_crash_dump_all_threads_allowlist = NULL;
 
-static int xc_crash_fork(int (*fn)(void *)) {
+/**
+ * fork一个新的进程
+ */
+static int xc_crash_fork(int (*fn)(void*)) {
 #ifndef __i386__
     return clone(fn, xc_crash_child_stack, CLONE_VFORK | CLONE_FS | CLONE_UNTRACED, NULL);
 #else
@@ -116,7 +120,7 @@ static int xc_crash_fork(int (*fn)(void *)) {
 
         _exit(fn(NULL));
     } else {
-        //parent process ...
+        // parent process ...
         char msg;
         XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_crash_child_notifier[0], &msg, sizeof(char)));
         syscall(SYS_close, xc_crash_child_notifier[0]);
@@ -127,8 +131,11 @@ static int xc_crash_fork(int (*fn)(void *)) {
 #endif
 }
 
-static int xc_crash_exec_dumper(void *arg) {
-    (void)arg;
+/**
+ * crash进程处理函数
+ */
+static int xc_crash_exec_dumper(void* arg) {
+    (void) arg;
 
     //for fd exhaust
     //keep the log_fd open for writing error msg before execl()
@@ -223,17 +230,17 @@ static int xc_crash_exec_dumper(void *arg) {
 }
 
 static void xc_xcrash_record_java_stacktrace() {
-    JNIEnv                           *env     = NULL;
-    xc_dl_t                          *libcpp  = NULL;
-    xc_dl_t                          *libart  = NULL;
-    xcc_util_libart_thread_current_t  current = NULL;
-    xcc_util_libart_thread_dump_t     dump    = NULL;
-    xcc_util_libart_thread_dump2_t    dump2   = NULL;
-    void                             *cerr    = NULL;
-    void                             *thread  = NULL;
+    JNIEnv* env = NULL;
+    xc_dl_t* libcpp = NULL;
+    xc_dl_t* libart = NULL;
+    xcc_util_libart_thread_current_t current = NULL;
+    xcc_util_libart_thread_dump_t dump = NULL;
+    xcc_util_libart_thread_dump2_t dump2 = NULL;
+    void* cerr = NULL;
+    void* thread = NULL;
 
     //is this a java thread?
-    if(JNI_OK == (*xc_common_vm)->GetEnv(xc_common_vm, (void**)&env, XC_JNI_VERSION))
+    if (JNI_OK == (*xc_common_vm)->GetEnv(xc_common_vm, (void**)&env, XC_JNI_VERSION))
         XC_JNI_CHECK_PENDING_EXCEPTION(end);
     else
         return;
@@ -272,15 +279,18 @@ static void xc_xcrash_record_java_stacktrace() {
 #endif
     }
     //get current thread object
-    if(NULL == (thread = current())) goto end;
+    if (NULL == (thread = current()))
+        goto end;
 
     //everything seems OK, do not dump java stacktrace again on the java layer
     xc_crash_dump_java_stacktrace = 0;
 
     //dump java stacktrace
-    if(0 != xcc_util_write_str(xc_crash_log_fd, "\n\njava stacktrace:\n")) goto end;
-    if(dup2(xc_crash_log_fd, STDERR_FILENO) < 0) goto end;
-    if(NULL != dump)
+    if (0 != xcc_util_write_str(xc_crash_log_fd, "\n\njava stacktrace:\n"))
+        goto end;
+    if (dup2(xc_crash_log_fd, STDERR_FILENO) < 0)
+        goto end;
+    if (NULL != dump)
         dump(thread, cerr);
     else if(NULL != dump2)
         dump2(thread, cerr, 0, 0);
@@ -288,19 +298,21 @@ static void xc_xcrash_record_java_stacktrace() {
     xcc_util_write_str(xc_crash_log_fd, "\n");
 
  end:
-    if(NULL != libcpp) xc_dl_close(&libcpp);
-    if(NULL != libart) xc_dl_close(&libart);
+    if (NULL != libcpp)
+        xc_dl_close(&libcpp);
+    if (NULL != libart)
+        xc_dl_close(&libart);
 }
 
-static void *xc_crash_callback_thread(void *arg) {
-    JNIEnv   *env = NULL;
-    uint64_t  data = 0;
-    jstring   j_pathname  = NULL;
-    jstring   j_emergency = NULL;
-    jboolean  j_dump_java_stacktrace = JNI_FALSE;
-    jboolean  j_is_main_thread = JNI_FALSE;
-    jstring   j_thread_name = NULL;
-    char      c_thread_name[16] = "\0";
+static void* xc_crash_callback_thread(void* arg) {
+    JNIEnv* env = NULL;
+    uint64_t data = 0;
+    jstring j_pathname = NULL;
+    jstring j_emergency = NULL;
+    jboolean j_dump_java_stacktrace = JNI_FALSE;
+    jboolean j_is_main_thread = JNI_FALSE;
+    jstring j_thread_name = NULL;
+    char c_thread_name[16] = "\0";
     
     (void)arg;
     
@@ -392,10 +404,16 @@ static int xc_crash_check_backtrace_valid() {
     return r;    
 }
 
+/**
+ * Native层Crash信号处理器函数
+ * @param sig 信号字
+ * @param si 信号信息
+ * @param uc FIXME: 未知
+ */
 static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     struct timespec crash_tp;
     int             restore_orig_ptracer = 0;
-    int             restore_orig_dumpable = 0;
+    int restore_orig_dumpable = 0;
     int orig_dumpable;
     int             dump_ok = 0;
 
@@ -424,7 +442,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     // save crashed thread ID 保存发生Crash的线程id
     xc_crash_tid = gettid();
     
-    // create and open log file TODO: ing...... 如何打开一个crash日志文件
+    // create and open log file TODO: 如何打开一个crash日志文件，并生成fd的？？
     if ((xc_crash_log_fd = xc_common_open_crash_log(xc_crash_log_pathname,
             sizeof(xc_crash_log_pathname), &xc_crash_log_from_placeholder)) < 0) {
         goto end;
@@ -439,33 +457,51 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     //    goto end;
     //}
 
-    // set dumpable，这个系统调用指令是为进程制定而设计的，明确的选择取决于option，例如：为进程或线程执行名字
+    // Yama LSM 是什么？
+    // Yama是一个Linux安全模块，它收集不由内核本身处理的系统范围的DAC安全保护。
+    // 1. 这可以在构建时使用CONFIG_SECURITY_YAMA进行选择，
+    // 2. 并且可以在运行时通过/proc/sys/kernel/yama中的sysctl进行控制
+    // LSM = Linux Security Module = linux安全模块
+    // Linux进程接口的一个特别令人不安的弱点是，单个用户能够检查任何进程的内存和运行状态。
+    // 由于ptrace通常不被非开发人员和非管理员使用，所以应该允许系统构建器禁用这个调试系统。
+    // 一个解决方案是，一些应用程序使用 prctl(PR_SET_DUMPABLE, ...) 专门禁止这种ptrace attach，但是很多应用程
+    // 序并没有禁止。更通用的解决方案是，只允许子进程的父进程来attach到子进程，或者通过 CAP_SYS_PTRACE
+
+    // set dumpable，这个系统调用指令是为进程指令而设计的，明确的选择取决于option，例如：为进程或线程执行名字
     // PR_GET_DUMPABLEL (Since Linux 2.4)Return(as the function result)the current state of the
     // calling process’s dumpable flag.
-    orig_dumpable = prctl(PR_GET_DUMPABLE); // 返回处理器标志dumpable
+    // 返回处理器标志dumpable，用于设定支持dump，否则/data/tombstones目录下没有内容，这样才能拿到crash的现
+    // 场信息，等于开启Native Log命令
+    orig_dumpable = prctl(PR_GET_DUMPABLE);
     errno = 0;
-    if(0 != prctl(PR_SET_DUMPABLE, 1)) {
+    // PR_SET_DUMPABLE，设置该进程可dump，arg2作为处理器标志dumpable被输入，这里设置为模式1，代表"限制的ptrace",
+    if (0 != prctl(PR_SET_DUMPABLE, 1)) {
         xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                "set dumpable failed, errno=%d\n\n", errno);
+                "set dumpable failed, errno=%d\n\n", errno); // 该进程不支持dump
+
         goto end;
     }
-    restore_orig_dumpable = 1;
+    restore_orig_dumpable = 1; // 标识需要恢复原始dumpable命令(使用完必须恢复，不影响业务运行)
 
     //set traceable (disable the ptrace restrictions introduced by Yama)
     //https://www.kernel.org/doc/Documentation/security/Yama.txt
     errno = 0;
-    if(0 != prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)) {
-        if(EINVAL != errno) {
-            xcc_util_write_format_safe(xc_crash_log_fd,
-                    XC_CRASH_ERR_TITLE"set traceable failed, errno=%d\n\n", errno);
+    // 设定ptrace行为，trace任意log，TODO: ing......这里继续......
+    // 参数2:
+    // 0: 清除到默认状态
+    // 给定pid: 只允许给定pid的进程 来attach到进当前进程
+    // PR_SET_PTRACER_ANY: 所有进程都允许attach到当前进程
+    if (0 != prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)) { // 设置当前进程可attach
+        if (EINVAL != errno) {
+            xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
+                    "set traceable failed, errno=%d\n\n", errno);
+
             goto end;
-        }
-        //else
-        //{
-        //    //this kernel does not support PR_SET_PTRACER_ANY, or Yama is not enabled
-        //}
+        } /*else {
+            //this kernel does not support PR_SET_PTRACER_ANY, or Yama is not enabled
+        }*/
     } else {
-        restore_orig_ptracer = 1;
+        restore_orig_ptracer = 1; // 表示需要恢复原始的trace设置
     }
 
     //set crash spot info
@@ -475,18 +511,20 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     memcpy(&(xc_crash_spot.ucontext), uc, sizeof(ucontext_t));
     xc_crash_spot.log_pathname_len = strlen(xc_crash_log_pathname);
 
-    //spawn crash dumper process
+    // spawn(产卵)crash dumper process
     errno = 0;
+    // 关键点：fork一个新的进程，专门用于dump发生crash的进程
     pid_t dumper_pid = xc_crash_fork(xc_crash_exec_dumper);
     if (-1 == dumper_pid) {
-        xcc_util_write_format_safe(xc_crash_log_fd,
-                XC_CRASH_ERR_TITLE"fork failed, errno=%d\n\n", errno);
+        xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
+                "fork failed, errno=%d\n\n", errno);
+
         goto end;
     }
 
-    //parent process ...
+    // parent process ... 此时是发生crash的父进程
 
-    //wait the crash dumper process terminated
+    // wait the crash dumper process terminated
     errno = 0;
     int status = 0;
     int wait_r = XCC_UTIL_TEMP_FAILURE_RETRY(waitpid(dumper_pid, &status, __WALL));
@@ -537,12 +575,14 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
 
  end:
     // restore dumpable
-    if (restore_orig_dumpable)
+    if (restore_orig_dumpable) {
         prctl(PR_SET_DUMPABLE, orig_dumpable);
+    }
 
     //restore traceable
-    if (restore_orig_ptracer)
-        prctl(PR_SET_PTRACER, 0);
+    if (restore_orig_ptracer) {
+        prctl(PR_SET_PTRACER, 0); // 清除到默认状态
+    }
 
     //fallback
     if (!dump_ok) {
@@ -580,8 +620,9 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     //JNI callback
     xc_crash_callback();
 
-    if (0 != xcc_signal_crash_queue(si))
+    if (0 != xcc_signal_crash_queue(si)) {
         goto exit;
+    }
     
     pthread_mutex_unlock(&xc_crash_mutex);
     return;
@@ -600,8 +641,9 @@ static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, siz
     char* total_encoded_allowlist;
     char* tmp;
     
-    if (NULL == allowlist || 0 == allowlist_len)
+    if (NULL == allowlist || 0 == allowlist_len) {
         return;
+    }
 
     //get total encoded length
     for (i = 0; i < allowlist_len; i++) {
@@ -750,5 +792,7 @@ int xc_crash_init(JNIEnv *env,
     //register signal handler
     return xcc_signal_crash_register(xc_crash_signal_handler);
 }
+
+#pragma clang diagnostic pop
 
 #pragma clang diagnostic pop

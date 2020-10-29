@@ -22,8 +22,7 @@ int g_allocCountTemp = 0;
 
 #endif
 
-void *SzAlloc(ISzAllocPtr p, size_t size)
-{
+void* SzAlloc(ISzAllocPtr p, size_t size) {
   UNUSED_VAR(p);
   if (size == 0)
     return 0;

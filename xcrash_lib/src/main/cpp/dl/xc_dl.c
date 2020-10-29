@@ -376,7 +376,8 @@ static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t *self,
 
     //ignore STN_UNDEF
     uint32_t i = self->gnu_hash.buckets[hash % self->gnu_hash.buckets_cnt];
-    if(i < self->gnu_hash.symoffset) return NULL;
+    if (i < self->gnu_hash.symoffset)
+        return NULL;
 
     //loop through the chain
     while(1) {

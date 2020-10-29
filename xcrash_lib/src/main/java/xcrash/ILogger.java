@@ -34,7 +34,6 @@ public interface ILogger {
      * @param tag Used to identify the source of a log message.
      * @param msg The message you would like logged.
      */
-    @SuppressWarnings("unused")
     void v(String tag, String msg);
 
     /**
@@ -44,7 +43,6 @@ public interface ILogger {
      * @param msg The message you would like logged.
      * @param tr An exception to log.
      */
-    @SuppressWarnings("unused")
     void v(String tag, String msg, Throwable tr);
 
     /**
@@ -53,7 +51,6 @@ public interface ILogger {
      * @param tag Used to identify the source of a log message.
      * @param msg The message you would like logged.
      */
-    @SuppressWarnings("unused")
     void d(String tag, String msg);
 
     /**
@@ -63,7 +60,6 @@ public interface ILogger {
      * @param msg The message you would like logged.
      * @param tr An exception to log.
      */
-    @SuppressWarnings("unused")
     void d(String tag, String msg, Throwable tr);
 
     /**
@@ -72,7 +68,6 @@ public interface ILogger {
      * @param tag Used to identify the source of a log message.
      * @param msg The message you would like logged.
      */
-    @SuppressWarnings("unused")
     void i(String tag, String msg);
 
     /**
@@ -82,7 +77,6 @@ public interface ILogger {
      * @param msg The message you would like logged.
      * @param tr An exception to log.
      */
-    @SuppressWarnings("unused")
     void i(String tag, String msg, Throwable tr);
 
     /**
@@ -91,7 +85,6 @@ public interface ILogger {
      * @param tag Used to identify the source of a log message.
      * @param msg The message you would like logged.
      */
-    @SuppressWarnings("unused")
     void w(String tag, String msg);
 
     /**
@@ -101,7 +94,6 @@ public interface ILogger {
      * @param msg The message you would like logged.
      * @param tr An exception to log.
      */
-    @SuppressWarnings("unused")
     void w(String tag, String msg, Throwable tr);
 
     /**
@@ -110,7 +102,6 @@ public interface ILogger {
      * @param tag Used to identify the source of a log message.
      * @param msg The message you would like logged.
      */
-    @SuppressWarnings("unused")
     void e(String tag, String msg);
 
     /**
@@ -120,6 +111,5 @@ public interface ILogger {
      * @param msg The message you would like logged.
      * @param tr An exception to log.
      */
-    @SuppressWarnings("unused")
     void e(String tag, String msg, Throwable tr);
 }

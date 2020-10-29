@@ -144,8 +144,7 @@ static xc_dl_util_lzma_free_t xc_dl_util_lzma_free = NULL;
 static void *xc_dl_util_lzma_code = NULL;
 
 // LZMA init
-static void xc_dl_util_lzma_init()
-{
+static void xc_dl_util_lzma_init() {
     xc_dl_t *lzma = xc_dl_open(XC_DL_CONST_PATHNAME_LZMA, XC_DL_DYNSYM);
     if(NULL == lzma) return;
 

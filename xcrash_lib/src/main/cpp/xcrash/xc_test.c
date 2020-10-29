@@ -45,9 +45,12 @@ static void xc_test_set_abort_msg() {
     xc_dl_t                           *libc          = NULL;
     xcc_util_libc_set_abort_message_t  set_abort_msg = NULL;
 
-    if(xc_common_api_level >= 29) libc = xc_dl_open(XCC_UTIL_LIBC_Q, XC_DL_DYNSYM);
-    if(NULL == libc && NULL == (libc = xc_dl_open(XCC_UTIL_LIBC, XC_DL_DYNSYM))) goto end;
-    if(NULL == (set_abort_msg = (xcc_util_libc_set_abort_message_t)xc_dl_dynsym_func(libc, XCC_UTIL_LIBC_SET_ABORT_MSG))) goto end;
+    if (xc_common_api_level >= 29) libc = xc_dl_open(XCC_UTIL_LIBC_Q, XC_DL_DYNSYM);
+    if (NULL == libc && NULL == (libc = xc_dl_open(XCC_UTIL_LIBC, XC_DL_DYNSYM)))
+        goto end;
+    if (NULL == (set_abort_msg = (xcc_util_libc_set_abort_message_t)
+            xc_dl_dynsym_func(libc, XCC_UTIL_LIBC_SET_ABORT_MSG)))
+        goto end;
 
     set_abort_msg(XC_TEST_ABORT_MSG);
 
@@ -84,8 +87,7 @@ void xc_test_call_1(void) {
     r = 0;
 }
 
-static void *xc_test_new_thread(void *arg)
-{
+static void *xc_test_new_thread(void* arg) {
     (void)arg;
     pthread_detach(pthread_self());
     pthread_setname_np(pthread_self(), "xcrash_test_cal");
@@ -95,15 +97,13 @@ static void *xc_test_new_thread(void *arg)
     return NULL;
 }
 
-static void *xc_test_keep_logging(void *arg)
-{
+static void *xc_test_keep_logging(void* arg) {
     (void)arg;
     pthread_detach(pthread_self());
     pthread_setname_np(pthread_self(), "xcrash_test_log");
 
     int i = 0;
-    while(++i < 600)
-    {
+    while(++i < 600) {
         XC_TEST_LOG("crashed APP's thread is running ...... %d", i);
         usleep(1000 * 100);
     }

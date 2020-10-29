@@ -39,18 +39,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class FileManager {
 
-    private String placeholderPrefix = "placeholder";
-    private String placeholderCleanSuffix = ".clean.xcrash";
-    private String placeholderDirtySuffix = ".dirty.xcrash";
+    private final String placeholderPrefix = "placeholder";
+    private final String placeholderCleanSuffix = ".clean.xcrash";
+    private final String placeholderDirtySuffix = ".dirty.xcrash";
     private String logDir = null;
     private int javaLogCountMax = 0;
     private int nativeLogCountMax = 0;
     private int anrLogCountMax = 0;
-    private int traceLogCountMax = 1;
+    private final int traceLogCountMax = 1;
     private int placeholderCountMax = 0;
     private int placeholderSizeKb = 0;
     private int delayMs = 0;
-    private AtomicInteger unique = new AtomicInteger();
+    private final AtomicInteger unique = new AtomicInteger();
     private static final FileManager instance = new FileManager();
 
     private FileManager() {
@@ -60,7 +60,10 @@ class FileManager {
         return instance;
     }
 
-    void initialize(String logDir, int javaLogCountMax, int nativeLogCountMax, int anrLogCountMax, int placeholderCountMax, int placeholderSizeKb, int delayMs) {
+    void initialize(String logDir, int javaLogCountMax, int nativeLogCountMax,
+                    int anrLogCountMax, int placeholderCountMax,
+                    int placeholderSizeKb, int delayMs) {
+
         this.logDir = logDir;
         this.javaLogCountMax = javaLogCountMax;
         this.nativeLogCountMax = nativeLogCountMax;
@@ -270,7 +273,6 @@ class FileManager {
         }
     }
 
-    @SuppressWarnings({"unused"})
     boolean recycleLogFile(File logFile) {
         if (logFile == null) {
             return false;

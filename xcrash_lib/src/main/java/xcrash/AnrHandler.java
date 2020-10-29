@@ -172,7 +172,8 @@ class AnrHandler {
         //create log file
         File logFile = null;
         try {
-            String logPath = String.format(Locale.US, "%s/%s_%020d_%s__%s%s", logDir, Util.logPrefix, anrTime.getTime() * 1000, appVersion, processName, Util.anrLogSuffix);
+            String logPath = String.format(Locale.US, "%s/%s_%020d_%s__%s%s", logDir, Util.logPrefix,
+                    anrTime.getTime() * 1000, appVersion, processName, Util.anrLogSuffix);
             logFile = FileManager.getInstance().createLogFile(logPath);
         } catch (Exception e) {
             XCrash.getLogger().e(Util.TAG, "AnrHandler createLogFile failed", e);

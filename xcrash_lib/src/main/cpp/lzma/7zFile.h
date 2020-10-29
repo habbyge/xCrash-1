@@ -20,8 +20,7 @@ EXTERN_C_BEGIN
 
 /* ---------- File ---------- */
 
-typedef struct
-{
+typedef struct {
   #ifdef USE_WINDOWS_FILE
   HANDLE handle;
   #else
@@ -61,8 +60,7 @@ typedef struct
 void FileSeqInStream_CreateVTable(CFileSeqInStream *p);
 
 
-typedef struct
-{
+typedef struct {
   ISeekInStream vt;
   CSzFile file;
 } CFileInStream;
@@ -70,8 +68,7 @@ typedef struct
 void FileInStream_CreateVTable(CFileInStream *p);
 
 
-typedef struct
-{
+typedef struct {
   ISeqOutStream vt;
   CSzFile file;
 } CFileOutStream;

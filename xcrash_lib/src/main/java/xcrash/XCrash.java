@@ -30,6 +30,7 @@ import android.text.TextUtils;
 
 /**
  * xCrash is a crash reporting library for Android APP.
+ * 该sdk的入口类
  */
 @SuppressWarnings("unused")
 public final class XCrash {
@@ -44,14 +45,15 @@ public final class XCrash {
     }
 
     /**
+     * 该sdk第1个需要执行的入口函数
      * Initialize xCrash with default parameters.
      *
      * <p>Note: This is a synchronous operation.
      *
      * @param ctx The context of the application object of the current process.
-     * @return Return zero if successful, non-zero otherwise. The error code is defined in: {@link xcrash.Errno}.
+     * @return Return zero if successful, non-zero otherwise. The error code is
+     *         defined in: {@link xcrash.Errno}.
      */
-    @SuppressWarnings("unused")
     public static int init(Context ctx) {
         return init(ctx, null);
     }
@@ -63,9 +65,9 @@ public final class XCrash {
      *
      * @param ctx The context of the application object of the current process.
      * @param params An initialization parameter set.
-     * @return Return zero if successful, non-zero otherwise. The error code is defined in: {@link xcrash.Errno}.
+     * @return Return zero if successful, non-zero otherwise. The error code is
+     *         defined in: {@link xcrash.Errno}.
      */
-    @SuppressWarnings("unused")
     public static synchronized int init(Context ctx, InitParameters params) {
         if (XCrash.initialized) {
             return Errno.OK;
@@ -161,7 +163,7 @@ public final class XCrash {
                 params.javaCallback);
         }
 
-        //init ANR handler (API level < 21)
+        // init ANR handler (API level < 21)
         if (params.enableAnrHandler && Build.VERSION.SDK_INT < 21) {
             AnrHandler.getInstance().initialize(
                 ctx,
@@ -179,7 +181,7 @@ public final class XCrash {
                 params.anrCallback);
         }
 
-        //init native crash handler / ANR handler (API level >= 21)
+        // init native crash handler / ANR handler (API level >= 21)
         int r = Errno.OK;
         if (params.enableNativeCrashHandler || (params.enableAnrHandler && Build.VERSION.SDK_INT >= 21)) {
             r = NativeHandler.getInstance().initialize(
@@ -237,7 +239,6 @@ public final class XCrash {
          * @param appVersion App version string.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAppVersion(String appVersion) {
             this.appVersion = appVersion;
             return this;
@@ -250,7 +251,7 @@ public final class XCrash {
          * @param dir Absolute path to the directory.
          * @return The InitParameters object.
          */
-        @SuppressWarnings({"unused", "WeakerAccess"})
+        @SuppressWarnings("WeakerAccess")
         public InitParameters setLogDir(String dir) {
             this.logDir = dir;
             return this;
@@ -262,7 +263,6 @@ public final class XCrash {
          * @param logFileMaintainDelayMs Delay in milliseconds before the log file maintain task is to be executed.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setLogFileMaintainDelayMs(int logFileMaintainDelayMs) {
             this.logFileMaintainDelayMs = (logFileMaintainDelayMs < 0 ? 0 : logFileMaintainDelayMs);
             return this;
@@ -302,7 +302,6 @@ public final class XCrash {
          * @param countMax The maximum number of placeholder files.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setPlaceholderCountMax(int countMax) {
             this.placeholderCountMax = (countMax < 0 ? 0 : countMax);
             return this;
@@ -314,7 +313,6 @@ public final class XCrash {
          * @param sizeKb The KB of each placeholder files.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setPlaceholderSizeKb(int sizeKb) {
             this.placeholderSizeKb = (sizeKb < 0 ? 0 : sizeKb);
             return this;
@@ -339,7 +337,6 @@ public final class XCrash {
          *
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters enableJavaCrashHandler() {
             this.enableJavaCrashHandler = true;
             return this;
@@ -350,7 +347,6 @@ public final class XCrash {
          *
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters disableJavaCrashHandler() {
             this.enableJavaCrashHandler = false;
             return this;
@@ -363,7 +359,6 @@ public final class XCrash {
          * @param rethrow If <code>true</code>, the Java exception will be rethrown to Android System.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaRethrow(boolean rethrow) {
             this.javaRethrow = rethrow;
             return this;
@@ -375,7 +370,6 @@ public final class XCrash {
          * @param countMax The maximum number of Java crash log files.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaLogCountMax(int countMax) {
             this.javaLogCountMax = (countMax < 1 ? 1 : countMax);
             return this;
@@ -387,7 +381,6 @@ public final class XCrash {
          * @param logcatSystemLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaLogcatSystemLines(int logcatSystemLines) {
             this.javaLogcatSystemLines = logcatSystemLines;
             return this;
@@ -463,7 +456,6 @@ public final class XCrash {
          * @param countMax The maximum number of other threads to dump.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaDumpAllThreadsCountMax(int countMax) {
             this.javaDumpAllThreadsCountMax = (countMax < 0 ? 0 : countMax);
             return this;
@@ -833,7 +825,6 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrDumpNetwork(boolean flag) {
             this.anrDumpNetworkInfo = flag;
             return this;
@@ -845,7 +836,6 @@ public final class XCrash {
          * @param callback An instance of {@link xcrash.ICrashCallback}.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrCallback(ICrashCallback callback) {
             this.anrCallback = callback;
             return this;
@@ -876,7 +866,6 @@ public final class XCrash {
      * @param runInNewThread Whether it is triggered in the current thread.
      * @throws RuntimeException This exception will terminate current process.
      */
-    @SuppressWarnings("unused")
     public static void testJavaCrash(boolean runInNewThread) throws RuntimeException {
         if (runInNewThread) {
             Thread thread = new Thread() {
@@ -899,7 +888,6 @@ public final class XCrash {
      *
      * @param runInNewThread Whether it is triggered in the current thread.
      */
-    @SuppressWarnings("unused")
     public static void testNativeCrash(boolean runInNewThread) {
         NativeHandler.getInstance().testNativeCrash(runInNewThread);
     }
