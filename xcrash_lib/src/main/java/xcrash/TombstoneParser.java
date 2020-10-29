@@ -44,6 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Crash墓碑文件解析器
  * Tombstone (crash) log file parser.
  */
 @SuppressWarnings("unused")

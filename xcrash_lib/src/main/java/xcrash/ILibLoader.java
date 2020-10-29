@@ -20,10 +20,11 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-07-15.
+// Created on 2019-07-15.
 package xcrash;
 
 /**
+ * so库加载回调接口
  * Define the native library loader.
  *
  * <p>In practice, older versions of Android had bugs in PackageManager

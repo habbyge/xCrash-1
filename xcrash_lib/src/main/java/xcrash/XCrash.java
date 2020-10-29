@@ -29,12 +29,17 @@ import android.os.Build;
 import android.text.TextUtils;
 
 /**
+ * xcrash提供捕获异常的配置和初始化的功能
  * xCrash is a crash reporting library for Android APP.
  * 该sdk的入口类
+ * xCrash是爱奇艺开源的在android平台上面捕获异常的开源库。xCrash能为安卓APP提供捕获Java崩溃异常，native崩溃
+ * 异常和ANR异常。能在 App 进程崩溃或 ANR 时，在你指定的目录中生成一个 tombstone 文件（格式与安卓系统的
+ * tombstone 文件类似）。
+ * xcrash分为两个module，是xcrash_lib，xcrash_sample。xcrash_lib是核心库，xcrash_sample是提供的测试工程.
+ *
  */
 @SuppressWarnings("unused")
 public final class XCrash {
-
     private static boolean initialized = false;
     private static String appId = null;
     private static String appVersion = null;
@@ -260,7 +265,8 @@ public final class XCrash {
         /**
          * Set delay in milliseconds before the log file maintain task is to be executed. (Default: 5000)
          *
-         * @param logFileMaintainDelayMs Delay in milliseconds before the log file maintain task is to be executed.
+         * @param logFileMaintainDelayMs Delay in milliseconds before the log file
+         *                               maintain task is to be executed.
          * @return The InitParameters object.
          */
         public InitParameters setLogFileMaintainDelayMs(int logFileMaintainDelayMs) {
@@ -376,7 +382,8 @@ public final class XCrash {
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b system" when a Java exception occurred. (Default: 50)
+         * Set the maximum number of rows to get from "logcat -b system" when
+         * a Java exception occurred. (Default: 50)
          *
          * @param logcatSystemLines The maximum number of rows.
          * @return The InitParameters object.
@@ -387,24 +394,24 @@ public final class XCrash {
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b events" when a Java exception occurred. (Default: 50)
+         * Set the maximum number of rows to get from "logcat -b events" when
+         * a Java exception occurred. (Default: 50)
          *
          * @param logcatEventsLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaLogcatEventsLines(int logcatEventsLines) {
             this.javaLogcatEventsLines = logcatEventsLines;
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b main" when a Java exception occurred. (Default: 200)
+         * Set the maximum number of rows to get from "logcat -b main" when
+         * a Java exception occurred. (Default: 200)
          *
          * @param logcatMainLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaLogcatMainLines(int logcatMainLines) {
             this.javaLogcatMainLines = logcatMainLines;
             return this;
@@ -416,7 +423,6 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaDumpFds(boolean flag) {
             this.javaDumpFds = flag;
             return this;
@@ -428,7 +434,6 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaDumpNetworkInfo(boolean flag) {
             this.javaDumpNetworkInfo = flag;
             return this;
@@ -441,7 +446,7 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings({"unused", "WeakerAccess"})
+        @SuppressWarnings("WeakerAccess")
         public InitParameters setJavaDumpAllThreads(boolean flag) {
             this.javaDumpAllThreads = flag;
             return this;
@@ -451,7 +456,8 @@ public final class XCrash {
          * Set the maximum number of other threads to dump when a Java exception occurred.
          * "0" means no limit. (Default: 0)
          *
-         * <p>Note: This option is only useful when "JavaDumpAllThreads" is enabled by calling {@link InitParameters#setJavaDumpAllThreads(boolean)}.
+         * <p>Note: This option is only useful when "JavaDumpAllThreads"
+         * is enabled by calling {@link InitParameters#setJavaDumpAllThreads(boolean)}.
          *
          * @param countMax The maximum number of other threads to dump.
          * @return The InitParameters object.
@@ -462,27 +468,28 @@ public final class XCrash {
         }
 
         /**
-         * Set a thread name (regular expression) allowlist to filter which threads need to be dumped when a Java exception occurred.
+         * Set a thread name (regular expression) allowlist to filter which
+         * threads need to be dumped when a Java exception occurred.
          * "null" means no filtering. (Default: null)
          *
-         * <p>Note: This option is only useful when "JavaDumpAllThreads" is enabled by calling {@link InitParameters#setJavaDumpAllThreads(boolean)}.
+         * <p>Note: This option is only useful when "JavaDumpAllThreads"
+         * is enabled by calling {@link InitParameters#setJavaDumpAllThreads(boolean)}.
          *
          * @param allowList A thread name (regular expression) allowlist.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaDumpAllThreadsAllowList(String[] allowList) {
             this.javaDumpAllThreadsAllowList = allowList;
             return this;
         }
 
         /**
-         * Set a callback to be executed when a Java exception occurred. (If not set, nothing will be happened.)
+         * Set a callback to be executed when a Java exception occurred.
+         * (If not set, nothing will be happened.)
          *
          * @param callback An instance of {@link xcrash.ICrashCallback}.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setJavaCallback(ICrashCallback callback) {
             this.javaCallback = callback;
             return this;
@@ -509,7 +516,6 @@ public final class XCrash {
          *
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters enableNativeCrashHandler() {
             this.enableNativeCrashHandler = true;
             return this;
@@ -520,7 +526,6 @@ public final class XCrash {
          *
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters disableNativeCrashHandler() {
             this.enableNativeCrashHandler = false;
             return this;
@@ -533,7 +538,6 @@ public final class XCrash {
          * @param rethrow If <code>true</code>, the native signal will be rethrown to Android System.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeRethrow(boolean rethrow) {
             this.nativeRethrow = rethrow;
             return this;
@@ -545,55 +549,54 @@ public final class XCrash {
          * @param countMax The maximum number of native crash log files.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeLogCountMax(int countMax) {
             this.nativeLogCountMax = (countMax < 1 ? 1 : countMax);
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b system" when a native crash occurred. (Default: 50)
+         * Set the maximum number of rows to get from "logcat -b system"
+         * when a native crash occurred. (Default: 50)
          *
          * @param logcatSystemLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeLogcatSystemLines(int logcatSystemLines) {
             this.nativeLogcatSystemLines = logcatSystemLines;
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b events" when a native crash occurred. (Default: 50)
+         * Set the maximum number of rows to get from "logcat -b events"
+         * when a native crash occurred. (Default: 50)
          *
          * @param logcatEventsLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeLogcatEventsLines(int logcatEventsLines) {
             this.nativeLogcatEventsLines = logcatEventsLines;
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b main" when a native crash occurred. (Default: 200)
+         * Set the maximum number of rows to get from "logcat -b main"
+         * when a native crash occurred. (Default: 200)
          *
          * @param logcatMainLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeLogcatMainLines(int logcatMainLines) {
             this.nativeLogcatMainLines = logcatMainLines;
             return this;
         }
 
         /**
-         * Set if dumping ELF file's MD5 hash in Build-Id section when a native crash occurred. (Default: enable)
+         * Set if dumping ELF file's MD5 hash in Build-Id section
+         * when a native crash occurred. (Default: enable)
          *
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeDumpElfHash(boolean flag) {
             this.nativeDumpElfHash = flag;
             return this;
@@ -605,7 +608,6 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeDumpMap(boolean flag) {
             this.nativeDumpMap = flag;
             return this;
@@ -617,7 +619,6 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeDumpFds(boolean flag) {
             this.nativeDumpFds = flag;
             return this;
@@ -629,20 +630,20 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeDumpNetwork(boolean flag) {
             this.nativeDumpNetworkInfo = flag;
             return this;
         }
 
         /**
-         * Set if dumping threads info (registers, backtrace and stack) for all threads (not just the thread that has crashed)
+         * Set if dumping threads info (registers, backtrace and stack)
+         * for all threads (not just the thread that has crashed)
          * when a native crash occurred. (Default: enable)
          *
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings({"unused", "WeakerAccess"})
+        @SuppressWarnings("WeakerAccess")
         public InitParameters setNativeDumpAllThreads(boolean flag) {
             this.nativeDumpAllThreads = flag;
             return this;
@@ -652,43 +653,45 @@ public final class XCrash {
          * Set the maximum number of other threads to dump when a native crash occurred.
          * "0" means no limit. (Default: 0)
          *
-         * <p>Note: This option is only useful when "NativeDumpAllThreads" is enabled by calling {@link InitParameters#setNativeDumpAllThreads(boolean)}.
+         * <p>Note: This option is only useful when "NativeDumpAllThreads"
+         * is enabled by calling {@link InitParameters#setNativeDumpAllThreads(boolean)}.
          *
          * @param countMax The maximum number of other threads to dump.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeDumpAllThreadsCountMax(int countMax) {
             this.nativeDumpAllThreadsCountMax = (countMax < 0 ? 0 : countMax);
             return this;
         }
 
         /**
-         * Set a thread name (regular expression) allowlist to filter which threads need to be dumped when a native crash occurred.
+         * Set a thread name (regular expression) allowlist to filter which threads
+         * need to be dumped when a native crash occurred.
          * "null" means no filtering. (Default: null)
          *
-         * <p>Note: This option is only useful when "NativeDumpAllThreads" is enabled by calling {@link InitParameters#setNativeDumpAllThreads(boolean)}.
+         * <p>Note: This option is only useful when "NativeDumpAllThreads" is enabled
+         * by calling {@link InitParameters#setNativeDumpAllThreads(boolean)}.
          *
-         * <p>Warning: The regular expression used here only supports POSIX ERE (Extended Regular Expression).
+         * <p>Warning: The regular expression used here only supports POSIX ERE
+         * (Extended Regular Expression).
          * Android bionic's regular expression is different from Linux libc's regular expression.
          * See: https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/include/regex.h .
          *
          * @param allowList A thread name (regular expression) allowlist.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeDumpAllThreadsAllowList(String[] allowList) {
             this.nativeDumpAllThreadsAllowList = allowList;
             return this;
         }
 
         /**
-         * Set a callback to be executed when a native crash occurred. (If not set, nothing will be happened.)
+         * Set a callback to be executed when a native crash occurred. (If not set,
+         * nothing will be happened.)
          *
          * @param callback An instance of {@link xcrash.ICrashCallback}.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setNativeCallback(ICrashCallback callback) {
             this.nativeCallback = callback;
             return this;
@@ -711,7 +714,6 @@ public final class XCrash {
          *
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters enableAnrCrashHandler() {
             this.enableAnrHandler = true;
             return this;
@@ -722,7 +724,6 @@ public final class XCrash {
          *
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters disableAnrCrashHandler() {
             this.enableAnrHandler = false;
             return this;
@@ -734,26 +735,28 @@ public final class XCrash {
          *
          * <p>Note: This option is only valid if Android API level greater than or equal to 21.
          *
-         * <p>Warning: It is highly recommended NOT to modify the default value (true) in most cases unless you know that you are doing.
+         * <p>Warning: It is highly recommended NOT to modify the default value (true) in most
+         * cases unless you know that you are doing.
          *
          * @param rethrow If <code>true</code>, the native signal will be rethrown to Android System.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrRethrow(boolean rethrow) {
             this.anrRethrow = rethrow;
             return this;
         }
 
         /**
-         * Set whether the process error state (from "ActivityManager#getProcessesInErrorState()") is a necessary condition for ANR.  (Default: true)
+         * Set whether the process error state (from "ActivityManager#getProcessesInErrorState()")
+         * is a necessary condition for ANR.  (Default: true)
          *
-         * <p>Note: On some Android TV box devices, the ANR is not reflected by process error state. In this case, set this option to false.
+         * <p>Note: On some Android TV box devices, the ANR is not reflected by process error state.
+         * In this case, set this option to false.
          *
-         * @param checkProcessState If <code>true</code>, process state error will be a necessary condition for ANR.
+         * @param checkProcessState If <code>true</code>, process state error will be a necessary
+         *                          condition for ANR.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrCheckProcessState(boolean checkProcessState) {
             this.anrCheckProcessState = checkProcessState;
             return this;
@@ -765,43 +768,42 @@ public final class XCrash {
          * @param countMax The maximum number of ANR log files.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrLogCountMax(int countMax) {
             this.anrLogCountMax = (countMax < 1 ? 1 : countMax);
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b system" when an ANR occurred. (Default: 50)
+         * Set the maximum number of rows to get from "logcat -b system" when an ANR occurred.
+         * (Default: 50)
          *
          * @param logcatSystemLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrLogcatSystemLines(int logcatSystemLines) {
             this.anrLogcatSystemLines = logcatSystemLines;
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b events" when an ANR occurred. (Default: 50)
+         * Set the maximum number of rows to get from "logcat -b events" when an ANR occurred.
+         * (Default: 50)
          *
          * @param logcatEventsLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrLogcatEventsLines(int logcatEventsLines) {
             this.anrLogcatEventsLines = logcatEventsLines;
             return this;
         }
 
         /**
-         * Set the maximum number of rows to get from "logcat -b main" when an ANR occurred. (Default: 200)
+         * Set the maximum number of rows to get from "logcat -b main" when an ANR occurred.
+         * (Default: 200)
          *
          * @param logcatMainLines The maximum number of rows.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrLogcatMainLines(int logcatMainLines) {
             this.anrLogcatMainLines = logcatMainLines;
             return this;
@@ -813,7 +815,6 @@ public final class XCrash {
          * @param flag True or false.
          * @return The InitParameters object.
          */
-        @SuppressWarnings("unused")
         public InitParameters setAnrDumpFds(boolean flag) {
             this.anrDumpFds = flag;
             return this;
@@ -861,7 +862,8 @@ public final class XCrash {
     /**
      * Force a java exception.
      *
-     * <p>Warning: This method is for testing purposes only. Don't call it in a release version of your APP.
+     * <p>Warning: This method is for testing purposes only. Don't call it
+     * in a release version of your APP.
      *
      * @param runInNewThread Whether it is triggered in the current thread.
      * @throws RuntimeException This exception will terminate current process.
@@ -884,7 +886,8 @@ public final class XCrash {
     /**
      * Force a native crash.
      *
-     * <p>Warning: This method is for testing purposes only. Don't call it in a release version of your APP.
+     * <p>Warning: This method is for testing purposes only. Don't call it
+     * in a release version of your APP.
      *
      * @param runInNewThread Whether it is triggered in the current thread.
      */

@@ -43,6 +43,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * 工具类，提供java异常的输出的基本信息，判断终端是否是root状态，获取内存信息等等。
+ */
 class Util {
 
     private Util() {

@@ -307,8 +307,7 @@ int xcc_util_write_format(int fd, const char *format, ...)
     return xcc_util_write(fd, buf, (size_t)len);
 }
 
-int xcc_util_write_format_safe(int fd, const char *format, ...)
-{
+int xcc_util_write_format_safe(int fd, const char *format, ...) {
     va_list ap;
     char    buf[1024];
     size_t  len;
@@ -323,29 +322,23 @@ int xcc_util_write_format_safe(int fd, const char *format, ...)
     return xcc_util_write(fd, buf, len);
 }
 
-char *xcc_util_gets(char *s, size_t size, int fd)
-{
+char* xcc_util_gets(char* s, size_t size, int fd) {
     ssize_t i, nread;
-    char    c, *p;
+    char c;
+    char* p;
 
     if(fd < 0 || NULL == s || size < 2) return NULL;
     
     s[0] = '\0';
     p = s;
     
-    for(i = 0; i < (ssize_t)(size - 1); i++)
-    {
-        if(1 == (nread = read(fd, &c, 1)))
-        {
+    for (i = 0; i < (ssize_t)(size - 1); i++) {
+        if(1 == (nread = read(fd, &c, 1))) {
             *p++ = c;
             if('\n' == c) break;
-        }
-        else if(0 == nread) //EOF
-        {
+        } else if(0 == nread) { //EOF
             break;
-        }
-        else
-        {
+        } else {
             if (errno != EINTR) return NULL;
         }
     }
@@ -354,18 +347,15 @@ char *xcc_util_gets(char *s, size_t size, int fd)
     return ('\0' == s[0] ? NULL : s);
 }
 
-int xcc_util_read_file_line(const char *path, char *buf, size_t len)
-{
+int xcc_util_read_file_line(const char* path, char* buf, size_t len) {
     int fd = -1;
     int r = 0;
     
-    if(0 > (fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_CLOEXEC))))
-    {
+    if (0 > (fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_CLOEXEC)))) {
         r = XCC_ERRNO_SYS;
         goto end;
     }
-    if(NULL == xcc_util_gets(buf, len, fd))
-    {
+    if(NULL == xcc_util_gets(buf, len, fd)) {
         r = XCC_ERRNO_SYS;
         goto end;
     }
@@ -375,20 +365,22 @@ int xcc_util_read_file_line(const char *path, char *buf, size_t len)
     return r;
 }
 
-static int xcc_util_get_process_thread_name(const char *path, char *buf, size_t len)
-{
-    char    tmp[256], *data;
-    size_t  data_len, cpy_len;
-    int     r;
+static int xcc_util_get_process_thread_name(const char* path, char* buf, size_t len) {
+    char tmp[256];
+    char* data;
+    size_t data_len, cpy_len;
+    int r;
 
     //read a line
-    if(0 != (r = xcc_util_read_file_line(path, tmp, sizeof(tmp)))) return r;
+    if (0 != (r = xcc_util_read_file_line(path, tmp, sizeof(tmp))))
+        return r;
 
     //trim
     data = xcc_util_trim(tmp);
 
     //return data
-    if(0 == (data_len = strlen(data))) return XCC_ERRNO_MISSING;
+    if (0 == (data_len = strlen(data)))
+        return XCC_ERRNO_MISSING;
     cpy_len = XCC_UTIL_MIN(len - 1, data_len);
     memcpy(buf, data, cpy_len);
     buf[cpy_len] = '\0';
@@ -396,18 +388,16 @@ static int xcc_util_get_process_thread_name(const char *path, char *buf, size_t 
     return 0;
 }
 
-void xcc_util_get_process_name(pid_t pid, char *buf, size_t len)
-{
+void xcc_util_get_process_name(pid_t pid, char* buf, size_t len) {
     char path[128];
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
     
-    if(0 != xcc_util_get_process_thread_name(path, buf, len))
+    if (0 != xcc_util_get_process_thread_name(path, buf, len))
         strncpy(buf, "unknown", len);
 }
 
-void xcc_util_get_thread_name(pid_t tid, char *buf, size_t len)
-{
+void xcc_util_get_thread_name(pid_t tid, char* buf, size_t len) {
     char path[128];
     
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/comm", tid);
@@ -416,19 +406,17 @@ void xcc_util_get_thread_name(pid_t tid, char *buf, size_t len)
         strncpy(buf, "unknown", len);
 }
 
-int xcc_util_record_sub_section_from(int fd, const char *path, const char *title, size_t limit)
-{
-    FILE   *fp = NULL;
-    char    line[512];
-    char   *p;
-    int     r = 0;
+int xcc_util_record_sub_section_from(int fd, const char* path, const char* title, size_t limit) {
+    FILE* fp = NULL;
+    char line[512];
+    char* p;
+    int r = 0;
     size_t  n = 0;
 
     if(NULL == (fp = fopen(path, "r"))) goto end;
 
     if(0 != (r = xcc_util_write_str(fd, title))) goto end;
-    while(NULL != fgets(line, sizeof(line), fp))
-    {
+    while(NULL != fgets(line, sizeof(line), fp)) {
         p = xcc_util_trim(line);
         if(strlen(p) > 0)
         {

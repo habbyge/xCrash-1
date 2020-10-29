@@ -73,7 +73,7 @@ extern int           xc_common_fd_null;
 
 //process statue
 extern sig_atomic_t  xc_common_native_crashed;
-extern sig_atomic_t  xc_common_java_crashed;
+extern sig_atomic_t  xc_common_java_crashed; // 标识是否发生Java Crash
 
 void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls);
 

@@ -31,6 +31,9 @@ import android.text.TextUtils;
 import java.io.File;
 import java.util.Map;
 
+/**
+ * native异常处理器
+ */
 @SuppressLint("StaticFieldLeak")
 class NativeHandler {
 

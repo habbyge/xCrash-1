@@ -20,10 +20,11 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 package xcrash;
 
 /**
+ * 异常回调接口
  * Define the callback interface after the crash occurs.
  *
  * <p>Note: Strictly speaking, this interface should always be implemented.

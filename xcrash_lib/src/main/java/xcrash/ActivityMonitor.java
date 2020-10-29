@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-09-25.
+// Created on 2019-09-25.
 package xcrash;
 
 import android.app.Activity;
@@ -29,8 +29,10 @@ import android.os.Bundle;
 
 import java.util.LinkedList;
 
+/**
+ * 对app应用的activity通过list进行管理的工具类
+ */
 class ActivityMonitor {
-
     private static final ActivityMonitor instance = new ActivityMonitor();
 
     private LinkedList<Activity> activities = null;

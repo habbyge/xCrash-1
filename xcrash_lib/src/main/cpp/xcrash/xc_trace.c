@@ -238,13 +238,13 @@ static void *xc_trace_dumper(void *arg)
     };
     if(JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) goto exit;
 
-    while(1)
-    {
+    while(1) {
         //block here, waiting for sigquit
         XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_trace_notifier, &data, sizeof(data)));
         
         //check if process already crashed
-        if(xc_common_native_crashed || xc_common_java_crashed) break;
+        if (xc_common_native_crashed || xc_common_java_crashed)
+            break;
 
         //trace time
         if(0 != gettimeofday(&tv, NULL)) break;
@@ -314,23 +314,20 @@ static void *xc_trace_dumper(void *arg)
     return NULL;
 }
 
-static void xc_trace_handler(int sig, siginfo_t *si, void *uc)
-{
+static void xc_trace_handler(int sig, siginfo_t *si, void *uc) {
     uint64_t data;
     
-    (void)sig;
-    (void)si;
-    (void)uc;
+    (void) sig;
+    (void) si;
+    (void) uc;
 
-    if(xc_trace_notifier >= 0)
-    {
+    if (xc_trace_notifier >= 0) {
         data = 1;
         XCC_UTIL_TEMP_FAILURE_RETRY(write(xc_trace_notifier, &data, sizeof(data)));
     }
 }
 
-static void xc_trace_init_callback(JNIEnv *env)
-{
+static void xc_trace_init_callback(JNIEnv* env) {
     if(NULL == xc_common_cb_class) return;
     
     xc_trace_cb_method = (*env)->GetStaticMethodID(env, xc_common_cb_class, XC_TRACE_CALLBACK_METHOD_NAME, XC_TRACE_CALLBACK_METHOD_SIGNATURE);

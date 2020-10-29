@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 package xcrash;
 
 import java.io.File;
@@ -38,10 +38,13 @@ import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import android.os.Process;
 
+/**
+ * java异常处理器
+ * UncaughtExceptionHandler是java系统提供用来处理未捕获全局异常。
+ */
 @SuppressLint("StaticFieldLeak")
 class JavaCrashHandler implements UncaughtExceptionHandler {
-
-    private static final JavaCrashHandler instance = new JavaCrashHandler();
+    private static final String TAG = "JavaCrashHandler";
 
     private final Date startTime = new Date();
 
@@ -65,14 +68,26 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
     private JavaCrashHandler() {
     }
 
+    private static final JavaCrashHandler instance = new JavaCrashHandler();
+
     static JavaCrashHandler getInstance() {
         return instance;
     }
 
-    void initialize(int pid, String processName, String appId, String appVersion, String logDir, boolean rethrow,
-                    int logcatSystemLines, int logcatEventsLines, int logcatMainLines,
-                    boolean dumpFds, boolean dumpNetworkInfo, boolean dumpAllThreads, int dumpAllThreadsCountMax, String[] dumpAllThreadsAllowList,
+    /**
+     * 初始化的功能有:
+     * 1. 保存APP应用信息。包括进程ID，进程名，应用版本。
+     * 2. Java异常输出配置，包括输出日志路径，是否抛出异常，配置输出内容
+     *
+     * @param rethrow 决定拦截异常后，是否继续抛出异常？
+     */
+    void initialize(int pid, String processName, String appId, String appVersion,
+                    String logDir, boolean rethrow, int logcatSystemLines,
+                    int logcatEventsLines, int logcatMainLines, boolean dumpFds,
+                    boolean dumpNetworkInfo, boolean dumpAllThreads,
+                    int dumpAllThreadsCountMax, String[] dumpAllThreadsAllowList,
                     ICrashCallback callback) {
+
         this.pid = pid;
         this.processName = (TextUtils.isEmpty(processName) ? "unknown" : processName);
         this.appId = appId;
@@ -93,27 +108,30 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
         try {
             Thread.setDefaultUncaughtExceptionHandler(this);
         } catch (Exception e) {
-            XCrash.getLogger().e(Util.TAG, "JavaCrashHandler setDefaultUncaughtExceptionHandler failed", e);
+            XCrash.getLogger().e(TAG, "JavaCrashHandler setDefaultUncaughtExceptionHandler failed", e);
         }
     }
 
     @Override
     public void uncaughtException(Thread thread, Throwable throwable) {
         if (defaultHandler != null) {
+            // xcrash不处理异常，采用默认的异常处理机制
             Thread.setDefaultUncaughtExceptionHandler(defaultHandler);
         }
 
         try {
             handleException(thread, throwable);
         } catch (Exception e) {
-            XCrash.getLogger().e(Util.TAG, "JavaCrashHandler handleException failed", e);
+            XCrash.getLogger().e(TAG, "JavaCrashHandler handleException failed", e);
         }
 
         if (this.rethrow) {
+            // java默认异常处理，抛出异常
             if (defaultHandler != null) {
                 defaultHandler.uncaughtException(thread, throwable);
             }
         } else {
+            // 关闭进程
             ActivityMonitor.getInstance().finishAllActivities();
             Process.killProcess(this.pid);
             System.exit(10);
@@ -123,29 +141,44 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
     private void handleException(Thread thread, Throwable throwable) {
         Date crashTime = new Date();
 
-        //notify the java crash
+        // 1. 通知native，anr异常处理器，java异常发生，其他异常处理器停止工作
+        // notify the java crash
         NativeHandler.getInstance().notifyJavaCrashed();
         AnrHandler.getInstance().notifyJavaCrashed();
 
-        //create log file
+        // 2. 创建异常日志文件
+        // create log file
         File logFile = null;
         try {
-            String logPath = String.format(Locale.US, "%s/%s_%020d_%s__%s%s", logDir, Util.logPrefix, startTime.getTime() * 1000, appVersion, processName, Util.javaLogSuffix);
+            // 异常日志文件的命名规则
+            String logPath = String.format(Locale.US, "%s/%s_%020d_%s__%s%s",
+                    logDir, Util.logPrefix, startTime.getTime() * 1000,
+                    appVersion, processName, Util.javaLogSuffix);
+
             logFile = FileManager.getInstance().createLogFile(logPath);
         } catch (Exception e) {
-            XCrash.getLogger().e(Util.TAG, "JavaCrashHandler createLogFile failed", e);
+            XCrash.getLogger().e(TAG, "JavaCrashHandler createLogFile failed", e);
         }
 
-        //get emergency
+        // 获取java 异常输出
+        // get emergency
         String emergency = null;
         try {
+            // 应用基本信息，和java异常堆栈
             emergency = getEmergency(crashTime, thread, throwable);
         } catch (Exception e) {
-            XCrash.getLogger().e(Util.TAG, "JavaCrashHandler getEmergency failed", e);
+            XCrash.getLogger().e(TAG, "JavaCrashHandler getEmergency failed", e);
         }
 
-        //write info to log file
+        // 3.异常日志写入文件
+        // write info to log file
         if (logFile != null) {
+            // 3.1 写入emergency，java异常信息
+            // 3.2 logcat 写入异常文件中 logcat -b main; logcat -b event; logcat -b system
+            // 3.3 输出APP应用进程的文件描述符信息
+            // 3.4 输出内存信息
+            // 3.5 输出其他线程信息
+
             RandomAccessFile raf = null;
             try {
                 raf = new RandomAccessFile(logFile, "rws");
@@ -155,12 +188,14 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
                     raf.write(emergency.getBytes("UTF-8"));
                 }
 
-                //If we wrote the emergency info successfully, we don't need to return it from callback again.
+                //If we wrote the emergency info successfully, we don't need to
+                // return it from callback again.
                 emergency = null;
 
                 //write logcat
                 if (logcatMainLines > 0 || logcatSystemLines > 0 || logcatEventsLines > 0) {
-                    raf.write(Util.getLogcat(logcatMainLines, logcatSystemLines, logcatEventsLines).getBytes("UTF-8"));
+                    raf.write(Util.getLogcat(logcatMainLines, logcatSystemLines, logcatEventsLines)
+                            .getBytes("UTF-8"));
                 }
 
                 //write fds
@@ -177,14 +212,15 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
                 raf.write(Util.getMemoryInfo().getBytes("UTF-8"));
 
                 //write background / foreground
-                raf.write(("foreground:\n" + (ActivityMonitor.getInstance().isApplicationForeground() ? "yes" : "no") + "\n\n").getBytes("UTF-8"));
+                raf.write(("foreground:\n" + (ActivityMonitor.getInstance().isApplicationForeground()
+                        ? "yes" : "no") + "\n\n").getBytes("UTF-8"));
 
                 //write other threads info
                 if (dumpAllThreads) {
                     raf.write(getOtherThreadsInfo(thread).getBytes("UTF-8"));
                 }
             } catch (Exception e) {
-                XCrash.getLogger().e(Util.TAG, "JavaCrashHandler write log file failed", e);
+                XCrash.getLogger().e(TAG, "JavaCrashHandler write log file failed", e);
             } finally {
                 if (raf != null) {
                     try {
@@ -213,7 +249,10 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
         String stacktrace = sw.toString();
 
         return Util.getLogHeader(startTime, crashTime, Util.javaCrashType, appId, appVersion)
-                + "pid: " + pid + ", tid: " + Process.myTid() + ", name: " + thread.getName() + "  >>> " + processName + " <<<\n"
+                + "pid: " + pid
+                + ", tid: " + Process.myTid()
+                + ", name: " + thread.getName()
+                + "  >>> " + processName + " <<<\n"
                 + "\n"
                 + "java stacktrace:\n"
                 + stacktrace
@@ -234,7 +273,7 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
                 try {
                     allowList.add(Pattern.compile(s));
                 } catch (Exception e) {
-                    XCrash.getLogger().w(Util.TAG, "JavaCrashHandler pattern compile failed", e);
+                    XCrash.getLogger().w(TAG, "JavaCrashHandler pattern compile failed", e);
                 }
             }
         }
@@ -260,7 +299,10 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
             }
 
             sb.append(Util.sepOtherThreads + "\n");
-            sb.append("pid: ").append(pid).append(", tid: ").append(thd.getId()).append(", name: ").append(thd.getName()).append("  >>> ").append(processName).append(" <<<\n");
+            sb.append("pid: ").append(pid).append(", tid: ").append(thd.getId())
+                    .append(", name: ").append(thd.getName())
+                    .append("  >>> ").append(processName).append(" <<<\n");
+
             sb.append("\n");
             sb.append("java stacktrace:\n");
             for (StackTraceElement element : stacktrace) {
@@ -276,12 +318,17 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
                 sb.append(Util.sepOtherThreads + "\n");
             }
 
-            sb.append("total JVM threads (exclude the crashed thread): ").append(map.size() - 1).append("\n");
+            sb.append("total JVM threads (exclude the crashed thread): ")
+                    .append(map.size() - 1)
+                    .append("\n");
+
             if (allowList != null) {
                 sb.append("JVM threads matched allowlist: ").append(thdMatchedRegex).append("\n");
             }
             if (dumpAllThreadsCountMax > 0) {
-                sb.append("JVM threads ignored by max count limit: ").append(thdIgnoredByLimit).append("\n");
+                sb.append("JVM threads ignored by max count limit: ")
+                        .append(thdIgnoredByLimit)
+                        .append("\n");
             }
             sb.append("dumped JVM threads:").append(thdDumped).append("\n");
             sb.append(Util.sepOtherThreadsEnding + "\n");

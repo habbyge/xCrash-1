@@ -20,10 +20,11 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 package xcrash;
 
 /**
+ * xcrash常见的错误码
  * The errno code for init() method of {@link xcrash.XCrash}.
  */
 @SuppressWarnings("WeakerAccess")

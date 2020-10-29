@@ -42,9 +42,11 @@
 
 typedef struct {
     int              signum; // 信号字
-    struct sigaction oldact; // 旧的信号处理器(信号处理函数)
+    struct sigaction oldact; // 旧的信号处理器(包括了信号处理函数)
 } xcc_signal_crash_info_t;
 #pragma clang diagnostic pop
+// #pragma 预处理指令，最初的目的是为了使得源代码在不同的编译器下兼容的，#pragma 在编译时进行计算。但它并不像如
+// #ifdef...#endif 之类的宏，#pragma 的使用方式不会改变你的应用运行时的行为。一般用于:整理代码和防止编译器警告
 
 /**
  * - 技术原理

@@ -23,6 +23,9 @@
 // Created by caikelun on 2019-03-07.
 package xcrash;
 
+/**
+ * xcrash的版本信息
+ */
 class Version {
 
     private Version() {

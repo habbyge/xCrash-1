@@ -20,11 +20,14 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-05-30.
+// Created on 2019-05-30.
 package xcrash;
 
 import android.util.Log;
 
+/**
+ * xcrash库默认的日志输出接口，默认为通过android.util.Log输出日志
+ */
 class DefaultLogger implements ILogger {
     @Override
     public void v(String tag, String msg) {

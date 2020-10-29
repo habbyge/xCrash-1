@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-05-20.
+// Created on 2019-05-20.
 package xcrash;
 
 import java.io.File;
@@ -37,8 +37,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 异常(crash/anr)日志管理器，负责 创建异常日志文件 和 清除过期的异常日志文件
+ */
 class FileManager {
-
     private final String placeholderPrefix = "placeholder";
     private final String placeholderCleanSuffix = ".clean.xcrash";
     private final String placeholderDirtySuffix = ".dirty.xcrash";
@@ -111,30 +113,30 @@ class FileManager {
                 }
             }
 
-            if (javaLogCount <= this.javaLogCountMax
-                && nativeLogCount <= this.nativeLogCountMax
-                && anrLogCount <= this.anrLogCountMax
-                && traceLogCount <= this.traceLogCountMax
-                && placeholderCleanCount == this.placeholderCountMax
-                && placeholderDirtyCount == 0) {
-                //everything OK, need to do nothing
+            if (javaLogCount <= this.javaLogCountMax &&
+                    nativeLogCount <= this.nativeLogCountMax &&
+                    anrLogCount <= this.anrLogCountMax &&
+                    traceLogCount <= this.traceLogCountMax &&
+                    placeholderCleanCount == this.placeholderCountMax &&
+                    placeholderDirtyCount == 0) {
+                // everything OK, need to do nothing
                 this.delayMs = -1;
-            } else if (javaLogCount > this.javaLogCountMax + 10
-                || nativeLogCount > this.nativeLogCountMax + 10
-                || anrLogCount > this.anrLogCountMax + 10
-                || traceLogCount > this.traceLogCountMax + 10
-                || placeholderCleanCount > this.placeholderCountMax + 10
-                || placeholderDirtyCount > 10) {
-                //too many unwanted files, clean up now
+            } else if (javaLogCount > this.javaLogCountMax + 10 ||
+                    nativeLogCount > this.nativeLogCountMax + 10 ||
+                    anrLogCount > this.anrLogCountMax + 10 ||
+                    traceLogCount > this.traceLogCountMax + 10 ||
+                    placeholderCleanCount > this.placeholderCountMax + 10 ||
+                    placeholderDirtyCount > 10) {
+                // too many unwanted files, clean up now
                 doMaintain();
                 this.delayMs = -1;
-            } else if (javaLogCount > this.javaLogCountMax
-                || nativeLogCount > this.nativeLogCountMax
-                || anrLogCount > this.anrLogCountMax
-                || traceLogCount > this.traceLogCountMax
-                || placeholderCleanCount > this.placeholderCountMax
-                || placeholderDirtyCount > 0) {
-                //have some unwanted files, clean up as soon as possible
+            } else if (javaLogCount > this.javaLogCountMax ||
+                    nativeLogCount > this.nativeLogCountMax ||
+                    anrLogCount > this.anrLogCountMax ||
+                    traceLogCount > this.traceLogCountMax ||
+                    placeholderCleanCount > this.placeholderCountMax ||
+                    placeholderDirtyCount > 0) {
+                // have some unwanted files, clean up as soon as possible
                 this.delayMs = 0;
             }
         } catch (Exception e) {

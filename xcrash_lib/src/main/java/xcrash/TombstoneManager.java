@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 /**
+ * 异常日志分析器，墓碑文件格式
  * Tombstone (crash) log file manager.
  */
 @SuppressWarnings("unused")

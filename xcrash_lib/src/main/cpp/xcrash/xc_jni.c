@@ -87,12 +87,12 @@ static jint xc_jni_init(JNIEnv       *env,
     const char      *c_model                                = NULL;
     const char      *c_build_fingerprint                    = NULL;
     const char      *c_app_id                               = NULL;
-    const char      *c_app_version                          = NULL;
-    const char      *c_app_lib_dir                          = NULL;
-    const char      *c_log_dir                              = NULL;
+    const char* c_app_version = NULL;
+    const char* c_app_lib_dir = NULL;
+    const char* c_log_dir = NULL;
     
-    const char     **c_crash_dump_all_threads_allowlist     = NULL;
-    size_t           c_crash_dump_all_threads_allowlist_len = 0;
+    const char** c_crash_dump_all_threads_allowlist = NULL;
+    size_t c_crash_dump_all_threads_allowlist_len = 0;
     
     size_t           len, i;
     jstring          tmp_str;
@@ -233,6 +233,9 @@ static jint xc_jni_init(JNIEnv       *env,
     return (0 == r_crash && 0 == r_trace) ? 0 : XCC_ERRNO_JNI;
 }
 
+/**
+ * 被Java层调用，用于通知发生了Java异常，让Native异常处理器可以停止工作了
+ */
 static void xc_jni_notify_java_crashed(JNIEnv *env, jobject thiz) {
     (void) env;
     (void) thiz;

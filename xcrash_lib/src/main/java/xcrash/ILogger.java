@@ -20,10 +20,11 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-05-30.
+// Created on 2019-05-30.
 package xcrash;
 
 /**
+ * xcrash日志输出接口，DefaultLogger是其实现类
  * Define the logger interface used by xCrash.
  */
 public interface ILogger {

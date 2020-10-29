@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-09-03.
+// Created on 2019-09-03.
 package xcrash;
 
 import android.content.Context;
@@ -40,9 +40,11 @@ import java.util.regex.Pattern;
 
 import static android.os.FileObserver.CLOSE_WRITE;
 
+/**
+ * anr异常捕获处理器
+ */
 @SuppressWarnings("StaticFieldLeak")
 class AnrHandler {
-
     private static final AnrHandler instance = new AnrHandler();
 
     private final Date startTime = new Date();

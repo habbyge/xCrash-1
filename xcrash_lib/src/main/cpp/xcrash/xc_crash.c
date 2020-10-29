@@ -211,7 +211,7 @@ static int xc_crash_exec_dumper(void* arg) {
     int iovs_cnt = (0 == xc_crash_spot.dump_all_threads_allowlist_len ? 11 : 12);
     errno = 0;
     ssize_t ret = XCC_UTIL_TEMP_FAILURE_RETRY(writev(pipefd[1], iovs, iovs_cnt));
-    if((ssize_t)write_len != ret) {
+    if ((ssize_t)write_len != ret) {
         xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                 "write args to pipe failed, return=%d, errno=%d\n\n", ret, errno);
         return 94;
@@ -702,7 +702,8 @@ static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, siz
 static void xc_crash_init_callback(JNIEnv* env) {
     if (NULL == xc_common_cb_class)
         return;
-    
+
+    // 这里调用的是Java层的crashCallback()，进而把crash信息callback到业务层
     xc_crash_cb_method = (*env)->GetStaticMethodID(env, xc_common_cb_class,
             XC_CRASH_CALLBACK_METHOD_NAME, XC_CRASH_CALLBACK_METHOD_SIGNATURE);
 
