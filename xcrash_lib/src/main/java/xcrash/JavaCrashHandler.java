@@ -188,14 +188,14 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
                     raf.write(emergency.getBytes("UTF-8"));
                 }
 
-                //If we wrote the emergency info successfully, we don't need to
+                // If we wrote the emergency info successfully, we don't need to
                 // return it from callback again.
                 emergency = null;
 
-                //write logcat
+                // write logcat
                 if (logcatMainLines > 0 || logcatSystemLines > 0 || logcatEventsLines > 0) {
-                    raf.write(Util.getLogcat(logcatMainLines, logcatSystemLines, logcatEventsLines)
-                            .getBytes("UTF-8"));
+                    raf.write(Util.getLogcat(logcatMainLines, logcatSystemLines,
+                            logcatEventsLines).getBytes("UTF-8"));
                 }
 
                 //write fds
@@ -241,7 +241,6 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
     }
 
     private String getEmergency(Date crashTime, Thread thread, Throwable throwable) {
-
         //stack stace
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -260,7 +259,6 @@ class JavaCrashHandler implements UncaughtExceptionHandler {
     }
 
     private String getOtherThreadsInfo(Thread crashedThread) {
-
         int thdMatchedRegex = 0;
         int thdIgnoredByLimit = 0;
         int thdDumped = 0;

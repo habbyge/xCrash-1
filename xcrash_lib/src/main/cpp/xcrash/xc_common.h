@@ -47,15 +47,15 @@ extern "C" {
 #define XC_COMMON_PLACEHOLDER_SUFFIX   ".clean.xcrash"
 
 //system info
-extern int           xc_common_api_level;
-extern char         *xc_common_os_version;
-extern char         *xc_common_abi_list;
-extern char         *xc_common_manufacturer;
-extern char         *xc_common_brand;
-extern char         *xc_common_model;
-extern char         *xc_common_build_fingerprint;
-extern char         *xc_common_kernel_version;
-extern long          xc_common_time_zone;
+extern int xc_common_api_level;
+extern char* xc_common_os_version;
+extern char* xc_common_abi_list;
+extern char* xc_common_manufacturer;
+extern char* xc_common_brand;
+extern char* xc_common_model;
+extern char* xc_common_build_fingerprint;
+extern char* xc_common_kernel_version;
+extern long xc_common_time_zone;
 
 //app info
 extern char         *xc_common_app_id;
@@ -78,16 +78,16 @@ extern sig_atomic_t  xc_common_java_crashed; // 标识是否发生Java Crash
 void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls);
 
 int xc_common_init(int         api_level,
-                   const char *os_version,
-                   const char *abi_list,
-                   const char *manufacturer,
-                   const char *brand,
-                   const char *model,
-                   const char *build_fingerprint,
-                   const char *app_id,
-                   const char *app_version,
-                   const char *app_lib_dir,
-                   const char *log_dir);
+                   const char* os_version,
+                   const char* abi_list,
+                   const char* manufacturer,
+                   const char* brand,
+                   const char* model,
+                   const char* build_fingerprint,
+                   const char* app_id,
+                   const char* app_version,
+                   const char* app_lib_dir,
+                   const char* log_dir);
 
 int xc_common_open_crash_log(char *pathname, size_t pathname_len, int *from_placeholder);
 int xc_common_open_trace_log(char *pathname, size_t pathname_len, uint64_t trace_time);

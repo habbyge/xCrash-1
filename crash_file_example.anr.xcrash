@@ -1,0 +1,21 @@
+//  应用基本信息
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Tombstone maker: 'xCrash 2.4.6'
+..
+// 异常信号部分
+Cmd line: xcrash.sample
+Mode: ART DumpForSigQuit
+//  主线程信息
+DALVIK THREADS (18):
+"main" prio=5 tid=1 Sleeping
+// logcat日志输出部分，包括main,system,event
+logcat:
+// app应用进程打开的文件描述符
+open files:
+// 内存信息
+memory info:
+// 进程信息
+Process Limits (From: /proc/PID/limits)
+Process Details (From: /proc/PID/smaps)
+Process Dalvik Details (From: /proc/PID/smaps)
+Process Summary (From: /proc/PID/smaps)

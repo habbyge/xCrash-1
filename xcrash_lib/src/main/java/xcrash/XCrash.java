@@ -29,28 +29,27 @@ import android.os.Build;
 import android.text.TextUtils;
 
 /**
- * xcrash提供捕获异常的配置和初始化的功能
  * xCrash is a crash reporting library for Android APP.
+ * xCrash提供捕获异常的配置和初始化的功能
  * 该sdk的入口类
  * xCrash是爱奇艺开源的在android平台上面捕获异常的开源库。xCrash能为安卓APP提供捕获Java崩溃异常，native崩溃
  * 异常和ANR异常。能在 App 进程崩溃或 ANR 时，在你指定的目录中生成一个 tombstone 文件（格式与安卓系统的
- * tombstone 文件类似）。
- * xcrash分为两个module，是xcrash_lib，xcrash_sample。xcrash_lib是核心库，xcrash_sample是提供的测试工程.
- *
+ * tombstone 文件类似）。Tombstone文件默认将被写入到 Context#getFilesDir() + “/tombstones” 目录。（通常
+ * 在：/data/data/PACKAGE_NAME/files/tombstones）
+ * xCrash分为两个module，是xcrash_lib，xcrash_sample。xcrash_lib是核心库，xcrash_sample是提供的测试工程.
  */
-@SuppressWarnings("unused")
 public final class XCrash {
-    private static boolean initialized = false;
-    private static String appId = null;
-    private static String appVersion = null;
-    private static String logDir = null;
-    private static ILogger logger = new DefaultLogger();
+    private static boolean initialized = false; // xcrash 初始化标志
+    private static String appId = null; // app应用的appId
+    private static String appVersion = null; // app应用版本的版本信息
+    private static String logDir = null; // 日志输出的文件夹路径
+    private static ILogger logger = new DefaultLogger(); // xcrash默认的日志输出接口
 
     private XCrash() {
     }
 
     /**
-     * 该sdk第1个需要执行的入口函数
+     * 该sdk第1个需要执行的入口函数，初始化xCrash
      * Initialize xCrash with default parameters.
      *
      * <p>Note: This is a synchronous operation.
@@ -65,8 +64,52 @@ public final class XCrash {
 
     /**
      * Initialize xCrash with custom parameters.
+     * xCrash初始化接口，主要对配置信息保存，以及执行日志文件管理
      *
-     * <p>Note: This is a synchronous operation.
+     * - 异常日志格式分析
+     * 通过xCrash_sample工程可以对Android常见的异常进行测试。下面对日志文件结构进行简单的分析，以便应用发生异常时，
+     * 通过日志来分析原因。以下日志文件，为采用默认配置输出的异常日志。日志文件的组成是：
+     * tombstone_应用启动时间*1000_app版本_app进程名_java异常后缀，例如：
+     * tombstone_00001571190344276000_1.2.3-beta456-patch789__xcrash.sample.java.xcrash
+     *
+     * - Java异常输出日志
+     * 日志分为:
+     * 1. 头部信息（为应用的基本信息）
+     * 2. java stacktrace
+     * 3. logcat日志输出部分，包括main,system,event
+     * 4. app应用进程打开的文件描述符
+     * 5. 内存信息
+     * 6. app应用进程信息
+     * 7. 异常回调填充信息
+     * // TODO: 2020/10/30 ing......这里继续分析......
+     * - Native异常输出日志
+     * 日志分为：
+     * 1. 头部信息（为应用的基本信息）
+     * 2. 异常信号部分。（哪个异常信号导致异常，信号参见Linux信号）
+     * 3. backtrace
+     * 4. so库的编译信息，build id
+     * 5. 堆栈信息
+     * 6. 内存信息
+     * 7. 内存映射(mmap)
+     * 8. Logcat日志输出部分，包括main,system,event
+     * 9. app应用进程打开的文件描述符
+     * 10. 内存信息
+     * 11. app应用进程信息
+     * 12. 异常回调填充信息
+     *
+     * - anr异常输出日志
+     * 1. 头部信息（为应用的基本信息）
+     * 2. 异常信号部分。（哪个异常信号导致异常，信号参见Linux信号）
+     * 3. backtrace
+     * 4. 主线程信息
+     * 5. 内存映射
+     * 6. Logcat日志输出部分，包括main,system,event
+     * 7. app应用进程打开的文件描述符
+     * 8. 内存信息
+     * 9. app应用进程信息
+     * 10. 异常回调填充信息
+     *
+     * Note: This is a synchronous operation. 这是一个异步初始化操作
      *
      * @param ctx The context of the application object of the current process.
      * @param params An initialization parameter set.
@@ -74,6 +117,8 @@ public final class XCrash {
      *         defined in: {@link xcrash.Errno}.
      */
     public static synchronized int init(Context ctx, InitParameters params) {
+
+        // 判断是否已初始化过，如果初始化过，不允许初始化两次
         if (XCrash.initialized) {
             return Errno.OK;
         }
@@ -83,48 +128,48 @@ public final class XCrash {
             return Errno.CONTEXT_IS_NULL;
         }
 
-        //make sure to get the instance of android.app.Application
+        // make sure to get the instance of android.app.Application
         Context appContext = ctx.getApplicationContext();
         if (appContext != null) {
             ctx = appContext;
         }
 
-        //use default parameters
+        // use default parameters
         if (params == null) {
             params = new InitParameters();
         }
 
-        //set logger
+        // set logger
         if (params.logger != null) {
             XCrash.logger = params.logger;
         }
 
-        //save app id
+        // save app id
         String packageName = ctx.getPackageName();
         XCrash.appId = packageName;
         if (TextUtils.isEmpty(XCrash.appId)) {
             XCrash.appId = "unknown";
         }
 
-        //save app version
+        // save app version
         if (TextUtils.isEmpty(params.appVersion)) {
             params.appVersion = Util.getAppVersion(ctx);
         }
         XCrash.appVersion = params.appVersion;
 
-        //save log dir
+        // save log dir
         if (TextUtils.isEmpty(params.logDir)) {
             params.logDir = ctx.getFilesDir() + "/tombstones";
         }
         XCrash.logDir = params.logDir;
 
-        //get PID and process name
+        // get PID and process name
         int pid = android.os.Process.myPid();
         String processName = null;
         if (params.enableJavaCrashHandler || params.enableAnrHandler) {
             processName = Util.getProcessName(ctx, pid);
 
-            //capture only the ANR of the main process
+            // capture only the ANR of the main process
             if (params.enableAnrHandler) {
                 if (TextUtils.isEmpty(processName) || !processName.equals(packageName)) {
                     params.enableAnrHandler = false;
@@ -132,15 +177,17 @@ public final class XCrash {
             }
         }
 
-        //init file manager
+        // init file manager，日志文件的管理器  异常日志文件数量，超过数量，删除最早的。
+        // 其中异常日志的占位文件，在native异常或者android 5.0以后anr异常会使用到
+        // 在捕获到native异常的时候，如果存在占位文件，则使用占位文件。不存在才会创建新的文件
         FileManager.getInstance().initialize(
-            params.logDir,
-            params.javaLogCountMax,
+            params.logDir, // 异常日志文件路径
+            params.javaLogCountMax, // java异常日志文件数量
             params.nativeLogCountMax,
             params.anrLogCountMax,
-            params.placeholderCountMax,
-            params.placeholderSizeKb,
-            params.logFileMaintainDelayMs);
+            params.placeholderCountMax, // 异常日志的占位文件，可配置
+            params.placeholderSizeKb, // 异常日志占位文件的大小
+            params.logFileMaintainDelayMs); // xCrash初始化后，延迟xx毫秒，进行日志文件管理
 
         if (params.enableJavaCrashHandler || params.enableNativeCrashHandler || params.enableAnrHandler) {
             if (ctx instanceof Application) {
@@ -148,7 +195,7 @@ public final class XCrash {
             }
         }
 
-        //init java crash handler
+        // init java crash handler, 是否捕获java异常日志
         if (params.enableJavaCrashHandler) {
             JavaCrashHandler.getInstance().initialize(
                 pid,
@@ -168,15 +215,17 @@ public final class XCrash {
                 params.javaCallback);
         }
 
-        // init ANR handler (API level < 21)
+        // init ANR handler (API level < 21)，更通用的方案(无版本限制)采用微信Matrix
         if (params.enableAnrHandler && Build.VERSION.SDK_INT < 21) {
             AnrHandler.getInstance().initialize(
-                ctx,
-                pid,
-                processName,
+                ctx, // context上下文
+                pid, // 进程pid
+                processName, // 进程名
                 appId,
-                params.appVersion,
-                params.logDir,
+                params.appVersion, // app应用版本
+                params.logDir, // 日志输出文件夹(目录)
+
+                // 以下为可配置参数
                 params.anrCheckProcessState,
                 params.anrLogcatSystemLines,
                 params.anrLogcatEventsLines,
@@ -219,22 +268,29 @@ public final class XCrash {
                 params.anrCallback);
         }
 
-        //maintain tombstone and placeholder files in a background thread with some delay
+        // maintain tombstone and placeholder files in a background thread with some delay
+        // 执行日志文件管理：在后台线程中维护逻辑: 删除文件和占位符文件
         FileManager.getInstance().maintain();
 
         return r;
     }
 
     /**
-     * An initialization parameter set.
+     * An initialization parameter set. xCrash初始化配置参数
+     * xCrash配置参数分为四个部分：1.通用输出配置；2.java异常输出配置；3.native异常输出配置；4.ANR异常输出配置。
      */
     public static class InitParameters {
 
-        //common
+        // common，通用输出配置
+        // APP应用版本信息
         String     appVersion             = null;
+        // 用于存放异常日志的文件夹
         String     logDir                 = null;
+        // 初始化xCrash后延迟xx毫秒，进行日志文件维护任务（为清理多余的过期日志文件）
         int        logFileMaintainDelayMs = 5000;
+        // xCrash库的日志输出接口
         ILogger    logger                 = null;
+        // xCrash库需要加载的so文件路径
         ILibLoader libLoader              = null;
 
         /**
@@ -296,7 +352,7 @@ public final class XCrash {
             return this;
         }
 
-        //placeholder
+        // placeholder
         int placeholderCountMax = 0;
         int placeholderSizeKb   = 128;
 
@@ -324,18 +380,29 @@ public final class XCrash {
             return this;
         }
 
-        //java crash
+        // java crash，Java异常输出配置
+        // 是否使能Java异常处理器
         boolean        enableJavaCrashHandler      = true;
+        // 是否继续抛出原始Java异常行为
         boolean        javaRethrow                 = true;
+        // java异常文件数量
         int            javaLogCountMax             = 10;
+        // 执行命令 logcat -b system 输出的日志行数
         int            javaLogcatSystemLines       = 50;
+        // 执行命令 logcat -b event 输出的日志行数
         int            javaLogcatEventsLines       = 50;
+        // logcat -b main 输出的日志行数
         int            javaLogcatMainLines         = 200;
+        // 是否输出app应用进程的文件描述符
         boolean        javaDumpFds                 = true;
         boolean        javaDumpNetworkInfo         = true;
+        // 是否输出所有线程的日志信息
         boolean        javaDumpAllThreads          = true;
+        // 输出日志最多的线程数
         int            javaDumpAllThreadsCountMax  = 0;
+        // 输出线程日志的线程白名单
         String[]       javaDumpAllThreadsAllowList = null;
+        // 发生java异常crash的回调
         ICrashCallback javaCallback                = null;
 
         /**
@@ -495,20 +562,33 @@ public final class XCrash {
             return this;
         }
 
-        //native crash
+        // native crash, Native异常输出配置
+        // 是否输出native异常标志
         boolean        enableNativeCrashHandler      = true;
+        // 是否继续向外抛出异常
         boolean        nativeRethrow                 = true;
+        // native异常文件的最大数量
         int            nativeLogCountMax             = 10;
+        // 执行命令 logcat -b system 输出的日志行数
         int            nativeLogcatSystemLines       = 50;
+        // 执行命令 logcat -b evnet输出的日志行数
         int            nativeLogcatEventsLines       = 50;
+        // logcat -b main 输出的日志行数
         int            nativeLogcatMainLines         = 200;
+        // 是否输出产生native异常的so库文件的hash值
         boolean        nativeDumpElfHash             = true;
+        // 是否输出产生native异常so文件的内存映射
         boolean        nativeDumpMap                 = true;
+        // 是否输出文件描述符
         boolean        nativeDumpFds                 = true;
         boolean        nativeDumpNetworkInfo         = true;
+        // 是否输出所有线程的日志信息，默认为true，如果为false只输出crahs线程的信息
         boolean        nativeDumpAllThreads          = true;
+        // 输出日志最多的线程数
         int            nativeDumpAllThreadsCountMax  = 0;
+        // 输出线程日志的线程白名单
         String[]       nativeDumpAllThreadsAllowList = null;
+        // 发生java异常crash的回调
         ICrashCallback nativeCallback                = null;
 
         /**
@@ -697,16 +777,28 @@ public final class XCrash {
             return this;
         }
 
-        //anr
+        // anr相关的自定义参数
+        // anr异常处理器，默认为true,如果为false不捕获anr异常
         boolean        enableAnrHandler     = true;
+        // 是否抛出原始anr异常。默认为true
         boolean        anrRethrow           = true;
+        // 是否设置anr的状态标志给进程状态（具体参见源码中的注释）
         boolean        anrCheckProcessState = true;
+        // anr日志最大保留文件数量
         int            anrLogCountMax       = 10;
+        // 执行命令 logcat -b system 输出的日志行数
+        // -b <buffer> 指定要查看的日志缓冲区，该选项用于指定要操作的日志缓冲区，可以是system,events,radio,main.
+        // 它们分别对应/dev/log文件夹下的system,events,radio,main日志文件。系统默认的是system和main。该选项可以
+        // 出现多次，以指定多个日志缓冲区，比如：adb logcat -b system -b main -b events -b radio -s robin:i
         int            anrLogcatSystemLines = 50;
+        // 执行命令 logcat -b event 输出的日志行数
         int            anrLogcatEventsLines = 50;
+        // 执行命令 logcat -b main 输出的日志行数
         int            anrLogcatMainLines   = 200;
+        // 是否输出app进程的下打开的文件描述符
         boolean        anrDumpFds           = true;
         boolean        anrDumpNetworkInfo   = true;
+        // 发生anr异常的应用回调
         ICrashCallback anrCallback          = null;
 
         /**

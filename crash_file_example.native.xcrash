@@ -1,0 +1,42 @@
+// 信息头部
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Tombstone maker: 'xCrash 2.4.5'
+Crash type: 'native'
+Start time: '2019-10-16T16:06:18.882+0800'
+Crash time: '2019-10-16T16:06:24.668+0800'
+App ID: 'xcrash.sample'
+App version: '1.2.3-beta456-patch789'
+Rooted: 'No'
+API level: '25'
+OS version: '7.1.2'
+Kernel version: 'Linux version 3.18.31-perf #1 SMP PREEMPT Fri Jan 18 09:50:24 CST 2019 (aarch64)'
+ABI list: 'arm64-v8a,armeabi-v7a,armeabi'
+Manufacturer: 'LANDI'
+Brand: 'LANDI'
+Model: 'AECR C10'
+Build fingerprint: 'Android/msm8953_64/msm8953_64:7.1.2/N2G47H/builde01180925:user/test-keys'
+ABI: 'arm64'
+pid: 23897, tid: 23897, name: xcrash.sample  >>> xcrash.sample <<<
+// 异常信号部分
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0
+// 异常堆栈信息
+backtrace:
+// so库的编译信息，build id
+build id:
+// 堆栈信息
+stack:
+// 内存信息
+memory near xxx:
+// 内存映射信息
+memory map:
+// logcat日志输出部分，包括main,system,event
+logcat:
+// app应用进程打开的文件描述符
+open files:
+// 内存信息
+memory info:
+// 进程信息
+Process Limits (From: /proc/PID/limits)
+Process Details (From: /proc/PID/smaps)
+Process Dalvik Details (From: /proc/PID/smaps)
+Process Summary (From: /proc/PID/smaps)

@@ -71,45 +71,56 @@ static char                  *xcd_core_app_id            = NULL;
 static char                  *xcd_core_app_version       = NULL;
 static char                  *xcd_core_dump_all_threads_allowlist = NULL;
 
-static int xcd_core_read_stdin(void *buf, size_t len)
-{
+static int xcd_core_read_stdin(void *buf, size_t len) {
     size_t  nread = 0;
     ssize_t n;
 
-    while(len - nread > 0)
-    {
-        n = XCC_UTIL_TEMP_FAILURE_RETRY(read(STDIN_FILENO, (void *)((uint8_t *)buf + nread), len - nread));
-        if(n <= 0) return XCC_ERRNO_SYS;
+    while(len - nread > 0) {
+        n = XCC_UTIL_TEMP_FAILURE_RETRY(read(STDIN_FILENO, (void*)((uint8_t*)buf + nread), len - nread));
+        if(n <= 0)
+            return XCC_ERRNO_SYS;
         nread += (size_t)n;
     }
     
     return 0;
 }
 
-static int xcd_core_read_stdin_extra(char **buf, size_t len)
-{
+static int xcd_core_read_stdin_extra(char **buf, size_t len) {
     if(0 == len) return XCC_ERRNO_INVAL;
     if(NULL == ((*buf) = (char *)calloc(1, len + 1))) return XCC_ERRNO_NOMEM;
     return xcd_core_read_stdin((void *)(*buf), len);
 }
 
-static int xcd_core_read_args()
-{
+static int xcd_core_read_args() {
     int r;
     
-    if(0 != (r = xcd_core_read_stdin((void *)&xcd_core_spot, sizeof(xcc_spot_t)))) return r;
-    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_log_pathname, xcd_core_spot.log_pathname_len))) return r;
-    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_os_version, xcd_core_spot.os_version_len))) return r;
-    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_kernel_version, xcd_core_spot.kernel_version_len))) return r;
+    if(0 != (r = xcd_core_read_stdin((void *)&xcd_core_spot, sizeof(xcc_spot_t))))
+        return r;
+    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_log_pathname, xcd_core_spot.log_pathname_len)))
+        return r;
+    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_os_version, xcd_core_spot.os_version_len)))
+        return r;
+    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_kernel_version, xcd_core_spot.kernel_version_len)))
+        return r;
     if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_abi_list, xcd_core_spot.abi_list_len))) return r;
-    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_manufacturer, xcd_core_spot.manufacturer_len))) return r;
+    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_manufacturer, xcd_core_spot.manufacturer_len)))
+        return r;
     if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_brand, xcd_core_spot.brand_len))) return r;
     if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_model, xcd_core_spot.model_len))) return r;
-    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_build_fingerprint, xcd_core_spot.build_fingerprint_len))) return r;
+    if (0 != (r = xcd_core_read_stdin_extra(&xcd_core_build_fingerprint,
+            xcd_core_spot.build_fingerprint_len))) {
+        return r;
+    }
+
     if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_app_id, xcd_core_spot.app_id_len))) return r;
-    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_app_version, xcd_core_spot.app_version_len))) return r;
-    if(xcd_core_spot.dump_all_threads_allowlist_len > 0)
-        if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_dump_all_threads_allowlist, xcd_core_spot.dump_all_threads_allowlist_len))) return r;
+    if(0 != (r = xcd_core_read_stdin_extra(&xcd_core_app_version, xcd_core_spot.app_version_len)))
+        return r;
+    if (xcd_core_spot.dump_all_threads_allowlist_len > 0) {
+        if (0 != (r = xcd_core_read_stdin_extra(&xcd_core_dump_all_threads_allowlist,
+                                                xcd_core_spot.dump_all_threads_allowlist_len))) {
+            return r;
+        }
+    }
     
     return 0;
 }
@@ -158,7 +169,10 @@ int main(int argc, char** argv)
     if(0 != xcd_core_read_args()) exit(1);
 
     //open log file
-    if(0 > (xcd_core_log_fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xcd_core_log_pathname, O_WRONLY | O_CLOEXEC)))) exit(2);
+    if (0 > (xcd_core_log_fd = XCC_UTIL_TEMP_FAILURE_RETRY(
+            open(xcd_core_log_pathname, O_WRONLY | O_CLOEXEC)))) {
+        exit(2);
+    }
 
     //register signal handler for catching self-crashing
     xcc_unwind_init(xcd_core_spot.api_level);

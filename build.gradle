@@ -38,7 +38,10 @@ ext {
     POM_VERSION_NAME = "3.0.0"
 
     POM_NAME = "xCrash Android Lib"
-    POM_DESCRIPTION = "xCrash provides the Android app with the ability to capture java crash, native crash and ANR."
+
+    POM_DESCRIPTION = "xCrash provides the Android app with the ability to capture " +
+            "java crash, native crash and ANR."
+
     POM_URL = "https://github.com/hexhacking/xCrash"
     POM_INCEPTION_YEAR = "2019"
     POM_PACKAGING = "aar"

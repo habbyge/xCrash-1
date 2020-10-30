@@ -223,8 +223,7 @@ class NativeHandler {
         }
     }
 
-    // do NOT obfuscate this method
-    @SuppressWarnings("unused")
+    // do NOT obfuscate this method，这个函数在JNI层被调用，需要keep
     private static void traceCallback(String logPath, String emergency) {
         if (TextUtils.isEmpty(logPath)) {
             return;

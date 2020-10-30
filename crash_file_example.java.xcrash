@@ -1,0 +1,34 @@
+//   头部信息
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Tombstone maker: 'xCrash 2.4.5'
+Crash type: 'java'
+Start time: '2019-10-16T09:45:44.276+0800'
+Crash time: '2019-10-16T09:45:49.395+0800'
+App ID: 'xcrash.sample'
+App version: '1.2.3-beta456-patch789'
+Rooted: 'No'
+API level: '25'
+OS version: '7.1.2'
+ABI list: 'arm64-v8a,armeabi-v7a,armeabi'
+Manufacturer: 'LANDI'
+Brand: 'LANDI'
+Model: 'AECR C10'
+Build fingerprint: 'Android/msm8953_64/msm8953_64:7.1.2/N2G47H/builde01180925:user/test-keys'
+pid: 22023, tid: 22023, name: main  >>> xcrash.sample <<<
+//  java stacktrace
+java stacktrace:
+...
+// logcat日志输出部分，包括main,system,event
+logcat:
+// app应用进程打开的文件描述符
+open files:
+...
+// app应用的内存信息
+memory info:
+ System Summary (From: /proc/meminfo)
+// 进程信息
+ Process Status (From: /proc/PID/status)
+ ...
+ Process Limits (From: /proc/PID/limits)
+ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++
+// 异常回调填充信息(应用自定的信息，参见ICrashCallback )

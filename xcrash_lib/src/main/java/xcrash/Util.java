@@ -57,8 +57,10 @@ class Util {
     static final String TAG = "xcrash";
 
     static final String sepHead = "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***";
-    static final String sepOtherThreads = "--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---";
-    static final String sepOtherThreadsEnding = "+++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++";
+    static final String sepOtherThreads =
+            "--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---";
+    static final String sepOtherThreadsEnding =
+            "+++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++ +++";
 
     static final String timeFormatterStr = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -66,14 +68,20 @@ class Util {
     static final String nativeCrashType = "native";
     static final String anrCrashType = "anr";
 
+    // 我们可以通过文件名获取到部分有用的信息，比如说发生异常的app应用的版本信息，以及发生异常的时间
+    // (如果换位年月日时分秒毫秒可能更为明显)，异常的类型.
+    // 异常日志文件名前缀
     static final String logPrefix = "tombstone";
+    // java 异常文件后缀
     static final String javaLogSuffix = ".java.xcrash";
+    // native异常文件后缀
     static final String nativeLogSuffix = ".native.xcrash";
+    // anr异常文件后缀，api版本小于21
     static final String anrLogSuffix = ".anr.xcrash";
+    // anr异常文件后缀，api版本大于21
     static final String traceLogSuffix = ".trace.xcrash";
 
     static String getProcessName(Context ctx, int pid) {
-
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader("/proc/" + pid + "/cmdline"));
@@ -141,16 +149,13 @@ class Util {
 
     static String getAppVersion(Context ctx) {
         String appVersion = null;
-
         try {
             appVersion = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionName;
         } catch (Exception ignored) {
         }
-
         if (TextUtils.isEmpty(appVersion)) {
             appVersion = "unknown";
         }
-
         return appVersion;
     }
 
@@ -165,24 +170,48 @@ class Util {
             Debug.getMemoryInfo(mi);
 
             if (Build.VERSION.SDK_INT >= 23) {
-                sb.append(String.format(Locale.US, memInfoFmt, "Java Heap:", mi.getMemoryStat("summary.java-heap")));
-                sb.append(String.format(Locale.US, memInfoFmt, "Native Heap:", mi.getMemoryStat("summary.native-heap")));
-                sb.append(String.format(Locale.US, memInfoFmt, "Code:", mi.getMemoryStat("summary.code")));
-                sb.append(String.format(Locale.US, memInfoFmt, "Stack:", mi.getMemoryStat("summary.stack")));
-                sb.append(String.format(Locale.US, memInfoFmt, "Graphics:", mi.getMemoryStat("summary.graphics")));
-                sb.append(String.format(Locale.US, memInfoFmt, "Private Other:", mi.getMemoryStat("summary.private-other")));
-                sb.append(String.format(Locale.US, memInfoFmt, "System:", mi.getMemoryStat("summary.system")));
-                sb.append(String.format(Locale.US, memInfoFmt2, "TOTAL:", mi.getMemoryStat("summary.total-pss"), "TOTAL SWAP:", mi.getMemoryStat("summary.total-swap")));
+                sb.append(String.format(Locale.US, memInfoFmt, "Java Heap:",
+                        mi.getMemoryStat("summary.java-heap")));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "Native Heap:",
+                        mi.getMemoryStat("summary.native-heap")));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "Code:",
+                        mi.getMemoryStat("summary.code")));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "Stack:",
+                        mi.getMemoryStat("summary.stack")));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "Graphics:",
+                        mi.getMemoryStat("summary.graphics")));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "Private Other:",
+                        mi.getMemoryStat("summary.private-other")));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "System:",
+                        mi.getMemoryStat("summary.system")));
+
+                sb.append(String.format(Locale.US, memInfoFmt2, "TOTAL:",
+                        mi.getMemoryStat("summary.total-pss"), "TOTAL SWAP:",
+                        mi.getMemoryStat("summary.total-swap")));
             } else {
-                sb.append(String.format(Locale.US, memInfoFmt, "Java Heap:", "~ " + mi.dalvikPrivateDirty));
-                sb.append(String.format(Locale.US, memInfoFmt, "Native Heap:", String.valueOf(mi.nativePrivateDirty)));
-                sb.append(String.format(Locale.US, memInfoFmt, "Private Other:", "~ " + mi.otherPrivateDirty));
+                sb.append(String.format(Locale.US, memInfoFmt, "Java Heap:",
+                        "~ " + mi.dalvikPrivateDirty));
+
+                sb.append(String.format(Locale.US, memInfoFmt, "Native Heap:",
+                        String.valueOf(mi.nativePrivateDirty)));
+                sb.append(String.format(Locale.US, memInfoFmt, "Private Other:",
+                        "~ " + mi.otherPrivateDirty));
                 if (Build.VERSION.SDK_INT >= 19) {
-                    sb.append(String.format(Locale.US, memInfoFmt, "System:", String.valueOf(mi.getTotalPss() - mi.getTotalPrivateDirty() - mi.getTotalPrivateClean())));
+                    sb.append(String.format(Locale.US, memInfoFmt, "System:",
+                            String.valueOf(mi.getTotalPss() - mi.getTotalPrivateDirty()
+                                    - mi.getTotalPrivateClean())));
                 } else {
-                    sb.append(String.format(Locale.US, memInfoFmt, "System:", "~ " + (mi.getTotalPss() - mi.getTotalPrivateDirty())));
+                    sb.append(String.format(Locale.US, memInfoFmt, "System:",
+                            "~ " + (mi.getTotalPss() - mi.getTotalPrivateDirty())));
                 }
-                sb.append(String.format(Locale.US, memInfoFmt, "TOTAL:", String.valueOf(mi.getTotalPss())));
+                sb.append(String.format(Locale.US, memInfoFmt, "TOTAL:",
+                        String.valueOf(mi.getTotalPss())));
             }
         } catch (Exception e) {
             XCrash.getLogger().i(Util.TAG, "Util getProcessMemoryInfo failed", e);
@@ -245,15 +274,19 @@ class Util {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     static boolean checkProcessAnrState(Context ctx, long timeoutMs) {
         ActivityManager am = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
-        if (am == null) return false;
+        if (am == null)
+            return false;
 
         int pid = android.os.Process.myPid();
-        long poll = timeoutMs / 500;
-        for (int i = 0; i < poll; i++) {
+        long poll = timeoutMs / 500; // 30
+        for (int i = 0; i < poll; i++) { // 轮询30次
+            // 获取系统中所有进程的错误信息
             List<ActivityManager.ProcessErrorStateInfo> processErrorList = am.getProcessesInErrorState();
             if (processErrorList != null) {
                 for (ActivityManager.ProcessErrorStateInfo errorStateInfo : processErrorList) {
-                    if (errorStateInfo.pid == pid && errorStateInfo.condition == ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING) {
+                    // 进程ID和当前应用ID相同，且错误状态是ANR异常
+                    if (errorStateInfo.pid == pid && errorStateInfo.condition
+                            == ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING) {
                         return true;
                     }
                 }
@@ -268,7 +301,9 @@ class Util {
         return false;
     }
 
-    static String getLogHeader(Date startTime, Date crashTime, String crashType, String appId, String appVersion) {
+    static String getLogHeader(Date startTime, Date crashTime, String crashType,
+                               String appId, String appVersion) {
+
         DateFormat timeFormatter = new SimpleDateFormat(Util.timeFormatterStr, Locale.US);
 
         return Util.sepHead + "\n"
@@ -401,7 +436,9 @@ class Util {
         return sb.toString();
     }
 
-    private static void getLogcatByBufferName(int pid, StringBuilder sb, String bufferName, int lines, char priority) {
+    private static void getLogcatByBufferName(int pid, StringBuilder sb, String bufferName,
+                                              int lines, char priority) {
+
         boolean withPid = (android.os.Build.VERSION.SDK_INT >= 24);
         String pidString = Integer.toString(pid);
         String pidLabel = " " + pidString + " ";
