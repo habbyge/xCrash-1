@@ -204,7 +204,6 @@ int xcc_signal_crash_unregister() {
             r = XCC_ERRNO_SYS;
         }
     }
-    
     return r;
 }
 
@@ -217,10 +216,11 @@ int xcc_signal_crash_ignore() {
     
     int r = 0;
     size_t i;
-    for(i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++)
-        if(0 != sigaction(xcc_signal_crash_info[i].signum, &act, NULL))
+    for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
+        if (0 != sigaction(xcc_signal_crash_info[i].signum, &act, NULL)) {
             r = XCC_ERRNO_SYS;
-
+        }
+    }
     return r;
 }
 
@@ -230,22 +230,22 @@ int xcc_signal_crash_queue(siginfo_t* si) {
             return XCC_ERRNO_SYS;
         }
     }
-
     return 0;
 }
 
-static sigset_t         xcc_signal_trace_oldset;
+static sigset_t xcc_signal_trace_oldset;
 static struct sigaction xcc_signal_trace_oldact;
 
 int xcc_signal_trace_register(void (*handler)(int, siginfo_t*, void*)) {
-    int              r;
-    sigset_t         set;
+    int r;
+    sigset_t set;
     struct sigaction act;
 
     //un-block the SIGQUIT mask for current thread, hope this is the main thread
     sigemptyset(&set);
     sigaddset(&set, SIGQUIT);
-    if(0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset))) return r;
+    if (0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset)))
+        return r;
 
     //register new signal handler for SIGQUIT
     memset(&act, 0, sizeof(act));

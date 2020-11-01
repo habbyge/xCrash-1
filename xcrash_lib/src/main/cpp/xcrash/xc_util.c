@@ -41,8 +41,7 @@
 #include "xcc_util.h"
 #include "xc_util.h"
 
-char *xc_util_strdupcat(const char *s1, const char *s2)
-{
+char *xc_util_strdupcat(const char *s1, const char *s2) {
     size_t s1_len, s2_len;
     char *s;
 
@@ -58,8 +57,7 @@ char *xc_util_strdupcat(const char *s1, const char *s2)
     return s;
 }
 
-int xc_util_mkdirs(const char *dir)
-{
+int xc_util_mkdirs(const char *dir) {
     size_t  len;
     char    buf[PATH_MAX];
     char   *p;
@@ -77,10 +75,8 @@ int xc_util_mkdirs(const char *dir)
     memcpy(buf, dir, len + 1);
     if(buf[len - 1] == '/') buf[len - 1] = '\0';
     
-    for(p = buf + 1; *p; p++)
-    {
-        if(*p == '/')
-        {
+    for(p = buf + 1; *p; p++) {
+        if(*p == '/') {
             *p = '\0';
             errno = 0;
             if(0 != mkdir(buf, S_IRWXU) && EEXIST != errno) return errno;
@@ -92,12 +88,10 @@ int xc_util_mkdirs(const char *dir)
     return 0;
 }
 
-void xc_util_get_kernel_version(char *buf, size_t len)
-{
+void xc_util_get_kernel_version(char *buf, size_t len) {
     struct utsname uts;
 
-    if(0 != uname(&uts))
-    {
+    if(0 != uname(&uts)) {
         strncpy(buf, "unknown", len);
         buf[len - 1] = '\0';
         return;

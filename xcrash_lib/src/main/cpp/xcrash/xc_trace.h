@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-int xc_trace_init(JNIEnv *env,
+int xc_trace_init(JNIEnv* env,
                   int rethrow,
                   unsigned int logcat_system_lines,
                   unsigned int logcat_events_lines,

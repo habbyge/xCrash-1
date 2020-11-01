@@ -399,8 +399,8 @@ int xcd_process_record(xcd_process_t *self,
                        int dump_all_threads,
                        unsigned int dump_all_threads_count_max,
                        char *dump_all_threads_allowlist,
-                       int api_level)
-{
+                       int api_level) {
+
     int                r = 0;
     xcd_thread_info_t *thd;
     regex_t           *re = NULL;
@@ -409,16 +409,13 @@ int xcd_process_record(xcd_process_t *self,
     int                thd_matched_regex = 0;
     int                thd_ignored_by_limit = 0;
     
-    TAILQ_FOREACH(thd, &(self->thds), link)
-    {
-        if(thd->t.tid == self->crash_tid)
-        {
+    TAILQ_FOREACH(thd, &(self->thds), link) {
+        if(thd->t.tid == self->crash_tid) {
             if(0 != (r = xcd_thread_record_info(&(thd->t), log_fd, self->pname))) return r;
             if(0 != (r = xcd_process_record_signal_info(self, log_fd))) return r;
             if(0 != (r = xcd_process_record_abort_message(self, log_fd, api_level))) return r;
             if(0 != (r = xcd_thread_record_regs(&(thd->t), log_fd))) return r;
-            if(0 == xcd_thread_load_frames(&(thd->t), self->maps))
-            {
+            if(0 == xcd_thread_load_frames(&(thd->t), self->maps)) {
                 if(0 != (r = xcd_thread_record_backtrace(&(thd->t), log_fd))) return r;
                 if(0 != (r = xcd_thread_record_buildid(&(thd->t), log_fd, dump_elf_hash, xcc_util_signal_has_si_addr(self->si) ? (uintptr_t)self->si->si_addr : 0))) return r;
                 if(0 != (r = xcd_thread_record_stack(&(thd->t), log_fd))) return r;

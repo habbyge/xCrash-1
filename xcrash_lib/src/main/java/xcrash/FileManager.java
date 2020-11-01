@@ -44,7 +44,9 @@ class FileManager {
     private final String placeholderPrefix = "placeholder";
     private final String placeholderCleanSuffix = ".clean.xcrash";
     private final String placeholderDirtySuffix = ".dirty.xcrash";
+
     private String logDir = null;
+
     private int javaLogCountMax = 0;
     private int nativeLogCountMax = 0;
     private int anrLogCountMax = 0;
@@ -230,7 +232,9 @@ class FileManager {
             if (newFile.createNewFile()) {
                 return newFile;
             } else {
-                XCrash.getLogger().e(Util.TAG, "FileManager createLogFile by createNewFile failed, file already exists");
+                XCrash.getLogger().e(Util.TAG, "FileManager createLogFile by " +
+                        "createNewFile failed, file already exists");
+
                 return null;
             }
         } catch (Exception e) {
@@ -293,7 +297,8 @@ class FileManager {
             File[] cleanFiles = dir.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return name.startsWith(placeholderPrefix + "_") && name.endsWith(placeholderCleanSuffix);
+                    return name.startsWith(placeholderPrefix + "_") &&
+                            name.endsWith(placeholderCleanSuffix);
                 }
             });
             if (cleanFiles != null && cleanFiles.length >= this.placeholderCountMax) {
@@ -305,7 +310,11 @@ class FileManager {
             }
 
             //rename to dirty file
-            String dirtyFilePath = String.format(Locale.US, "%s/%s_%020d%s", logDir, placeholderPrefix, new Date().getTime() * 1000 + getNextUnique(), placeholderDirtySuffix);
+            String dirtyFilePath = String.format(Locale.US, "%s/%s_%020d%s",
+                    logDir, placeholderPrefix,
+                    new Date().getTime() * 1000 + getNextUnique(),
+                    placeholderDirtySuffix);
+
             File dirtyFile = new File(dirtyFilePath);
             if (!logFile.renameTo(dirtyFile)) {
                 try {
@@ -334,7 +343,7 @@ class FileManager {
         File dir = new File(logDir);
 
         try {
-            doMaintainTombstone(dir);
+            doMaintainTombstone(dir); // TODO: 2020/11/1 ing......
         } catch (Exception e) {
             XCrash.getLogger().e(Util.TAG, "FileManager doMaintainTombstone failed", e);
         }
@@ -355,6 +364,7 @@ class FileManager {
 
     private boolean doMaintainTombstoneType(File dir, final String logSuffix, int logCountMax) {
         File[] files = dir.listFiles(new FilenameFilter() {
+
             @Override
             public boolean accept(File dir, String name) {
                 return name.startsWith(Util.logPrefix + "_") && name.endsWith(logSuffix);
@@ -415,7 +425,9 @@ class FileManager {
                 dirtyFilesCount--;
             } else {
                 try {
-                    File dirtyFile = new File(String.format(Locale.US, "%s/%s_%020d%s", logDir, placeholderPrefix, new Date().getTime() * 1000 + getNextUnique(), placeholderDirtySuffix));
+                    File dirtyFile = new File(String.format(Locale.US, "%s/%s_%020d%s",
+                            logDir, placeholderPrefix, new Date().getTime() * 1000 + getNextUnique(),
+                            placeholderDirtySuffix));
                     if (dirtyFile.createNewFile()) {
                         if (cleanTheDirtyFile(dirtyFile)) {
                             cleanFilesCount++;
@@ -436,13 +448,15 @@ class FileManager {
             cleanFiles = dir.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return name.startsWith(placeholderPrefix + "_") && name.endsWith(placeholderCleanSuffix);
+                    return name.startsWith(placeholderPrefix + "_") &&
+                            name.endsWith(placeholderCleanSuffix);
                 }
             });
             dirtyFiles = dir.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return name.startsWith(placeholderPrefix + "_") && name.endsWith(placeholderDirtySuffix);
+                    return name.startsWith(placeholderPrefix + "_") &&
+                            name.endsWith(placeholderDirtySuffix);
                 }
             });
         }
@@ -494,7 +508,11 @@ class FileManager {
             stream.flush();
 
             //rename the dirty file to clean file
-            String newCleanFilePath = String.format(Locale.US, "%s/%s_%020d%s", logDir, placeholderPrefix, new Date().getTime() * 1000 + getNextUnique(), placeholderCleanSuffix);
+            String newCleanFilePath = String.format(Locale.US, "%s/%s_%020d%s",
+                    logDir, placeholderPrefix,
+                    new Date().getTime() * 1000 + getNextUnique(),
+                    placeholderCleanSuffix);
+
             succeeded = dirtyFile.renameTo(new File(newCleanFilePath));
         } catch (Exception e) {
             XCrash.getLogger().e(Util.TAG, "FileManager cleanTheDirtyFile failed", e);

@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #ifndef XCD_MEMORY_H
 #define XCD_MEMORY_H 1
@@ -34,10 +34,9 @@ extern "C" {
 
 typedef struct xcd_memory xcd_memory_t;
 
-typedef struct
-{
-    void (*destroy)(void **self);
-    size_t (*read)(void *self, uintptr_t addr, void *dst, size_t size);
+typedef struct {
+    void (*destroy)(void** self);
+    size_t (*read)(void* self, uintptr_t addr, void* dst, size_t size);
 } xcd_memory_handlers_t;
 
 int xcd_memory_create(xcd_memory_t **self, void *map_obj, pid_t pid, void *maps_obj);

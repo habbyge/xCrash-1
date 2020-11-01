@@ -86,7 +86,7 @@ public final class XCrash {
      * 日志分为：
      * 1. 头部信息（为应用的基本信息）
      * 2. 异常信号部分。（哪个异常信号导致异常，信号参见Linux信号）
-     * 3. backtrace
+     * 3. backtrace // 表示发生错误的堆栈
      * 4. so库的编译信息，build id
      * 5. 堆栈信息
      * 6. 内存信息
@@ -96,6 +96,42 @@ public final class XCrash {
      * 10. 内存信息
      * 11. app应用进程信息
      * 12. 异常回调填充信息
+     *
+     * Native Crash分析：
+     * 1. Native Crash的分析工具：
+     *（1）addr2line
+     * 作用：把出错backtrace 解析出来文件和行数
+     * 格式：arm-linux_androideabi-addr2line -C -f -e sysbols/system/lib/xxx.so 0004097c
+     * 参数：arm-linux_androideabi-addr2line ndk里面工具,可以使用locate搜索出来
+     * xxx.so:位于sysbols目录下，需要具有符号表，版本需要一致
+     * 0004097c：需要和backtrace里面的地址一下
+     *（2）objdump
+     * arm-linux_androideabi-objdump -dl xxx.so > xxx.txt
+     * 把库的汇编文件放在指定xxx.txt，搜索backtrace地址，通过汇编看是否有问题*
+     *（3）Coredump
+     * 1.arm-linux_androideabi-gdb app_process(sysbols/system/bin目录下) -c xxx.core(data/core目录下)
+     * 2.set solib-absolute-prefix symbols //加载symblos目录
+     * 3.set solib-search-path system/lib //加载sysblos文件的lib目录
+     * 4.symbol-file libcamera.so //加载具体的库，都是带有符号表的目录
+     *
+     *（4）gdb基本命令
+     * bt  // check backtrace
+     * f 2 // 进入第n帧，bt之后会看到第几帧
+     * p this // 打印this值
+     * p *this 打印地址值
+     * x/12x  0x111 // 打印111地址附件的12个寄存器值 第一个x为命令  12代表个数 最后一个代表格式
+     * info threads   // 列出所有线程
+     * info registers // 列出所有寄存器值
+     * t  2  //选择第二个线程
+     * 2. 分析步骤
+     * (1)找到上述DEBUG内容位置,关键字am_crash DEBUG : pid
+     * (2)查看进程是否有错误，搜索pid  tid看线程log
+     * (3)查看是否有系统性能问题
+     * (4)检查下1中的backtrace中的问题库，是否在最近有修改，或者有个类似的问题，可以加快时间
+     * (5)使用addr2line工具，看下出问题的代码，看是否找出原因
+     * (6)objdump汇编文件得到之后，根据寄存器的推是不是寄存器问题
+     * (7)gdb工具，加载库之后，使用f bt 之类的命令查看线程信息  backtrace 寄存器值 内存值
+     * (8)根据代码和上述结果分析
      *
      * - anr异常输出日志
      * 1. 头部信息（为应用的基本信息）
@@ -167,7 +203,7 @@ public final class XCrash {
         int pid = android.os.Process.myPid();
         String processName = null;
         if (params.enableJavaCrashHandler || params.enableAnrHandler) {
-            processName = Util.getProcessName(ctx, pid);
+            processName = Util.getProcessName(pid);
 
             // capture only the ANR of the main process
             if (params.enableAnrHandler) {
@@ -189,7 +225,10 @@ public final class XCrash {
             params.placeholderSizeKb, // 异常日志占位文件的大小
             params.logFileMaintainDelayMs); // xCrash初始化后，延迟xx毫秒，进行日志文件管理
 
-        if (params.enableJavaCrashHandler || params.enableNativeCrashHandler || params.enableAnrHandler) {
+        if (params.enableJavaCrashHandler ||
+                params.enableNativeCrashHandler ||
+                params.enableAnrHandler) {
+
             if (ctx instanceof Application) {
                 ActivityMonitor.getInstance().initialize((Application) ctx);
             }
@@ -237,13 +276,15 @@ public final class XCrash {
 
         // init native crash handler / ANR handler (API level >= 21)
         int r = Errno.OK;
-        if (params.enableNativeCrashHandler || (params.enableAnrHandler && Build.VERSION.SDK_INT >= 21)) {
+        if (params.enableNativeCrashHandler ||
+                (params.enableAnrHandler && Build.VERSION.SDK_INT >= 21)) {
+
             r = NativeHandler.getInstance().initialize(
                 ctx,
-                params.libLoader,
+                params.libLoader, // so库加载路径
                 appId,
                 params.appVersion,
-                params.logDir,
+                params.logDir, // 日志输出路径
                 params.enableNativeCrashHandler,
                 params.nativeRethrow,
                 params.nativeLogcatSystemLines,
@@ -257,6 +298,8 @@ public final class XCrash {
                 params.nativeDumpAllThreadsCountMax,
                 params.nativeDumpAllThreadsAllowList,
                 params.nativeCallback,
+
+                // 以下配置与ANR相关
                 params.enableAnrHandler && Build.VERSION.SDK_INT >= 21,
                 params.anrRethrow,
                 params.anrCheckProcessState,
@@ -507,7 +550,7 @@ public final class XCrash {
         }
 
         /**
-         * Set if dumping threads info (stacktrace) for all threads (not just the thread that has crashed)
+         * Set if dumping threads info(stacktrace)for all threads(not just the thread that has crashed)
          * when a Java exception occurred. (Default: enable)
          *
          * @param flag True or false.
@@ -624,7 +667,7 @@ public final class XCrash {
         }
 
         /**
-         * Set the maximum number of native crash log files to save in the log directory. (Default: 10)
+         * Set the maximum number of native crash log files to save in the log directory.(Default: 10)
          *
          * @param countMax The maximum number of native crash log files.
          * @return The InitParameters object.
@@ -755,7 +798,7 @@ public final class XCrash {
          * <p>Warning: The regular expression used here only supports POSIX ERE
          * (Extended Regular Expression).
          * Android bionic's regular expression is different from Linux libc's regular expression.
-         * See: https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/include/regex.h .
+         * See:https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/include/regex.h
          *
          * @param allowList A thread name (regular expression) allowlist.
          * @return The InitParameters object.

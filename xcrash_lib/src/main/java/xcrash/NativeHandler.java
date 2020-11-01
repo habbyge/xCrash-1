@@ -33,11 +33,10 @@ import java.util.Map;
 
 /**
  * native异常处理器
+ * 在捕获Native异常中，原理上面基本是采用Linux的信号机制。
  */
 @SuppressLint("StaticFieldLeak")
 class NativeHandler {
-
-    private static final NativeHandler instance = new NativeHandler();
     private long anrTimeoutMs = 15 * 1000;
 
     private Context ctx;
@@ -49,6 +48,8 @@ class NativeHandler {
 
     private boolean initNativeLibOk = false;
 
+    private static final NativeHandler instance = new NativeHandler();
+
     private NativeHandler() {
     }
 
@@ -56,6 +57,10 @@ class NativeHandler {
         return instance;
     }
 
+    /**
+     * 加载so动态库
+     * 初始化C/C++库，用于捕获Native异常。
+     */
     int initialize(Context ctx,
                    ILibLoader libLoader,
                    String appId,
@@ -83,7 +88,7 @@ class NativeHandler {
                    boolean anrDumpFds,
                    boolean anrDumpNetworkInfo,
                    ICrashCallback anrCallback) {
-        //load lib
+        // load lib 加载libxcrash.so
         if (libLoader == null) {
             try {
                 System.loadLibrary("xcrash");
@@ -92,7 +97,7 @@ class NativeHandler {
                 return Errno.LOAD_LIBRARY_FAILED;
             }
         } else {
-            try {
+            try { // 指定路径下面加载
                 libLoader.loadLibrary("xcrash");
             } catch (Throwable e) {
                 XCrash.getLogger().e(Util.TAG, "NativeHandler ILibLoader.loadLibrary failed", e);
@@ -109,7 +114,7 @@ class NativeHandler {
         //setting rethrow to "false" is NOT recommended
         this.anrTimeoutMs = anrRethrow ? 15 * 1000 : 30 * 1000;
 
-        //init native lib
+        // init native lib
         try {
             int r = nativeInit(
                 Build.VERSION.SDK_INT,
@@ -142,6 +147,7 @@ class NativeHandler {
                 anrLogcatMainLines,
                 anrDumpFds,
                 anrDumpNetworkInfo);
+
             if (r != 0) {
                 XCrash.getLogger().e(Util.TAG, "NativeHandler init failed");
                 return Errno.INIT_LIBRARY_FAILED;
@@ -304,6 +310,9 @@ class NativeHandler {
             boolean traceDumpFds,
             boolean traceDumpNetworkInfo);
 
+    /**
+     * 通知natvie异常信息
+     */
     private static native void nativeNotifyJavaCrashed();
 
     private static native void nativeTestCrash(int runInNewThread);

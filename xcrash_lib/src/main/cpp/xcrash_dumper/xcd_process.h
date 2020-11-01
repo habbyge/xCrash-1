@@ -42,7 +42,7 @@ void xcd_process_resume_threads(xcd_process_t *self);
 
 int xcd_process_load_info(xcd_process_t *self);
 
-int xcd_process_record(xcd_process_t *self,
+int xcd_process_record(xcd_process_t* self,
                        int log_fd,
                        unsigned int logcat_system_lines,
                        unsigned int logcat_events_lines,

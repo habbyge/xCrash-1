@@ -81,15 +81,19 @@ class Util {
     // anr异常文件后缀，api版本大于21
     static final String traceLogSuffix = ".trace.xcrash";
 
-    static String getProcessName(Context ctx, int pid) {
+    /**
+     * 通过pid获取进程名
+     */
+    static String getProcessName(int pid) {
         BufferedReader br = null;
         try {
+            // /proc/pid/cmdline
             br = new BufferedReader(new FileReader("/proc/" + pid + "/cmdline"));
             String processName = br.readLine();
             if (!TextUtils.isEmpty(processName)) {
                 processName = processName.trim();
                 if (!TextUtils.isEmpty(processName)) {
-                    return processName; //OK
+                    return processName; // OK
                 }
             }
         } catch (Exception ignored) {
@@ -119,6 +123,9 @@ class Util {
         "/sbin/su",
         "/su/bin/su"};
 
+    /**
+     * 手机是否root
+     */
     static boolean isRoot() {
         try {
             for (String path : suPathname) {

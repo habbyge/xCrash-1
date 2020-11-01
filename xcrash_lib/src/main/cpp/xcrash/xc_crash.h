@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-int xc_crash_init(JNIEnv *env,
+int xc_crash_init(JNIEnv* env,
                   int rethrow,
                   unsigned int logcat_system_lines,
                   unsigned int logcat_events_lines,
@@ -44,7 +44,7 @@ int xc_crash_init(JNIEnv *env,
                   int dump_network_info,
                   int dump_all_threads,
                   unsigned int dump_all_threads_count_max,
-                  const char **dump_all_threads_allowlist,
+                  const char** dump_all_threads_allowlist,
                   size_t dump_all_threads_allowlist_len);
 
 #ifdef __cplusplus

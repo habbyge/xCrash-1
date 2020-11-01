@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #include <inttypes.h>
 #include <unistd.h>
@@ -125,8 +125,7 @@ static int xcd_core_read_args() {
     return 0;
 }
 
-static void xcd_core_signal_handler(int sig, siginfo_t *si, void *uc)
-{
+static void xcd_core_signal_handler(int sig, siginfo_t *si, void *uc) {
     char buf[2048] = "\0";
     size_t len;
 
@@ -157,8 +156,7 @@ static void xcd_core_signal_handler(int sig, siginfo_t *si, void *uc)
     xcc_signal_crash_queue(si);
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
     

@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -41,8 +41,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
-typedef struct xcd_elf_symbols
-{
+typedef struct xcd_elf_symbols {
     size_t sym_offset;
     size_t sym_end;
     size_t sym_entry_size;
@@ -55,8 +54,7 @@ typedef TAILQ_HEAD(xcd_elf_symbols_queue, xcd_elf_symbols,) xcd_elf_symbols_queu
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
-typedef struct xcd_elf_strtab
-{
+typedef struct xcd_elf_strtab {
     size_t addr;
     size_t offset;
     TAILQ_ENTRY(xcd_elf_strtab,) link;
@@ -66,11 +64,10 @@ typedef TAILQ_HEAD(xcd_elf_strtab_queue, xcd_elf_strtab,) xcd_elf_strtab_queue_t
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
-struct xcd_elf_interface
-{
+struct xcd_elf_interface {
     pid_t                    pid;
-    xcd_memory_t            *memory;
-    char                    *so_name;
+    xcd_memory_t* memory;
+    char* so_name;
     uintptr_t                load_bias;
     int                      is_gnu;
 
@@ -113,8 +110,7 @@ struct xcd_elf_interface
 };
 #pragma clang diagnostic pop
 
-static int xcd_elf_interface_check_valid(ElfW(Ehdr) *ehdr)
-{
+static int xcd_elf_interface_check_valid(ElfW(Ehdr)* ehdr) {
     //check magic
     if(0 != memcmp(ehdr->e_ident, ELFMAG, SELFMAG)) return XCC_ERRNO_FORMAT;
 
@@ -153,23 +149,20 @@ static int xcd_elf_interface_check_valid(ElfW(Ehdr) *ehdr)
     return 0;
 }
 
-static int xcd_elf_interface_read_program_headers(xcd_elf_interface_t *self, ElfW(Ehdr) *ehdr, uintptr_t *load_bias)
-{
+static int xcd_elf_interface_read_program_headers(xcd_elf_interface_t* self,
+                                                  ElfW(Ehdr)* ehdr, uintptr_t* load_bias) {
     size_t     i;
     ElfW(Phdr) phdr;
     int        try_save_load_bias = 0;
     int        r;
     
-    for(i = 0; i < ehdr->e_phnum * ehdr->e_phentsize; i += ehdr->e_phentsize)
-    {
-        if(0 != xcd_memory_read_fully(self->memory, ehdr->e_phoff + i, &phdr, sizeof(phdr)))
-        {
+    for(i = 0; i < ehdr->e_phnum * ehdr->e_phentsize; i += ehdr->e_phentsize) {
+        if(0 != xcd_memory_read_fully(self->memory, ehdr->e_phoff + i, &phdr, sizeof(phdr))) {
             r = XCC_ERRNO_MEM;
             goto err;
         }
 
-        switch(phdr.p_type)
-        {
+        switch(phdr.p_type) {
         case PT_LOAD:
             {
                 if(0 == (phdr.p_flags & PF_X)) continue;
@@ -205,8 +198,7 @@ static int xcd_elf_interface_read_program_headers(xcd_elf_interface_t *self, Elf
     return r;
 }
 
-static int xcd_elf_interface_read_section_headers(xcd_elf_interface_t *self, ElfW(Ehdr) *ehdr)
-{
+static int xcd_elf_interface_read_section_headers(xcd_elf_interface_t *self, ElfW(Ehdr) *ehdr) {
     size_t             i;
     ElfW(Shdr)         shdr;
     ElfW(Shdr)         str_shdr;
@@ -399,8 +391,7 @@ int xcd_elf_interface_create(xcd_elf_interface_t **self, pid_t pid, xcd_memory_t
     return 0;
 }
 
-xcd_elf_interface_t *xcd_elf_interface_gnu_create(xcd_elf_interface_t *self)
-{
+xcd_elf_interface_t *xcd_elf_interface_gnu_create(xcd_elf_interface_t *self) {
     xcd_elf_interface_t *gnu;
     xcd_memory_t        *memory = NULL;
     uint8_t             *src = NULL;

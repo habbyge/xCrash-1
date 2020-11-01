@@ -123,37 +123,33 @@ void xcd_thread_load_regs(xcd_thread_t *self)
     xcd_regs_load_from_ptregs(&(self->regs), regs, regs_len);
 }
 
-void xcd_thread_load_regs_from_ucontext(xcd_thread_t *self, ucontext_t *uc)
-{
+void xcd_thread_load_regs_from_ucontext(xcd_thread_t *self, ucontext_t *uc) {
     xcd_regs_load_from_ucontext(&(self->regs), uc);
 }
 
-int xcd_thread_load_frames(xcd_thread_t *self, xcd_maps_t *maps)
-{
+int xcd_thread_load_frames(xcd_thread_t *self, xcd_maps_t *maps) {
 #if XCD_THREAD_DEBUG
     XCD_LOG_DEBUG("THREAD: load frames, tid=%d, tname=%s", self->tid, self->tname);
 #endif
 
-    if(XCD_THREAD_STATUS_OK != self->status) return XCC_ERRNO_STATE; //do NOT ignore
+    if(XCD_THREAD_STATUS_OK != self->status)
+        return XCC_ERRNO_STATE; //do NOT ignore
 
     return xcd_frames_create(&(self->frames), &(self->regs), maps, self->pid);
 }
 
-int xcd_thread_record_info(xcd_thread_t *self, int log_fd, const char *pname)
-{
+int xcd_thread_record_info(xcd_thread_t *self, int log_fd, const char *pname) {
     return xcc_util_write_format(log_fd, "pid: %d, tid: %d, name: %s  >>> %s <<<\n",
                                  self->pid, self->tid, self->tname, pname);
 }
 
-int xcd_thread_record_regs(xcd_thread_t *self, int log_fd)
-{
+int xcd_thread_record_regs(xcd_thread_t *self, int log_fd) {
     if(XCD_THREAD_STATUS_OK != self->status) return 0; //ignore
     
     return xcd_regs_record(&(self->regs), log_fd);
 }
 
-int xcd_thread_record_backtrace(xcd_thread_t *self, int log_fd)
-{
+int xcd_thread_record_backtrace(xcd_thread_t *self, int log_fd) {
     if(XCD_THREAD_STATUS_OK != self->status) return 0; //ignore
 
     return xcd_frames_record_backtrace(self->frames, log_fd);

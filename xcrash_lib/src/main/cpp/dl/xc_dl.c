@@ -303,20 +303,28 @@ xc_dl_t *xc_dl_open(const char* pathname, int flags) {
         return NULL;
 
     xc_dl_t *self = NULL;
-    uintptr_t pkg[3] = {(uintptr_t)&self, (uintptr_t)pathname, (uintptr_t)flags};
+    uintptr_t pkg[3] = {
+        (uintptr_t) &self,
+        (uintptr_t) pathname,
+        (uintptr_t) flags
+    };
 
     bool is_linker = xc_dl_util_ends_with(pathname, XC_DL_CONST_BASENAME_LINKER);
-    xc_dl_iterate(xc_dl_iterate_cb, pkg,is_linker ? (int)XC_DL_WITH_LINKER : (int)XC_DL_DEFAULT);
+    xc_dl_iterate(xc_dl_iterate_cb, pkg,is_linker ? (int) XC_DL_WITH_LINKER : (int)XC_DL_DEFAULT);
 
     return self;
 }
 
 void xc_dl_close(xc_dl_t** self) {
-    if (NULL == self || NULL == *self) return;
+    if (NULL == self || NULL == *self)
+        return;
 
-    if (MAP_FAILED != (*self)->file) munmap((*self)->file, (*self)->file_sz);
-    if ((*self)->file_fd >= 0) close((*self)->file_fd);
-    if (NULL != (*self)->debugdata) free((*self)->debugdata);
+    if (MAP_FAILED != (*self)->file)
+        munmap((*self)->file, (*self)->file_sz);
+    if ((*self)->file_fd >= 0)
+        close((*self)->file_fd);
+    if (NULL != (*self)->debugdata)
+        free((*self)->debugdata);
     free(*self);
     *self = NULL;
 }
@@ -342,25 +350,27 @@ static uint32_t xc_dl_gnu_hash(const uint8_t* name) {
     return h;
 }
 
-static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t *self,
+static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self,
                                                          const char* sym_name,
                                                          bool need_func) {
 
-    uint32_t hash = xc_dl_sysv_hash((const uint8_t *)sym_name);
+    uint32_t hash = xc_dl_sysv_hash((const uint8_t*) sym_name);
 
-    for(uint32_t i = self->sysv_hash.buckets[hash % self->sysv_hash.buckets_cnt];
+    for (uint32_t i = self->sysv_hash.buckets[hash % self->sysv_hash.buckets_cnt];
             0 != i; i = self->sysv_hash.chains[i]) {
 
-        ElfW(Sym) *sym = self->dynsym + i;
-        if((need_func ? STT_FUNC : STT_OBJECT) != ELF_ST_TYPE(sym->st_info)) continue;
-        if(0 != strcmp(self->dynstr + sym->st_name, sym_name)) continue;
+        ElfW(Sym)* sym = self->dynsym + i;
+        if ((need_func ? STT_FUNC : STT_OBJECT) != ELF_ST_TYPE(sym->st_info))
+            continue;
+        if (0 != strcmp(self->dynstr + sym->st_name, sym_name))
+            continue;
         return sym;
     }
 
     return NULL;
 }
 
-static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t *self,
+static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
                                                         const char* sym_name,
                                                         bool need_func) {
 

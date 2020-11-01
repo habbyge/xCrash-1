@@ -204,8 +204,10 @@ static int xc_crash_exec_dumper(void* arg) {
         {.iov_base = xc_common_build_fingerprint, .iov_len = xc_crash_spot.build_fingerprint_len},
         {.iov_base = xc_common_app_id,            .iov_len = xc_crash_spot.app_id_len},
         {.iov_base = xc_common_app_version,       .iov_len = xc_crash_spot.app_version_len},
-        {.iov_base = xc_crash_dump_all_threads_allowlist,
-         .iov_len = xc_crash_spot.dump_all_threads_allowlist_len}
+        {
+            .iov_base = xc_crash_dump_all_threads_allowlist,
+            .iov_len = xc_crash_spot.dump_all_threads_allowlist_len
+        }
     };
 
     int iovs_cnt = (0 == xc_crash_spot.dump_all_threads_allowlist_len ? 11 : 12);
@@ -722,7 +724,7 @@ static void xc_crash_init_callback(JNIEnv* env) {
     }
 }
 
-int xc_crash_init(JNIEnv *env,
+int xc_crash_init(JNIEnv* env,
                   int rethrow,
                   unsigned int logcat_system_lines,
                   unsigned int logcat_events_lines,
@@ -733,7 +735,7 @@ int xc_crash_init(JNIEnv *env,
                   int dump_network_info,
                   int dump_all_threads,
                   unsigned int dump_all_threads_count_max,
-                  const char **dump_all_threads_allowlist,
+                  const char** dump_all_threads_allowlist,
                   size_t dump_all_threads_allowlist_len) {
 
     xc_crash_prepared_fd = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR));

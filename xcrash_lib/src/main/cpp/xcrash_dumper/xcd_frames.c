@@ -46,8 +46,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
-typedef struct xcd_frame
-{
+typedef struct xcd_frame {
     xcd_map_t* map;
     size_t     num;
     uintptr_t  pc;
@@ -62,8 +61,7 @@ typedef TAILQ_HEAD(xcd_frame_queue, xcd_frame,) xcd_frame_queue_t;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
-struct xcd_frames
-{
+struct xcd_frames {
     pid_t              pid;
     xcd_regs_t        *regs;
     xcd_maps_t        *maps;
@@ -72,8 +70,7 @@ struct xcd_frames
 };
 #pragma clang diagnostic pop
 
-static void xcd_frames_load(xcd_frames_t *self)
-{
+static void xcd_frames_load(xcd_frames_t *self) {
     xcd_frame_t  *frame;
     xcd_map_t    *map;
     xcd_map_t    *map_sp;
@@ -233,8 +230,7 @@ static void xcd_frames_load(xcd_frames_t *self)
     }
 }
 
-int xcd_frames_create(xcd_frames_t **self, xcd_regs_t *regs, xcd_maps_t *maps, pid_t pid)
-{
+int xcd_frames_create(xcd_frames_t **self, xcd_regs_t *regs, xcd_maps_t *maps, pid_t pid) {
     if(NULL == (*self = malloc(sizeof(xcd_frames_t)))) return XCC_ERRNO_NOMEM;
     (*self)->pid = pid;
     (*self)->regs = regs;
@@ -247,8 +243,7 @@ int xcd_frames_create(xcd_frames_t **self, xcd_regs_t *regs, xcd_maps_t *maps, p
     return 0;
 }
 
-int xcd_frames_record_backtrace(xcd_frames_t *self, int log_fd)
-{
+int xcd_frames_record_backtrace(xcd_frames_t *self, int log_fd) {
     xcd_frame_t *frame;
     xcd_elf_t   *elf;
     char        *name;
