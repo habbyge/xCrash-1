@@ -653,21 +653,25 @@ static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, siz
 
     //get total encoded length
     for (i = 0; i < allowlist_len; i++) {
-        if (NULL == allowlist[i])
+        if (NULL == allowlist[i]) {
             continue;
+        }
         len = strlen(allowlist[i]);
-        if (0 == len)
+        if (0 == len) {
             continue;
+        }
         total_encoded_len += xcc_b64_encode_max_len(len);
     }
-    if (0 == total_encoded_len)
+    if (0 == total_encoded_len) {
         return;
+    }
     total_encoded_len += allowlist_len; //separator ('|')
     total_encoded_len += 1; //terminating null byte ('\0')
 
     //alloc encode buffer
-    if (NULL == (total_encoded_allowlist = calloc(1, total_encoded_len)))
+    if (NULL == (total_encoded_allowlist = calloc(1, total_encoded_len))) {
         return;
+    }
 
     //to base64 encode each allowlist item
     for (i = 0; i < allowlist_len; i++) {
