@@ -68,33 +68,33 @@
 #define XC_CRASH_EMERGENCY_BUF_LEN         (30 * 1024)
 #define XC_CRASH_ERR_TITLE                 "\n\nxcrash error:\n"
 
-static pthread_mutex_t  xc_crash_mutex   = PTHREAD_MUTEX_INITIALIZER;
-static int              xc_crash_rethrow;
-static char            *xc_crash_dumper_pathname;
-static char            *xc_crash_emergency;
+static pthread_mutex_t xc_crash_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int xc_crash_rethrow;
+static char* xc_crash_dumper_pathname;
+static char* xc_crash_emergency;
 
 //the log file
-static int              xc_crash_prepared_fd = -1;
-static int              xc_crash_log_fd  = -1; // Crash日志文件的文件描述符
-static int              xc_crash_log_from_placeholder; // TODO: 不知是干啥的......
-static char             xc_crash_log_pathname[1024] = "\0"; // Crash 日志文件名
+static int xc_crash_prepared_fd = -1;
+static int xc_crash_log_fd  = -1; // Crash日志文件的文件描述符
+static int xc_crash_log_from_placeholder; // 表示crash日志从占位符之后append方式写入
+static char xc_crash_log_pathname[1024] = "\0"; // Crash 日志文件名
 
 //the crash
-static pid_t            xc_crash_tid = 0; // 发生Crash的线程id
-static int              xc_crash_dump_java_stacktrace = 0; //try to dump java stacktrace in java layer
-static uint64_t         xc_crash_time = 0; // 发生Crash的时间戳
+static pid_t xc_crash_tid = 0; // 发生Crash的线程id
+static int xc_crash_dump_java_stacktrace = 0; //try to dump java stacktrace in java layer
+static uint64_t xc_crash_time = 0; // 发生Crash的时间戳
 
 //callback
-static jmethodID        xc_crash_cb_method = NULL;
-static pthread_t        xc_crash_cb_thd;
-static int              xc_crash_cb_notifier = -1;
+static jmethodID xc_crash_cb_method = NULL;
+static pthread_t xc_crash_cb_thd;
+static int xc_crash_cb_notifier = -1;
 
 //for clone and fork
 #ifndef __i386__
 #define XC_CRASH_CHILD_STACK_LEN (16 * 1024)
 static void            *xc_crash_child_stack;
 #else
-static int              xc_crash_child_notifier[2];
+static int xc_crash_child_notifier[2]; // [0]为读端；[1]为写端，[1]写入的存于kernel，直到从读端[0]被读走
 #endif
 
 //info passed to the dumper process
@@ -109,18 +109,16 @@ static int xc_crash_fork(int (*fn)(void*)) {
     return clone(fn, xc_crash_child_stack, CLONE_VFORK | CLONE_FS | CLONE_UNTRACED, NULL);
 #else
     pid_t dumper_pid = fork();
-    if(-1 == dumper_pid) {
+    if (-1 == dumper_pid) {
         return -1;
-    } else if(0 == dumper_pid) {
-        //child process ...
+    } else if(0 == dumper_pid) { // child process ...
         char msg = 'a';
         XCC_UTIL_TEMP_FAILURE_RETRY(write(xc_crash_child_notifier[1], &msg, sizeof(char)));
         syscall(SYS_close, xc_crash_child_notifier[0]);
         syscall(SYS_close, xc_crash_child_notifier[1]);
 
         _exit(fn(NULL));
-    } else {
-        // parent process ...
+    } else { // parent process ...
         char msg;
         XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_crash_child_notifier[0], &msg, sizeof(char)));
         syscall(SYS_close, xc_crash_child_notifier[0]);
@@ -412,12 +410,12 @@ static int xc_crash_check_backtrace_valid() {
  * @param si 信号信息
  * @param uc FIXME: 未知
  */
-static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
+static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     struct timespec crash_tp;
-    int             restore_orig_ptracer = 0;
+    int restore_orig_ptracer = 0;
     int restore_orig_dumpable = 0;
     int orig_dumpable;
-    int             dump_ok = 0;
+    int dump_ok = 0;
 
     (void) sig;
 
@@ -430,11 +428,13 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
 
     // restore the original/default signal handler 恢复原始或默认的信号处理器
     if (xc_crash_rethrow) {
-        if(0 != xcc_signal_crash_unregister())
+        if (0 != xcc_signal_crash_unregister()) {
             goto exit;
+        }
     } else {
-        if (0 != xcc_signal_crash_ignore())
+        if (0 != xcc_signal_crash_ignore()) {
             goto exit;
+        }
     }
 
     // save crash time 保存发生crash的时间戳
@@ -459,7 +459,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     //    goto end;
     //}
 
-    // Yama LSM 是什么？
+    // Yama LSM 是什么？Linux Security Module
     // Yama是一个Linux安全模块，它收集不由内核本身处理的系统范围的DAC安全保护。
     // 1. 这可以在构建时使用CONFIG_SECURITY_YAMA进行选择，
     // 2. 并且可以在运行时通过/proc/sys/kernel/yama中的sysctl进行控制
@@ -469,14 +469,18 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     // 一个解决方案是，一些应用程序使用 prctl(PR_SET_DUMPABLE, ...) 专门禁止这种ptrace attach，但是很多应用程
     // 序并没有禁止。更通用的解决方案是，只允许子进程的父进程来attach到子进程，或者通过 CAP_SYS_PTRACE
 
+    // pctrl()进程控制函数(Linux)
     // set dumpable，这个系统调用指令是为进程指令而设计的，明确的选择取决于option，例如：为进程或线程执行名字
     // PR_GET_DUMPABLEL (Since Linux 2.4)Return(as the function result)the current state of the
     // calling process’s dumpable flag.
     // 返回处理器标志dumpable，用于设定支持dump，否则/data/tombstones目录下没有内容，这样才能拿到crash的现
     // 场信息，等于开启Native Log命令
+    // PR_SET_DUMPABLE：:arg2作为处理器标志dumpable被输入
     orig_dumpable = prctl(PR_GET_DUMPABLE);
     errno = 0;
-    // PR_SET_DUMPABLE，设置该进程可dump，arg2作为处理器标志dumpable被输入，这里设置为模式1，代表"限制的ptrace",
+    // PR_SET_DUMPABLE，arg2=1启用coredumps生成，设置进程可以dump
+    // 很多Linux系统默认不生成Core文件，此时App遇到Crash问题没有Core文件，就很难确定问题根因，因此需要开启CoreDump，
+    //
     if (0 != prctl(PR_SET_DUMPABLE, 1)) {
         xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                 "set dumpable failed, errno=%d\n\n", errno); // 该进程不支持dump
@@ -488,12 +492,12 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
     //set traceable (disable the ptrace restrictions introduced by Yama)
     //https://www.kernel.org/doc/Documentation/security/Yama.txt
     errno = 0;
-    // 设定ptrace行为，trace任意log，TODO: ing......这里继续......
+    // 设定ptrace行为，trace任意log
     // 参数2:
     // 0: 清除到默认状态
     // 给定pid: 只允许给定pid的进程 来attach到进当前进程
     // PR_SET_PTRACER_ANY: 所有进程都允许attach到当前进程
-    if (0 != prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)) { // 设置当前进程可attach
+    if (0 != prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)) { // 设置当前进程可trace
         if (EINVAL != errno) {
             xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                     "set traceable failed, errno=%d\n\n", errno);
@@ -506,7 +510,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
         restore_orig_ptracer = 1; // 表示需要恢复原始的trace设置
     }
 
-    //set crash spot info
+    // set crash spot info
     xc_crash_spot.crash_time = xc_crash_time;
     xc_crash_spot.crash_tid = xc_crash_tid;
     memcpy(&(xc_crash_spot.siginfo), si, sizeof(siginfo_t));
@@ -515,7 +519,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
 
     // spawn(产卵)crash dumper process
     errno = 0;
-    // 关键点：fork一个新的进程，专门用于dump发生crash的进程
+    // 关键点：fork一个新的进程，专门用于dump发生crash的进程，dumper_pid即新进程的pid
     pid_t dumper_pid = xc_crash_fork(xc_crash_exec_dumper);
     if (-1 == dumper_pid) {
         xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
@@ -528,12 +532,12 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void *uc) {
 
     // wait the crash dumper process terminated
     errno = 0;
-    int status = 0;
+    int status = 0; // TODO: ing.................................................................
     int wait_r = XCC_UTIL_TEMP_FAILURE_RETRY(waitpid(dumper_pid, &status, __WALL));
 
-    //the crash dumper process should have written a lot of logs,
-    //so we need to seek to the end of log file
-    if (xc_crash_log_from_placeholder) {
+    // the crash dumper process should have written a lot of logs, so we need to seek
+    // to the end of log file
+    if (xc_crash_log_from_placeholder) { //
         if ((xc_crash_log_fd = xc_common_seek_to_content_end(xc_crash_log_fd)) < 0) {
             goto end;
         }
@@ -785,11 +789,32 @@ int xc_crash_init(JNIEnv* env,
 
     //for clone and fork
 #ifndef __i386__
-    if(NULL == (xc_crash_child_stack = calloc(XC_CRASH_CHILD_STACK_LEN, 1))) return XCC_ERRNO_NOMEM;
-    xc_crash_child_stack = (void *)(((uint8_t *)xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
+    if (NULL == (xc_crash_child_stack = calloc(XC_CRASH_CHILD_STACK_LEN, 1)))
+        return XCC_ERRNO_NOMEM;
+    xc_crash_child_stack = (void*) (((uint8_t*) xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
 #else
-    if (0 != pipe2(xc_crash_child_notifier, O_CLOEXEC))
+    // 每个进程各自有不同的用户地址空间，任何一个进程的全局变量在另一个进程中都看不到，所以进程之间要交换数据必须
+    // 通过内核，在内核中开辟一块缓冲区，进程A把数据从用户空间拷到内核缓冲区，进程B再从内核缓冲区把数据读走，内核
+    // 提供的这种机制称为进程间通信.
+    // pipe创建一个管道，一种没有方向的数据通道，可用于进程间的通信，数组fd[2]被用于返回两个文件描述符，代表管道
+    // 的两端，fd[0]是管道的读端，fd[1]是管道的写端.
+    //
+    // 数据写入pipe的写端的时候被内核缓冲，直到被管道的读端读出.
+    // - 管道的创建
+    // #include <unistd.h>
+    // int pipe (int fd[2]) 返回:成功返回0，出错返回-1
+    // fd参数返回两个文件描述符,fd[0]指向管道的读端,fd[1]指向管道的写端。fd[1]的输出是fd[0]的输入
+    // - 管道如何实现进程间的通信
+    // 1. 父进程创建管道，得到两个⽂件描述符指向管道的两端(Linux世界一切皆文件的体现)
+    // 2. 父进程fork出子进程，⼦进程也有两个⽂件描述符指向同⼀管道
+    // 3. 父进程关闭fd[0], 子进程关闭fd[1], 即⽗进程关闭管道读端，⼦进程关闭管道写端(因为管道只支持单向通信).
+    //    ⽗进程可以往管道⾥写，⼦进程可以从管道⾥读，管道是⽤环形队列实现的，数据从写端流⼊、从读端流出，这样就
+    //    实现了进程间通信.
+    // O_CLOEXEC: Set the close-on-exec (FD_CLOEXEC) flag on the two new file descriptors. 这个flag
+    // 主要是为了避免文件描述符泄漏，当进程exec其他进程时，当前进程对应的fd自动关闭.
+    if (0 != pipe2(xc_crash_child_notifier, O_CLOEXEC)) {
         return XCC_ERRNO_SYS;
+    }
 #endif
     
     //register signal handler

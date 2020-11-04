@@ -81,36 +81,43 @@ static jmethodID                        xc_trace_cb_method = NULL;
 static int                              xc_trace_notifier = -1;
 
 static void xc_trace_load_signal_catcher_tid() {
-    char           buf[256];
-    DIR           *dir;
+    char buf[256];
+    DIR* dir;
     struct dirent *ent;
-    FILE          *f;
-    pid_t          tid;
-    uint64_t       sigblk;
+    FILE* f;
+    pid_t tid;
+    uint64_t sigblk;
 
     xc_trace_signal_catcher_tid = XC_TRACE_SIGNAL_CATCHER_TID_UNKNOWN;
 
     snprintf(buf, sizeof(buf), "/proc/%d/task", xc_common_process_id);
-    if(NULL == (dir = opendir(buf))) return;
-    while(NULL != (ent = readdir(dir))) {
+    if (NULL == (dir = opendir(buf)))
+        return;
+    while (NULL != (ent = readdir(dir))) {
         //get and check thread id
-        if(0 != xcc_util_atoi(ent->d_name, &tid)) continue;
-        if(tid < 0) continue;
+        if (0 != xcc_util_atoi(ent->d_name, &tid))
+            continue;
+        if (tid < 0)
+            continue;
 
         //check thread name
         xcc_util_get_thread_name(tid, buf, sizeof(buf));
-        if(0 != strcmp(buf, XC_TRACE_SIGNAL_CATCHER_THREAD_NAME)) continue;
+        if (0 != strcmp(buf, XC_TRACE_SIGNAL_CATCHER_THREAD_NAME))
+            continue;
 
         //check signal block masks
         sigblk = 0;
         snprintf(buf, sizeof(buf), "/proc/%d/status", tid);
-        if(NULL == (f = fopen(buf, "r"))) break;
-        while(fgets(buf, sizeof(buf), f))
-        {
-            if(1 == sscanf(buf, "SigBlk: %"SCNx64, &sigblk)) break;
+        if (NULL == (f = fopen(buf, "r")))
+            break;
+        while (fgets(buf, sizeof(buf), f)) {
+            if (1 == sscanf(buf, "SigBlk: %"SCNx64, &sigblk)) {
+                break;
+            }
         }
         fclose(f);
-        if(XC_TRACE_SIGNAL_CATCHER_THREAD_SIGBLK != sigblk) continue;
+        if (XC_TRACE_SIGNAL_CATCHER_THREAD_SIGBLK != sigblk)
+            continue;
 
         //found it
         xc_trace_signal_catcher_tid = tid;
@@ -120,16 +127,16 @@ static void xc_trace_load_signal_catcher_tid() {
 }
 
 static void xc_trace_send_sigquit() {
-    if(XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD == xc_trace_signal_catcher_tid)
+    if (XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD == xc_trace_signal_catcher_tid)
         xc_trace_load_signal_catcher_tid();
 
-    if(xc_trace_signal_catcher_tid >= 0)
+    if (xc_trace_signal_catcher_tid >= 0)
         syscall(SYS_tgkill, xc_common_process_id, xc_trace_signal_catcher_tid, SIGQUIT);
 }
 
 static int xc_trace_load_symbols() {
-    xc_dl_t *libcpp = NULL;
-    xc_dl_t *libart = NULL;
+    xc_dl_t* libcpp = NULL;
+    xc_dl_t* libart = NULL;
 
     //only once
     if (xc_trace_symbols_loaded)
@@ -143,15 +150,19 @@ static int xc_trace_load_symbols() {
     if (NULL == (xc_trace_libcpp_cerr = xc_dl_dynsym_object(libcpp, XCC_UTIL_LIBCPP_CERR)))
         goto end;
 
-    if (xc_common_api_level >= 30) libart =
-            xc_dl_open(XCC_UTIL_LIBART_R, XC_DL_DYNSYM);
+    if (xc_common_api_level >= 30) {
+        libart = xc_dl_open(XCC_UTIL_LIBART_R, XC_DL_DYNSYM);
+    }
+
     if (NULL == libart && xc_common_api_level >= 29)
         libart = xc_dl_open(XCC_UTIL_LIBART_Q, XC_DL_DYNSYM);
     if (NULL == libart && NULL == (libart = xc_dl_open(XCC_UTIL_LIBART, XC_DL_DYNSYM)))
         goto end;
     if (NULL == (xc_trace_libart_runtime_instance = (void **)
-            xc_dl_dynsym_object(libart, XCC_UTIL_LIBART_RUNTIME_INSTANCE)))
+            xc_dl_dynsym_object(libart, XCC_UTIL_LIBART_RUNTIME_INSTANCE))) {
+
         goto end;
+    }
 
     if (NULL == (xc_trace_libart_runtime_dump = (xcc_util_libart_runtime_dump_t)
             xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_RUNTIME_DUMP))) {
@@ -161,6 +172,7 @@ static int xc_trace_load_symbols() {
     if (xc_trace_is_lollipop) {
         if (NULL == (xc_trace_libart_dbg_suspend = (xcc_util_libart_dbg_suspend_t)
                 xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_SUSPEND)))
+
             goto end;
 
         if (NULL == (xc_trace_libart_dbg_resume = (xcc_util_libart_dbg_resume_t)
