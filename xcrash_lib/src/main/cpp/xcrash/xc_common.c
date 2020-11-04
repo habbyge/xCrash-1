@@ -61,10 +61,10 @@ char*         xc_common_kernel_version    = NULL;
 long          xc_common_time_zone         = 0;
 
 //app info
-char*         xc_common_app_id            = NULL;
-char*         xc_common_app_version       = NULL;
-char*         xc_common_app_lib_dir       = NULL;
-char*         xc_common_log_dir           = NULL;
+char* xc_common_app_id      = NULL;
+char* xc_common_app_version = NULL;
+char* xc_common_app_lib_dir = NULL;
+char* xc_common_log_dir     = NULL;
 
 //process info
 pid_t         xc_common_process_id        = 0;

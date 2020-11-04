@@ -21,7 +21,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wreserved-id-macro"
@@ -135,8 +135,8 @@ static int xc_crash_fork(int (*fn)(void*)) {
 static int xc_crash_exec_dumper(void* arg) {
     (void) arg;
 
-    //for fd exhaust
-    //keep the log_fd open for writing error msg before execl()
+    // for fd exhaust
+    // keep the log_fd open for writing error msg before execl()
     int i;
     for (i = 0; i < 1024; i++) {
         if (i != xc_crash_log_fd) {
@@ -147,7 +147,7 @@ static int xc_crash_exec_dumper(void* arg) {
     //hold the fd 0, 1, 2
     errno = 0;
     int devnull = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR));
-    if(devnull < 0) {
+    if (devnull < 0) {
         xcc_util_write_format_safe(xc_crash_log_fd,
                 XC_CRASH_ERR_TITLE"open /dev/null failed, errno=%d\n\n", errno);
         return 90;
@@ -408,7 +408,7 @@ static int xc_crash_check_backtrace_valid() {
  * Native层Crash信号处理器函数
  * @param sig 信号字
  * @param si 信号信息
- * @param uc FIXME: 未知
+ * @param uc Crash发生(捕获信号字)时的上下文参数
  */
 static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     struct timespec crash_tp;
@@ -531,35 +531,37 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     // parent process ... 此时是发生crash的父进程
 
     // wait the crash dumper process terminated
+    // 父进程(当前进程)一直阻塞等待，直到子进程(dump进程)执行完返回
     errno = 0;
-    int status = 0; // TODO: ing.................................................................
+    int status = 0;
     int wait_r = XCC_UTIL_TEMP_FAILURE_RETRY(waitpid(dumper_pid, &status, __WALL));
 
     // the crash dumper process should have written a lot of logs, so we need to seek
     // to the end of log file
-    if (xc_crash_log_from_placeholder) { //
+    if (xc_crash_log_from_placeholder) {
         if ((xc_crash_log_fd = xc_common_seek_to_content_end(xc_crash_log_fd)) < 0) {
             goto end;
         }
     }
     
     if (-1 == wait_r) {
-        xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                "waitpid failed, errno=%d\n\n", errno);
+        xcc_util_write_format_safe(xc_crash_log_fd,
+                XC_CRASH_ERR_TITLE"waitpid failed, errno=%d\n\n", errno);
         goto end;
     }
 
-    //check child process state
+    // TODO: ing .................................................................
+    // check child process state
     if (!(WIFEXITED(status)) || 0 != WEXITSTATUS(status)) {
         if (WIFEXITED(status) && 0 != WEXITSTATUS(status)) {
-            //terminated normally, but return / exit / _exit NON-zero
+            // terminated normally, but return / exit / _exit NON-zero
             xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                 "child terminated normally with non-zero exit status(%d), "
                 "dumper=%s\n\n", WEXITSTATUS(status), xc_crash_dumper_pathname);
 
             goto end;
         } else if(WIFSIGNALED(status)) {
-            //terminated by a signal
+            // terminated by a signal
             xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
                     "child terminated by a signal(%d)\n\n", WTERMSIG(status));
 
@@ -580,20 +582,20 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     dump_ok = 1;
 
  end:
-    // restore dumpable
+    // restore dumpable 还原当前进程的dump原始状态
     if (restore_orig_dumpable) {
         prctl(PR_SET_DUMPABLE, orig_dumpable);
     }
 
-    //restore traceable
+    // restore traceable
     if (restore_orig_ptracer) {
         prctl(PR_SET_PTRACER, 0); // 清除到默认状态
     }
 
-    //fallback
+    // fallback
     if (!dump_ok) {
         xc_fallback_get_emergency(si,
-                                  (ucontext_t *)uc,
+                                  (ucontext_t*) uc,
                                   xc_crash_tid,
                                   xc_crash_time,
                                   xc_crash_emergency,
@@ -751,8 +753,10 @@ int xc_crash_init(JNIEnv* env,
     if (NULL == (xc_crash_emergency = calloc(XC_CRASH_EMERGENCY_BUF_LEN, 1))) {
         return XCC_ERRNO_NOMEM;
     }
+
     if (NULL == (xc_crash_dumper_pathname = xc_util_strdupcat(
             xc_common_app_lib_dir, "/"XCC_UTIL_XCRASH_DUMPER_FILENAME))) {
+
         return XCC_ERRNO_NOMEM;
     }
 

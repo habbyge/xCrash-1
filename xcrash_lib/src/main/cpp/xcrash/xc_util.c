@@ -41,16 +41,19 @@
 #include "xcc_util.h"
 #include "xc_util.h"
 
-char *xc_util_strdupcat(const char *s1, const char *s2) {
-    size_t s1_len, s2_len;
-    char *s;
+char *xc_util_strdupcat(const char* s1, const char* s2) {
+    size_t s1_len;
+    size_t s2_len;
+    char* s;
 
-    if(NULL == s1 || NULL == s2) return NULL;
+    if (NULL == s1 || NULL == s2)
+        return NULL;
 
     s1_len = strlen(s1);
     s2_len = strlen(s2);
 
-    if(NULL == (s = malloc(s1_len + s2_len + 1))) return NULL;
+    if (NULL == (s = malloc(s1_len + s2_len + 1)))
+        return NULL;
     memcpy(s, s1, s1_len);
     memcpy(s + s1_len, s2, s2_len + 1);
 

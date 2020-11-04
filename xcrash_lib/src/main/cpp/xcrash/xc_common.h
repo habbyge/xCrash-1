@@ -58,24 +58,24 @@ extern char* xc_common_kernel_version;
 extern long xc_common_time_zone;
 
 //app info
-extern char         *xc_common_app_id;
-extern char         *xc_common_app_version;
-extern char         *xc_common_app_lib_dir;
-extern char         *xc_common_log_dir;
+extern char* xc_common_app_id;
+extern char* xc_common_app_version;
+extern char* xc_common_app_lib_dir;
+extern char* xc_common_log_dir;
 
 //process info
-extern pid_t         xc_common_process_id;
-extern char         *xc_common_process_name;
-extern uint64_t      xc_common_start_time;
-extern JavaVM       *xc_common_vm;
-extern jclass        xc_common_cb_class;
-extern int           xc_common_fd_null;
+extern pid_t xc_common_process_id;
+extern char* xc_common_process_name;
+extern uint64_t xc_common_start_time;
+extern JavaVM* xc_common_vm;
+extern jclass xc_common_cb_class;
+extern int xc_common_fd_null;
 
 //process statue
-extern sig_atomic_t  xc_common_native_crashed;
-extern sig_atomic_t  xc_common_java_crashed; // 标识是否发生Java Crash
+extern sig_atomic_t xc_common_native_crashed;
+extern sig_atomic_t xc_common_java_crashed; // 标识是否发生Java Crash
 
-void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls);
+void xc_common_set_vm(JavaVM* vm, JNIEnv* env, jclass cls);
 
 int xc_common_init(int         api_level,
                    const char* os_version,
@@ -89,8 +89,8 @@ int xc_common_init(int         api_level,
                    const char* app_lib_dir,
                    const char* log_dir);
 
-int xc_common_open_crash_log(char *pathname, size_t pathname_len, int *from_placeholder);
-int xc_common_open_trace_log(char *pathname, size_t pathname_len, uint64_t trace_time);
+int xc_common_open_crash_log(char* pathname, size_t pathname_len, int* from_placeholder);
+int xc_common_open_trace_log(char* pathname, size_t pathname_len, uint64_t trace_time);
 void xc_common_close_crash_log(int fd);
 void xc_common_close_trace_log(int fd);
 int xc_common_seek_to_content_end(int fd);

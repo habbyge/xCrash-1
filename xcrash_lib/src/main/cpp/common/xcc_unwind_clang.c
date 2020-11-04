@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-02.
+// Created on 2019-08-02.
 
 #include <stdio.h>
 #include <stdlib.h>

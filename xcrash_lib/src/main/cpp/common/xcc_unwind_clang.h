@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-02.
+// Created on 2019-08-02.
 
 #ifndef XCC_UNWIND_CLANG_H
 #define XCC_UNWIND_CLANG_H 1

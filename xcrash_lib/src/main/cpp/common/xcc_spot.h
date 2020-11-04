@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #ifndef XCC_SPOT_H
 #define XCC_SPOT_H 1
@@ -41,7 +41,7 @@ typedef struct {
     //set when crashed
     pid_t        crash_tid;
     siginfo_t    siginfo;
-    ucontext_t   ucontext;
+    ucontext_t   ucontext; // crash发生的上下文
     uint64_t     crash_time;
 
     //set when inited

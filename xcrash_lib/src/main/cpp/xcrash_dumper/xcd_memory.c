@@ -41,25 +41,31 @@ struct xcd_memory {
     const xcd_memory_handlers_t* handlers;
 };
 
-int xcd_memory_create(xcd_memory_t **self, void *map_obj, pid_t pid, void *maps_obj) {
-    xcd_map_t  *map  = (xcd_map_t *)map_obj;
-    xcd_maps_t *maps = (xcd_maps_t *)maps_obj;
+int xcd_memory_create(xcd_memory_t** self, void* map_obj, pid_t pid, void* maps_obj) {
+    xcd_map_t* map  = (xcd_map_t*) map_obj;
+    xcd_maps_t* maps = (xcd_maps_t*) maps_obj;
     
-    if(map->end <= map->start) return XCC_ERRNO_INVAL;
-    if(map->flags & XCD_MAP_PORT_DEVICE) return XCC_ERRNO_DEV;
+    if (map->end <= map->start)
+        return XCC_ERRNO_INVAL;
+    if (map->flags & XCD_MAP_PORT_DEVICE)
+        return XCC_ERRNO_DEV;
     
-    if(NULL == (*self = malloc(sizeof(xcd_memory_t)))) return XCC_ERRNO_NOMEM;
+    if (NULL == (*self = malloc(sizeof(xcd_memory_t))))
+        return XCC_ERRNO_NOMEM;
     
     //try memory from file
     (*self)->handlers = &xcd_memory_file_handlers;
-    if(0 == xcd_memory_file_create(&((*self)->obj), *self, map, maps)) return 0;
+    if (0 == xcd_memory_file_create(&((*self)->obj), *self, map, maps))
+        return 0;
 
     //try memory from remote ptrace
     //Sometimes, data only exists in the remote process's memory such as vdso data on x86.
-    if(!(map->flags & PROT_READ)) return XCC_ERRNO_PERM;
+    if (!(map->flags & PROT_READ))
+        return XCC_ERRNO_PERM;
     (*self)->handlers = &xcd_memory_remote_handlers;
-    if(0 == xcd_memory_remote_create(&((*self)->obj), map, pid)) return 0;
-    (void)pid;
+    if (0 == xcd_memory_remote_create(&((*self)->obj), map, pid))
+        return 0;
+    (void) pid;
 
     free(*self);
     return XCC_ERRNO_MEM;
@@ -67,9 +73,11 @@ int xcd_memory_create(xcd_memory_t **self, void *map_obj, pid_t pid, void *maps_
 
 //for ELF header info unzipped from .gnu_debugdata in the local memory
 int xcd_memory_create_from_buf(xcd_memory_t **self, uint8_t *buf, size_t len) {
-    if(NULL == (*self = malloc(sizeof(xcd_memory_t)))) return XCC_ERRNO_NOMEM;
+    if (NULL == (*self = malloc(sizeof(xcd_memory_t))))
+        return XCC_ERRNO_NOMEM;
     (*self)->handlers = &xcd_memory_buf_handlers;
-    if(0 == xcd_memory_buf_create(&((*self)->obj), buf, len)) return 0;
+    if (0 == xcd_memory_buf_create(&((*self)->obj), buf, len))
+        return 0;
 
     free(*self);
     return XCC_ERRNO_MEM;
@@ -98,11 +106,13 @@ int xcd_memory_read_string(xcd_memory_t* self, uintptr_t addr,
     int    r;
     
     while(i < size && i < max_read) {
-        if (0 != (r = xcd_memory_read_fully(self, addr, &value, sizeof(value))))
+        if (0 != (r = xcd_memory_read_fully(self, addr, &value, sizeof(value)))) {
             return r;
+        }
         dst[i] = value;
-        if ('\0' == value)
+        if ('\0' == value) {
             return 0;
+        }
         addr++;
         i++;
     }
