@@ -118,7 +118,6 @@ typedef struct {
  * prctl(PR_SET_PTRACER涉及到LSM（Linux security module)Linux安全模块中yama部分。
  * Yama主要是对Ptrace函数调用进行访问控制，利用ptrace函数，不仅可以劫持另一个进程的调用，修改系统函数调用和改变返回
  * 值，而且可以向另一个函数注入代码，修改eip，进入自己的逻辑。这个函数广泛用于调试和信号跟踪工具。
- * TODO: 这里继续......ing......
  */
 static xcc_signal_crash_info_t xcc_signal_crash_info[] = {
     // 调用abort()/kill()/tkill()/tgkill()自杀，或被其他进程通过kill()/tkill()/tgkill()他杀
@@ -164,6 +163,10 @@ int xcc_signal_crash_register(void (*handler)(int, siginfo_t*, void*)) {
     // 的位置及属性信息。第2个参数old_sigstack也是一个stack_t类型指针，它用来返回上一次建立的“可替换信号栈”的信
     // 息(如果有的话)。
     if (0 != sigaltstack(&ss, NULL)) {
+        // 用于替换信号处理函数栈，有的说法是设置紧急函数栈。其原因是一般情况下，信号处理函数被调用时，内核会在进程
+        // 的栈上为其创建一个栈帧。但是这里就会有一个问题，如果栈的增长到达了栈的资源限制值 (RLIMIT_STACK，使用
+        // ulimit 命令可以查看，一般为 8M)，或是栈已经长得太大(没有 RLIMIT_STACK 的限制)，以致到达了映射内存(
+        // mapped memory)边界，那么此时信号处理函数就没法得到栈帧的分配。
         return XCC_ERRNO_SYS;
     }
 
@@ -236,14 +239,19 @@ int xcc_signal_crash_queue(siginfo_t* si) {
 static sigset_t xcc_signal_trace_oldset;
 static struct sigaction xcc_signal_trace_oldact;
 
+/**
+ * 低版本(api level < 21)Anr监控方案: 监听 /data/anr 目录的变化。
+ * 高版本(api level >= 21)方案: app已经访问不到 /data/anr 了, xCrash是不是有提供了其他的实现方案呢？实际上
+ * 它上捕获了 SIGQUIT 信号，这个是 Android App 发生 ANR 时由 ActivityMangerService 向 App 发送的信号.
+ */
 int xcc_signal_trace_register(void (*handler)(int, siginfo_t*, void*)) {
     int r;
     sigset_t set;
     struct sigaction act;
 
-    //un-block the SIGQUIT mask for current thread, hope this is the main thread
+    // un-block the SIGQUIT mask for current thread, hope this is the main thread
     sigemptyset(&set);
-    sigaddset(&set, SIGQUIT);
+    sigaddset(&set, SIGQUIT); // 增加一个信号到信号集
     if (0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset)))
         return r;
 
@@ -252,7 +260,7 @@ int xcc_signal_trace_register(void (*handler)(int, siginfo_t*, void*)) {
     sigfillset(&act.sa_mask);
     act.sa_sigaction = handler;
     act.sa_flags = SA_RESTART | SA_SIGINFO;
-    if (0 != sigaction(SIGQUIT, &act, &xcc_signal_trace_oldact)) {
+    if (0 != sigaction(SIGQUIT, &act, &xcc_signal_trace_oldact)) { // 注册之
         pthread_sigmask(SIG_SETMASK, &xcc_signal_trace_oldset, NULL);
         return XCC_ERRNO_SYS;
     }

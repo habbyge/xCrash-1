@@ -29,6 +29,7 @@ import android.os.Build;
 import android.text.TextUtils;
 
 /**
+ * 分析: https://juejin.im/post/6844904077428686862
  * xCrash is a crash reporting library for Android APP.
  * xCrash提供捕获异常的配置和初始化的功能
  * 该sdk的入口类

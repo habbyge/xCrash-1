@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #include <unistd.h>
 #include <errno.h>
@@ -50,10 +50,8 @@
 
 #define XCC_UTIL_TIME_FORMAT "%04d-%02d-%02dT%02d:%02d:%02d.%03ld%c%02ld%02ld"
 
-const char* xcc_util_get_signame(const siginfo_t* si)
-{
-    switch (si->si_signo)
-    {
+const char* xcc_util_get_signame(const siginfo_t* si) {
+    switch (si->si_signo) {
     case SIGABRT:   return "SIGABRT";
     case SIGBUS:    return "SIGBUS";
     case SIGFPE:    return "SIGFPE";
@@ -66,8 +64,7 @@ const char* xcc_util_get_signame(const siginfo_t* si)
     }
 }
 
-const char* xcc_util_get_sigcodename(const siginfo_t* si)
-{
+const char* xcc_util_get_sigcodename(const siginfo_t* si) {
     // Try the signal-specific codes...
     switch (si->si_signo) {
     case SIGBUS:
@@ -230,8 +227,7 @@ int xcc_util_atoi(const char *str, int *i)
     return 0;
 }
 
-char *xcc_util_trim(char *start)
-{
+char* xcc_util_trim(char* start) {
     char *end;
 
     if(NULL == start) return NULL;
@@ -437,8 +433,7 @@ int xcc_util_record_sub_section_from(int fd, const char* path, const char* title
     return r;
 }
 
-static const char *xcc_util_su_pathnames[] =
-{
+static const char *xcc_util_su_pathnames[] = {
     "/data/local/su",
     "/data/local/bin/su",
     "/data/local/xbin/su",
@@ -569,7 +564,8 @@ static int xcc_util_record_logcat_buffer(int fd, pid_t pid, int api_level,
     xcc_fmt_snprintf(cmd, sizeof(cmd), "/system/bin/logcat -b %s -d -v threadtime -t %u %s*:%c",
                      buffer, lines, pid_filter, priority);
 
-    if(0 != (r = xcc_util_write_format_safe(fd, "--------- tail end of log %s (%s)\n", buffer, cmd))) return r;
+    if (0 != (r = xcc_util_write_format_safe(fd, "--------- tail end of log %s (%s)\n", buffer, cmd)))
+        return r;
 
     if(NULL != (fp = popen(cmd, "r")))
     {
@@ -597,13 +593,18 @@ int xcc_util_record_logcat(int fd,
     if(0 != (r = xcc_util_write_str(fd, "logcat:\n"))) return r;
 
     if(logcat_main_lines > 0)
-        if(0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "main", logcat_main_lines, 'D'))) return r;
+        if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "main", logcat_main_lines, 'D')))
+            return r;
     
     if(logcat_system_lines > 0)
-        if(0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "system", logcat_system_lines, 'W'))) return r;
+        if(0 != (r = xcc_util_record_logcat_buffer(fd, pid,
+                api_level, "system", logcat_system_lines, 'W')))
+            return r;
 
     if(logcat_events_lines > 0)
-        if(0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "events", logcat_events_lines, 'I'))) return r;
+        if(0 != (r = xcc_util_record_logcat_buffer(fd, pid,
+                api_level, "events", logcat_events_lines, 'I')))
+            return r;
 
     if(0 != (r = xcc_util_write_str(fd, "\n"))) return r;
 
@@ -626,12 +627,11 @@ int xcc_util_record_fds(int fd, pid_t pid)
     if(0 != (r = xcc_util_write_str(fd, "open files:\n"))) return r;
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/fd", pid);
-    if((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0) goto end;
+    if((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0)
+        goto end;
     
-    while((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd2, buf, sizeof(buf))) > 0)
-    {
-        for(i = 0; i < n;)
-        {
+    while((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd2, buf, sizeof(buf))) > 0) {
+        for(i = 0; i < n;) {
             ent = (xcc_util_dirent_t *)(buf + i);
 
             //get the fd
@@ -652,7 +652,8 @@ int xcc_util_record_fds(int fd, pid_t pid)
                 fd_path[len] = '\0';
             
             //dump
-            if(0 != (r = xcc_util_write_format_safe(fd, "    fd %d: %s\n", fd_num, fd_path))) goto clean;
+            if(0 != (r = xcc_util_write_format_safe(fd, "    fd %d: %s\n", fd_num, fd_path)))
+                goto clean;
             
         next:
             i += ent->d_reclen;
@@ -670,39 +671,51 @@ int xcc_util_record_fds(int fd, pid_t pid)
     return r;
 }
 
-int xcc_util_record_network_info(int fd, pid_t pid, int api_level)
-{
+int xcc_util_record_network_info(int fd, pid_t pid, int api_level) {
     int  r;
     char path[128];
 
-    if(0 != (r = xcc_util_write_str(fd, "network info:\n"))) return r;
+    if (0 != (r = xcc_util_write_str(fd, "network info:\n")))
+        return r;
 
-    if(api_level >= 29)
-    {
-        if(0 != (r = xcc_util_write_str(fd, "Not supported on Android Q (API level 29) and later.\n"))) return r;
-    }
-    else
-    {
+    if (api_level >= 29) {
+        if(0 != (r = xcc_util_write_str(fd, "Not supported on Android Q (API level 29) and later.\n")))
+            return r;
+    } else {
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " TCP over IPv4 (From: /proc/PID/net/tcp)\n", 1024))) return r;
+        if(0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " TCP over IPv4 (From: /proc/PID/net/tcp)\n", 1024)))
+            return r;
 
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp6", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " TCP over IPv6 (From: /proc/PID/net/tcp6)\n", 1024))) return r;
+        if(0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " TCP over IPv6 (From: /proc/PID/net/tcp6)\n", 1024)))
+            return r;
 
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/udp", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " UDP over IPv4 (From: /proc/PID/net/udp)\n", 1024))) return r;
+        if(0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " UDP over IPv4 (From: /proc/PID/net/udp)\n", 1024)))
+            return r;
 
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/udp6", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " UDP over IPv6 (From: /proc/PID/net/udp6)\n", 1024))) return r;
+        if(0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " UDP over IPv6 (From: /proc/PID/net/udp6)\n", 1024)))
+            return r;
 
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/icmp", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " ICMP in IPv4 (From: /proc/PID/net/icmp)\n", 256))) return r;
+        if(0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " ICMP in IPv4 (From: /proc/PID/net/icmp)\n", 256)))
+            return r;
 
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/icmp6", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n", 256))) return r;
+        if(0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n", 256)))
+            return r;
 
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/unix", pid);
-        if(0 != (r = xcc_util_record_sub_section_from(fd, path, " UNIX domain (From: /proc/PID/net/unix)\n", 256))) return r;
+        if (0 != (r = xcc_util_record_sub_section_from(fd, path,
+                " UNIX domain (From: /proc/PID/net/unix)\n", 256)))
+            return r;
     }
 
     if(0 != (r = xcc_util_write_str(fd, "\n"))) return r;

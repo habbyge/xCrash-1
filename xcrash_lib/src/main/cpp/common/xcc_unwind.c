@@ -31,17 +31,13 @@
 #include "xcc_unwind_libunwind.h"
 #include "xcc_unwind_clang.h"
 
-void xcc_unwind_init(int api_level)
-{
+void xcc_unwind_init(int api_level) {
 #if defined(__arm__) || defined(__i386__)
-    if(api_level >= 16 && api_level <= 20)
-    {
+    if (api_level >= 16 && api_level <= 20) {
         xcc_unwind_libcorkscrew_init();
     }
 #endif
-    
-    if(api_level >= 21 && api_level <= 23)
-    {
+    if (api_level >= 21 && api_level <= 23) {
         xcc_unwind_libunwind_init();
     }
 }

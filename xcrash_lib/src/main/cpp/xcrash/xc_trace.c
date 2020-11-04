@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-13.
+// Created on 2019-08-13.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,34 +56,34 @@
 #define XC_TRACE_SIGNAL_CATCHER_THREAD_NAME   "Signal Catcher"
 #define XC_TRACE_SIGNAL_CATCHER_THREAD_SIGBLK 0x1000
 
-static int                              xc_trace_is_lollipop = 0;
+static int xc_trace_is_lollipop = 0;
 static pid_t xc_trace_signal_catcher_tid = XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD;
 
-//symbol address in libc++.so and libart.so
-static void                            *xc_trace_libcpp_cerr = NULL;
-static void                           **xc_trace_libart_runtime_instance = NULL;
-static xcc_util_libart_runtime_dump_t   xc_trace_libart_runtime_dump = NULL;
-static xcc_util_libart_dbg_suspend_t    xc_trace_libart_dbg_suspend = NULL;
-static xcc_util_libart_dbg_resume_t     xc_trace_libart_dbg_resume = NULL;
-static int                              xc_trace_symbols_loaded = 0;
-static int                              xc_trace_symbols_status = XCC_ERRNO_NOTFND;
+// symbol address in libc++.so and libart.so
+static void* xc_trace_libcpp_cerr = NULL;
+static void** xc_trace_libart_runtime_instance = NULL;
+static xcc_util_libart_runtime_dump_t xc_trace_libart_runtime_dump = NULL;
+static xcc_util_libart_dbg_suspend_t xc_trace_libart_dbg_suspend = NULL;
+static xcc_util_libart_dbg_resume_t xc_trace_libart_dbg_resume = NULL;
+static int xc_trace_symbols_loaded = 0;
+static int xc_trace_symbols_status = XCC_ERRNO_NOTFND;
 
-//init parameters
-static int                              xc_trace_rethrow;
-static unsigned int                     xc_trace_logcat_system_lines;
-static unsigned int                     xc_trace_logcat_events_lines;
-static unsigned int                     xc_trace_logcat_main_lines;
-static int                              xc_trace_dump_fds;
-static int                              xc_trace_dump_network_info;
+// init parameters
+static int xc_trace_rethrow;
+static unsigned int xc_trace_logcat_system_lines;
+static unsigned int xc_trace_logcat_events_lines;
+static unsigned int xc_trace_logcat_main_lines;
+static int xc_trace_dump_fds;
+static int xc_trace_dump_network_info;
 
 //callback
-static jmethodID                        xc_trace_cb_method = NULL;
-static int                              xc_trace_notifier = -1;
+static jmethodID xc_trace_cb_method = NULL;
+static int xc_trace_notifier = -1; // trace文件的描述符(fd)
 
 static void xc_trace_load_signal_catcher_tid() {
     char buf[256];
     DIR* dir;
-    struct dirent *ent;
+    struct dirent* ent;
     FILE* f;
     pid_t tid;
     uint64_t sigblk;
@@ -134,6 +134,17 @@ static void xc_trace_send_sigquit() {
         syscall(SYS_tgkill, xc_common_process_id, xc_trace_signal_catcher_tid, SIGQUIT);
 }
 
+/**
+ * 加载符号表
+ * xc_dl_create() 和 xc_dl_sym() 是里面比较重要的两个函数实现。xc_dl_create 是寻找到 so 被 mmap 所加载的虚
+ * 拟地址，xc_dl_sym 是计算 so 中相应符号(函数)的虚拟地址。其主要是从 libc++.so 中查找符号 _ZNSt3__14cerrE，
+ * 对的，就是 cerr；从 libart.so 中查找符号 _ZN3art7Runtime9instance_E 以及
+ * _ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE 在进程虚拟空间中
+ * 的地址。针对 L 还需要 _ZN3art3Dbg9SuspendVMEv 和 _ZN3art3Dbg8ResumeVMEv.
+ *
+ * xc_dl_create() 的具体实现在 xc_dl_find_map_start() 获取 so 的基地址、xc_dl_file_open() 通过 mmap 加载
+ * so、xc_dl_parse_elf() 解析 so。这里的解析 so ，其实就是解析  elf 文件，这个比较复杂，需要对 elf 文件格式熟悉.
+ */
 static int xc_trace_load_symbols() {
     xc_dl_t* libcpp = NULL;
     xc_dl_t* libart = NULL;
@@ -247,18 +258,21 @@ static int xc_trace_write_header(int fd, uint64_t trace_time) {
             xc_common_process_id, xc_common_process_name);
 }
 
+/**
+ * SIGQUIT信号发生后，等待处理函数(注意：非信号处理函数)，在子线程中执行...
+ */
 static void* xc_trace_dumper(void* arg) {
     JNIEnv* env = NULL;
-    uint64_t        data;
-    uint64_t        trace_time;
-    int             fd;
-    struct timeval  tv;
-    char            pathname[1024];
-    jstring         j_pathname;
+    uint64_t data;
+    uint64_t trace_time;
+    int fd;
+    struct timeval tv;
+    char pathname[1024];
+    jstring j_pathname;
     
     (void) arg;
     
-    pthread_detach(pthread_self());
+    pthread_detach(pthread_self()); // 设置当前子线程不让其父线程等待
 
     JavaVMAttachArgs attach_args = {
         .version = XC_JNI_VERSION,
@@ -266,45 +280,54 @@ static void* xc_trace_dumper(void* arg) {
         .group   = NULL
     };
 
-    if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args))
+    // 这个函数的作用是：绑定 JavaVM 到当前线程上，为了让当前子线程获取env对象实例.
+    // 很多时候，你的native代码建立自己的线程（比如这里建立anr dump线程），并在合适的时候回调Java代码，我们没
+    // 有办法像上面那样直接获得JNIEnv，获取它的实例需要把你的线程Attach到JavaVM上去，调用的方法是
+    // JavaVM::AttachCurrentThread()，使用完之后还需要调用 JavaVM::DetachCurrentThread()函数解绑线程
+    // 需要注意的是对于一个已经绑定到JavaVM上的线程调用AttachCurrentThread不会有任何影响。如果你的线程已经绑定
+    // 到了JavaVM上，你还可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回JNI_EDETACHED.
+    if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
         goto exit;
+    }
 
     while (1) {
-        //block here, waiting for sigquit
+        // block here, waiting for sigquit信号
         XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_trace_notifier, &data, sizeof(data)));
         
-        //check if process already crashed
-        if (xc_common_native_crashed || xc_common_java_crashed)
-            break;
+        // check if process already crashed
+        if (xc_common_native_crashed || xc_common_java_crashed) {
+            break; // 被native crash 或 java crash捷足先登了，这里不处理anr(sigquit信号)了
+        }
 
-        //trace time
+        // trace time
         if (0 != gettimeofday(&tv, NULL))
             break;
         trace_time = (uint64_t)(tv.tv_sec) * 1000 * 1000 + (uint64_t) tv.tv_usec;
 
-        //Keep only one current trace.
-        if (0 != xc_trace_logs_clean())
+        // Keep only one current trace.
+        if (0 != xc_trace_logs_clean()) // TODO: ing......
             continue;
 
-        //create and open log file
+        // create and open log file
         if ((fd = xc_common_open_trace_log(pathname, sizeof(pathname), trace_time)) < 0)
             continue;
 
-        //write header info
-        if(0 != xc_trace_write_header(fd, trace_time)) goto end;
+        // write header info
+        if (0 != xc_trace_write_header(fd, trace_time))
+            goto end;
 
-        //write trace info from ART runtime
+        // write trace info from ART runtime TODO: 这里是重点
         if (0 != xcc_util_write_format(fd, XCC_UTIL_THREAD_SEP"Cmd line: %s\n", xc_common_process_name))
             goto end;
         if (0 != xcc_util_write_str(fd, "Mode: ART DumpForSigQuit\n"))
             goto end;
-        if (0 != xc_trace_load_symbols()) {
+        if (0 != xc_trace_load_symbols()) { // 加载符号表
             if (0 != xcc_util_write_str(fd, "Failed to load symbols.\n"))
                 goto end;
             goto skip;
         }
         if (dup2(fd, STDERR_FILENO) < 0) {
-            if(0 != xcc_util_write_str(fd, "Failed to duplicate FD.\n"))
+            if (0 != xcc_util_write_str(fd, "Failed to duplicate FD.\n"))
                 goto end;
             goto skip;
         }
@@ -353,7 +376,8 @@ static void* xc_trace_dumper(void* arg) {
         XC_JNI_IGNORE_PENDING_EXCEPTION();
         (*env)->DeleteLocalRef(env, j_pathname);
     }
-    
+
+    // 使用完之后还需要调用 JavaVM::DetachCurrentThread()函数解绑线程
     (*xc_common_vm)->DetachCurrentThread(xc_common_vm);
 
  exit:
@@ -362,19 +386,26 @@ static void* xc_trace_dumper(void* arg) {
     return NULL;
 }
 
-static void xc_trace_handler(int sig, siginfo_t *si, void *uc) {
+/**
+ * SIGQUIT处理函数
+ */
+static void xc_trace_handler(int sig, siginfo_t* si, void* uc) {
     uint64_t data;
     
     (void) sig;
     (void) si;
     (void) uc;
 
+    // 发生SIGQUIT异常信号，向eventid中写入数据，通知出去......，目前dump线程正在阻塞等待这个eventid
     if (xc_trace_notifier >= 0) {
         data = 1;
         XCC_UTIL_TEMP_FAILURE_RETRY(write(xc_trace_notifier, &data, sizeof(data)));
     }
 }
 
+/**
+ * 获取 Java 的 methodId
+ */
 static void xc_trace_init_callback(JNIEnv* env) {
     if(NULL == xc_common_cb_class) return;
     
@@ -388,6 +419,9 @@ static void xc_trace_init_callback(JNIEnv* env) {
     xc_trace_cb_method = NULL;
 }
 
+/**
+ * 主要是用来获取ANR的trace.
+ */
 int xc_trace_init(JNIEnv* env,
                   int rethrow,
                   unsigned int logcat_system_lines,
@@ -399,9 +433,11 @@ int xc_trace_init(JNIEnv* env,
     int r;
     pthread_t thd;
 
-    //capture SIGQUIT only for ART
-    if (xc_common_api_level < 21)
+    // capture SIGQUIT only for ART
+    // 只是针对Android 5.0以上，因为其主要是用来获取ANR的trace，<=21，使用监控/data/anr目录变更的方案
+    if (xc_common_api_level < 21) {
         return 0;
+    }
 
     //is Android Lollipop (5.x)?
     xc_trace_is_lollipop = ((21 == xc_common_api_level || 22 == xc_common_api_level) ? 1 : 0);
@@ -413,18 +449,36 @@ int xc_trace_init(JNIEnv* env,
     xc_trace_dump_fds = dump_fds;
     xc_trace_dump_network_info = dump_network_info;
 
-    //init for JNI callback
+    // init for JNI callback
     xc_trace_init_callback(env);
 
-    //create event FD
+    // create event FD，eventfd是Linux的一个系统调用，创建一个文件描述符用于事件通知，eventfd()创建一个
+    // eventfd对象，可以由用户空间应用程序实现事件等待/通知机制，或由内核通知用户空间应用程序事件，该对象包
+    // 含了由内核维护的无符号64位整数计数器count 。使用参数arg1初始化此计数器，flags可以是以下值的 OR 运算
+    // 结果，用以改变 eventfd 的行为:
+    // 1. EFD_CLOEXEC (since Linux 2.6.27)
+    //    文件被设置成 O_CLOEXEC，创建子进程 (fork) 时不继承父进程的文件描述符。
+    // 2. EFD_NONBLOCK (since Linux 2.6.27)
+    //    文件被设置成 O_NONBLOCK，执行 read / write 操作时，不会阻塞。
+    // 3. EFD_SEMAPHORE (since Linux 2.6.30)
+    //    提供类似信号量语义的read操作，简单说就是计数值count 递减1
+    // - 操作方法:
+    // 一切皆为文件是Linux内核设计的一种高度抽象，eventfd的实现也不例外，我们可以使用操作文件的方法操作eventfd.
+    // read(): 读取count值后置0。如果设置EFD_SEMAPHORE，读到的值为1，同时count值递减1。
+    // write(): 其实是执行add操作，累加count值。
+    // epoll()/poll()/select(): 支持IO多路复用操作。
+    // close(): 关闭文件描述符，eventfd对象引用计数减1，若减为0，则释放eventfd对象资源。
+    // - 使用场景
+    // 在 pipe 仅用于发出事件信号的所有情况下，都可以使用 eventfd 取而代之。
     if (0 > (xc_trace_notifier = eventfd(0, EFD_CLOEXEC)))
         return XCC_ERRNO_SYS;
 
-    //register signal handler
+    // register signal handler
     if (0 != (r = xcc_signal_trace_register(xc_trace_handler)))
         goto err2;
 
-    //create thread for dump trace
+    // create thread for dump trace
+    // 启动一个线程，并在线程响应函数中等待ANR的发生。这里的等待机制同样是用的eventfd
     if (0 != (r = pthread_create(&thd, NULL, xc_trace_dumper, NULL)))
         goto err1;
 

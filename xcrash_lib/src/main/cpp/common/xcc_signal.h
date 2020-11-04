@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #ifndef XCC_SIGNAL_CRASH_H
 #define XCC_SIGNAL_CRASH_H 1
@@ -33,12 +33,12 @@
 extern "C" {
 #endif
 
-int xcc_signal_crash_register(void (*handler)(int, siginfo_t *, void *));
+int xcc_signal_crash_register(void (*handler)(int, siginfo_t*, void*));
 int xcc_signal_crash_unregister(void);
 int xcc_signal_crash_ignore(void);
 int xcc_signal_crash_queue(siginfo_t* si);
 
-int xcc_signal_trace_register(void (*handler)(int, siginfo_t *, void *));
+int xcc_signal_trace_register(void (*handler)(int, siginfo_t*, void*));
 void xcc_signal_trace_unregister(void);
 
 #ifdef __cplusplus

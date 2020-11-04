@@ -63,6 +63,7 @@ import static android.os.FileObserver.CLOSE_WRITE;
  * /data/anr/traces.txt。因此可以猜想到应用程序可以监控/data/anr/文件是否有写入，即可判断是否发生ANR异常。如何
  * 监控文件夹，Android提供了一个类“FileObserver”，可以监控文件。但是通过这种方式监控是否发生ANR异常，对Android
  * 的版本有要求，API版本必须<21。xCrash对应API版本<21的也是采用此种方式，腾讯提供的Buly也是采用该种方式。
+ * xCrash在api>=21时，采用捕获SIGQUIT信号的方案，来处理anr；
  *
  * 微信的Matrix采用 "旁路方案" 的方式，另辟蹊径来监控是否发生ANR，Matrix适用所有Android版本，具体方案是：借助
  * VSYNC帧类：Choreographer，在其返回的每一个渲染帧的callback函数中，关闭和开始一个5s的超时异步事件，如果在5s内
@@ -233,12 +234,12 @@ class AnrHandler {
             try {
                 raf = new RandomAccessFile(logFile, "rws");
 
-                //write emergency info
+                // write emergency info
                 if (emergency != null) {
                     raf.write(emergency.getBytes("UTF-8"));
                 }
 
-                //If we wrote the emergency info successfully,
+                // If we wrote the emergency info successfully,
                 // we don't need to return it from callback again.
                 emergency = null;
 

@@ -44,6 +44,19 @@
 
 static int xc_jni_inited = 0;
 
+/**
+ * 初始化native crash，分为3个部分：
+ * 1. xc_common_init
+ * 2. xc_crash_init
+ * 3. xc_trace_init
+ *
+ * 总结一下：
+ * - 初始化 JavaCrashHandler，其实现机制是通过 Thread.setDefaultUncaughtExceptionHandler() 注册一个自己的
+ *   UncaughtExceptionHandler。
+ * - 初始化 AnrHandler，其实现机制是监听"/data/anr"文件夹的变化。同时对于5.0以上的版本，通过监听SIGQUIT来实现。
+ * - 初始化 NativeHandler，预留FD、安装一系列signal、初始化用于unwind的libcorkscrew.so和libunwind.so，以及
+ *   获取相关的函数。
+ */
 static jint xc_jni_init(JNIEnv*       env,
                         jobject       thiz,
                         jint          api_level,
@@ -136,7 +149,9 @@ static jint xc_jni_init(JNIEnv*       env,
     if (NULL == (c_log_dir = (*env)->GetStringUTFChars(env, log_dir, 0)))
         goto clean;
 
-    //common init
+    // common init:
+    // 这里面初始化了一些公共参数，如 os-kernel-version、app_version、appid、log目录等。
+    // 其中最重要的是初始化了两个文件fd ，以应对文件fd被耗尽的(异常)情况
     if (0 != xc_common_init((int) api_level,
                            c_os_version,
                            c_abi_list,
@@ -167,8 +182,8 @@ static jint xc_jni_init(JNIEnv*       env,
                         tmp_str = (jstring)((*env)->GetObjectArrayElement(env,
                                 crash_dump_all_threads_allowlist, (jsize)i));
 
-                        c_crash_dump_all_threads_allowlist[i] =
-                                (tmp_str ? (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
+                        c_crash_dump_all_threads_allowlist[i] = (tmp_str ?
+                                (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
                     }
                 }
             }
@@ -177,15 +192,15 @@ static jint xc_jni_init(JNIEnv*       env,
         // crash init
         r_crash = xc_crash_init(env,
                                 crash_rethrow ? 1 : 0,
-                                (unsigned int)crash_logcat_system_lines,
-                                (unsigned int)crash_logcat_events_lines,
-                                (unsigned int)crash_logcat_main_lines,
+                                (unsigned int) crash_logcat_system_lines,
+                                (unsigned int) crash_logcat_events_lines,
+                                (unsigned int) crash_logcat_main_lines,
                                 crash_dump_elf_hash ? 1 : 0,
                                 crash_dump_map ? 1 : 0,
                                 crash_dump_fds ? 1 : 0,
                                 crash_dump_network_info ? 1 : 0,
                                 crash_dump_all_threads ? 1 : 0,
-                                (unsigned int)crash_dump_all_threads_count_max,
+                                (unsigned int) crash_dump_all_threads_count_max,
                                 c_crash_dump_all_threads_allowlist,
                                 c_crash_dump_all_threads_allowlist_len);
     }
@@ -202,23 +217,23 @@ static jint xc_jni_init(JNIEnv*       env,
     }
     
  clean:
-    if (os_version        && c_os_version)
+    if (os_version && c_os_version)
         (*env)->ReleaseStringUTFChars(env, os_version, c_os_version);
-    if (abi_list          && c_abi_list)
+    if (abi_list && c_abi_list)
         (*env)->ReleaseStringUTFChars(env, abi_list, c_abi_list);
-    if (manufacturer      && c_manufacturer)
+    if (manufacturer && c_manufacturer)
         (*env)->ReleaseStringUTFChars(env, manufacturer, c_manufacturer);
-    if (brand             && c_brand)
+    if (brand && c_brand)
         (*env)->ReleaseStringUTFChars(env, brand, c_brand);
-    if (model             && c_model)
+    if (model && c_model)
         (*env)->ReleaseStringUTFChars(env, model, c_model);
     if (build_fingerprint && c_build_fingerprint)
         (*env)->ReleaseStringUTFChars(env, build_fingerprint, c_build_fingerprint);
-    if (app_id            && c_app_id)
+    if (app_id && c_app_id)
         (*env)->ReleaseStringUTFChars(env, app_id, c_app_id);
-    if (app_version       && c_app_version)
+    if (app_version && c_app_version)
         (*env)->ReleaseStringUTFChars(env, app_version, c_app_version);
-    if (app_lib_dir       && c_app_lib_dir)
+    if (app_lib_dir && c_app_lib_dir)
         (*env)->ReleaseStringUTFChars(env, app_lib_dir, c_app_lib_dir);
     if (log_dir && c_log_dir)
         (*env)->ReleaseStringUTFChars(env, log_dir, c_log_dir);

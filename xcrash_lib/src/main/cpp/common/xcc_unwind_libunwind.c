@@ -80,12 +80,15 @@ static t_unw_init_local  unw_init_local = NULL;
 static t_unw_get_reg     unw_get_reg    = NULL;
 static t_unw_step        unw_step       = NULL;
 
-void xcc_unwind_libunwind_init(void)
-{
-    if(NULL == (libunwind = dlopen("libunwind.so", RTLD_NOW))) return;
-    if(NULL == (unw_init_local = (t_unw_init_local)dlsym(libunwind, "_U"UNW_TARGET"_init_local"))) goto err;
-    if(NULL == (unw_get_reg = (t_unw_get_reg)dlsym(libunwind, "_U"UNW_TARGET"_get_reg"))) goto err;
-    if(NULL == (unw_step = (t_unw_step)dlsym(libunwind, "_U"UNW_TARGET"_step"))) goto err;
+void xcc_unwind_libunwind_init() {
+    if (NULL == (libunwind = dlopen("libunwind.so", RTLD_NOW)))
+        return;
+    if (NULL == (unw_init_local = (t_unw_init_local) dlsym(libunwind, "_U"UNW_TARGET"_init_local")))
+        goto err;
+    if (NULL == (unw_get_reg = (t_unw_get_reg) dlsym(libunwind, "_U"UNW_TARGET"_get_reg")))
+        goto err;
+    if (NULL == (unw_step = (t_unw_step) dlsym(libunwind, "_U"UNW_TARGET"_step")))
+        goto err;
     return;
 
  err:
@@ -93,18 +96,20 @@ void xcc_unwind_libunwind_init(void)
     libunwind = NULL;
 }
 
-size_t xcc_unwind_libunwind_record(ucontext_t *uc, char *buf, size_t buf_len)
-{
-    unw_cursor_t  *cursor = NULL;
-    unw_context_t *context = NULL;
+size_t xcc_unwind_libunwind_record(ucontext_t* uc, char* buf, size_t buf_len) {
+    unw_cursor_t* cursor = NULL;
+    unw_context_t* context = NULL;
     size_t         buf_used = 0, len, i = 0;
     uintptr_t      pc;
     Dl_info        info;
 
-    if(NULL == libunwind) return 0;
+    if (NULL == libunwind)
+        return 0;
 
-    if(NULL == (cursor = calloc(1, sizeof(unw_cursor_t)))) return 0;
-    if(NULL == (context = calloc(1, sizeof(unw_context_t)))) return 0;
+    if (NULL == (cursor = calloc(1, sizeof(unw_cursor_t))))
+        return 0;
+    if (NULL == (context = calloc(1, sizeof(unw_context_t))))
+        return 0;
 
 #if defined(__arm__)
     context->r[0] = uc->uc_mcontext.arm_r0;
@@ -127,58 +132,46 @@ size_t xcc_unwind_libunwind_record(ucontext_t *uc, char *buf, size_t buf_len)
     memcpy(context, uc, sizeof(ucontext_t));
 #endif
 
-    if(unw_init_local(cursor, context) < 0) goto end;
-    do
-    {
-        //get current pc
-        if(unw_get_reg(cursor, UNW_REG_IP, &pc) < 0) goto end;
+    if (unw_init_local(cursor, context) < 0)
+        goto end;
+    do {
+        // get current pc
+        if (unw_get_reg(cursor, UNW_REG_IP, &pc) < 0) // 获取当前pc指针
+            goto end;
         
         //append line for current frame
-        if(0 == dladdr((void *)pc, &info) || (uintptr_t)info.dli_fbase > pc)
-        {
+        if (0 == dladdr((void *)pc, &info) || (uintptr_t)info.dli_fbase > pc) {
             len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
                                    "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <unknown>\n",
                                    i, pc);
-        }
-        else
-        {
-            if(NULL == info.dli_fname || '\0' == info.dli_fname[0])
-            {
+        } else {
+            if (NULL == info.dli_fname || '\0' == info.dli_fname[0]) {
                 len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-                                   "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <anonymous:%"XCC_UTIL_FMT_ADDR">\n",
-                                       i, pc - (uintptr_t)info.dli_fbase, (uintptr_t)info.dli_fbase);
-            }
-            else
-            {
-                if(NULL == info.dli_sname || '\0' == info.dli_sname[0])
-                {
+                        "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <anonymous:%"XCC_UTIL_FMT_ADDR">\n",
+                        i, pc - (uintptr_t)info.dli_fbase, (uintptr_t)info.dli_fbase);
+            } else {
+                if (NULL == info.dli_sname || '\0' == info.dli_sname[0]) {
                     len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-                                           "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s\n",
-                                           i, pc - (uintptr_t)info.dli_fbase, info.dli_fname);
-                }
-                else
-                {
-                    if(0 == (uintptr_t)info.dli_saddr || (uintptr_t)info.dli_saddr > pc)
-                    {
+                            "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s\n",
+                            i, pc - (uintptr_t)info.dli_fbase, info.dli_fname);
+                } else {
+                    if (0 == (uintptr_t)info.dli_saddr || (uintptr_t)info.dli_saddr > pc) {
                         len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-                                               "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s)\n",
-                                               i, pc - (uintptr_t)info.dli_fbase, info.dli_fname,
-                                               info.dli_sname);
-                    }
-                    else
-                    {
+                                "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s)\n",
+                                i, pc - (uintptr_t)info.dli_fbase, info.dli_fname,
+                                info.dli_sname);
+                    } else {
                         len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-                                               "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s+%"PRIuPTR")\n",
-                                               i, pc - (uintptr_t)info.dli_fbase, info.dli_fname,
-                                               info.dli_sname, pc - (uintptr_t)info.dli_saddr);
+                                "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s+%"PRIuPTR")\n",
+                                i, pc - (uintptr_t)info.dli_fbase, info.dli_fname,
+                                info.dli_sname, pc - (uintptr_t)info.dli_saddr);
                     }
                 }
             }
         }
 
         //truncated?
-        if(len >= buf_len - buf_used)
-        {
+        if (len >= buf_len - buf_used) {
             buf[buf_len - 2] = '\n';
             buf[buf_len - 1] = '\0';
             len = buf_len - buf_used - 1;
@@ -186,7 +179,8 @@ size_t xcc_unwind_libunwind_record(ucontext_t *uc, char *buf, size_t buf_len)
 
         //check remaining space length in the buffer
         buf_used += len;
-        if(buf_len - buf_used < 20) break;
+        if (buf_len - buf_used < 20)
+            break;
 
         i++;
         

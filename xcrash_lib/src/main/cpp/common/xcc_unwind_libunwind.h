@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-void xcc_unwind_libunwind_init(void);
+void xcc_unwind_libunwind_init();
 size_t xcc_unwind_libunwind_record(ucontext_t *uc, char *buf, size_t buf_len);
 
 #ifdef __cplusplus

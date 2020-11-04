@@ -88,6 +88,7 @@ class NativeHandler {
                    boolean anrDumpFds,
                    boolean anrDumpNetworkInfo,
                    ICrashCallback anrCallback) {
+
         // load lib 加载libxcrash.so
         if (libLoader == null) {
             try {

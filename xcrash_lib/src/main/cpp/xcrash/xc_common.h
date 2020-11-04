@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-20.
+// Created on 2019-08-20.
 
 #ifndef XC_COMMON_H
 #define XC_COMMON_H 1

@@ -324,11 +324,11 @@ static void* xc_crash_callback_thread(void* arg) {
     if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args))
         return NULL;
 
-    //block until native crashed
+    // block until native crashed
     if (sizeof(data) != XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_crash_cb_notifier, &data, sizeof(data))))
         goto end;
 
-    //prepare callback parameters
+    // prepare callback parameters
     if (NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname)))
         goto end;
     if ('\0' != xc_crash_emergency[0]) {
@@ -711,6 +711,10 @@ static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, siz
     xc_crash_dump_all_threads_allowlist = total_encoded_allowlist;
 }
 
+/**
+ * 初始化 jni call back
+ * 这里主要是初始化了一个native的线程，然后通过eventfd阻塞等待native发生crash时向上层java发出通知.
+ */
 static void xc_crash_init_callback(JNIEnv* env) {
     if (NULL == xc_common_cb_class)
         return;
@@ -722,8 +726,10 @@ static void xc_crash_init_callback(JNIEnv* env) {
     XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_crash_cb_method, err);
     
     //eventfd and a new thread for callback
-    if(0 > (xc_crash_cb_notifier = eventfd(0, EFD_CLOEXEC))) goto err;
-    if(0 != pthread_create(&xc_crash_cb_thd, NULL, xc_crash_callback_thread, NULL)) goto err;
+    if (0 > (xc_crash_cb_notifier = eventfd(0, EFD_CLOEXEC)))
+        goto err;
+    if (0 != pthread_create(&xc_crash_cb_thd, NULL, xc_crash_callback_thread, NULL))
+        goto err;
     return;
 
  err:
@@ -760,10 +766,10 @@ int xc_crash_init(JNIEnv* env,
         return XCC_ERRNO_NOMEM;
     }
 
-    //init the local unwinder for fallback mode
+    // 1/3. init the local unwinder() for fallback(回退) mode
     xcc_unwind_init(xc_common_api_level);
 
-    //init for JNI callback
+    // 2/3. init for JNI callback
     xc_crash_init_callback(env);
 
     //struct info passed to the dumper process
@@ -795,7 +801,7 @@ int xc_crash_init(JNIEnv* env,
             dump_all_threads_allowlist,
             dump_all_threads_allowlist_len);
 
-    //for clone and fork
+    // for clone and fork
 #ifndef __i386__
     if (NULL == (xc_crash_child_stack = calloc(XC_CRASH_CHILD_STACK_LEN, 1)))
         return XCC_ERRNO_NOMEM;
@@ -825,7 +831,8 @@ int xc_crash_init(JNIEnv* env,
     }
 #endif
     
-    //register signal handler
+    // 3/3. register signal handler
+    // 比较重要的信号注册
     return xcc_signal_crash_register(xc_crash_signal_handler);
 }
 

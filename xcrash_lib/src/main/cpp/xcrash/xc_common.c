@@ -78,9 +78,13 @@ int           xc_common_fd_null           = -1;
 sig_atomic_t  xc_common_native_crashed    = 0;
 sig_atomic_t  xc_common_java_crashed      = 0;
 
-static int    xc_common_crash_prepared_fd = -1;
-static int    xc_common_trace_prepared_fd = -1;
+static int xc_common_crash_prepared_fd = -1;
+static int xc_common_trace_prepared_fd = -1;
 
+/**
+ * 这两个 fd 分别给了 xc_common_crash_prepared_fd 和 xc_common_trace_prepared_fd。
+ * 但是这里要注意，它们目前打开的都是 "/dev/null"。
+ */
 static void xc_common_open_prepared_fd(int is_crash) {
     int fd = (is_crash ? xc_common_crash_prepared_fd : xc_common_trace_prepared_fd);
     if(fd >= 0)
@@ -123,6 +127,10 @@ void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls) {
     xc_common_cb_class = NULL;
 }
 
+/**
+ * 这里面初始化了一些公共参数，如 os-kernel-version、app_version、appid、log目录等。
+ * 其中最重要的是初始化了两个文件fd ，以应对文件fd被耗尽的(异常)情况
+ */
 int xc_common_init(int         api_level,
                    const char* os_version,
                    const char* abi_list,
@@ -204,7 +212,8 @@ int xc_common_init(int         api_level,
     if (0 != (r = xc_util_mkdirs(log_dir)))
         goto err;
 
-    //create prepared FD for FD exhausted case
+    // create prepared FD for FD exhausted case.
+    // fixme: 其中最重要的是初始化了两个文件 fd ，以应对文件 fd 被耗尽的情况.
     xc_common_open_prepared_fd(1);
     xc_common_open_prepared_fd(0);
 
