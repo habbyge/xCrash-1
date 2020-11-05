@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #ifndef XCC_ERRNO_H
 #define XCC_ERRNO_H 1

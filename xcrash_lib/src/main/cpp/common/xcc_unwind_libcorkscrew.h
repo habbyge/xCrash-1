@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-02.
+// Created on 2019-08-02.
 
 #if defined(__arm__) || defined(__i386__)
 

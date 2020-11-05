@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-22.
+// Created on 2019-03-22.
 
 #ifndef XCC_MEMINFO_H
 #define XCC_MEMINFO_H 1

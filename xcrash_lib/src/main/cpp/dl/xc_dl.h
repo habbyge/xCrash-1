@@ -19,7 +19,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2020-10-04.
+// Created on 2020-10-04.
 
 // 这里解释啥是LZMA？
 // LZMA（Lempel-Ziv-Markov chain-Algorithm）是Igor Pavlov为7-Zip发明的压缩算法

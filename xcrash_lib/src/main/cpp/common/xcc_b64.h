@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-12.
+// Created on 2019-03-12.
 
 #ifndef XCC_B64_H
 #define XCC_B64_H 1

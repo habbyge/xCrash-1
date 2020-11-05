@@ -19,7 +19,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2020-10-04.
+// Created on 2020-10-04.
 
 #include <inttypes.h>
 #include <stdio.h>

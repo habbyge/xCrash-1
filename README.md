@@ -121,11 +121,6 @@ There is a more practical and complex sample app in the [xcrash_sample](xcrash_s
 
 ## Support
 
-1. Check the [xcrash-sample](xcrash_sample).
-2. Communicate on [GitHub issues](https://github.com/hexhacking/xCrash/issues).
-3. Email: <a href="mailto:caikelun@gmail.com">caikelun@gmail.com</a>
-4. QQ group: 603635869.
-
 
 ## Contributing
 

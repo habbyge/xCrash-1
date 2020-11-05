@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-13.
+// Created on 2019-08-13.
 
 #ifndef XC_TRACE_H
 #define XC_TRACE_H 1

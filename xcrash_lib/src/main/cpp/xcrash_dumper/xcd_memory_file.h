@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #ifndef XCD_MEMORY_FILE_H
 #define XCD_MEMORY_FILE_H 1

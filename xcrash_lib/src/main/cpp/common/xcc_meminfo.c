@@ -168,7 +168,8 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
     int        done = 0;
     int        is_swappable = 0;
 
-    if(NULL == fgets(line, sizeof(line), fp)) return;
+    if (NULL == fgets(line, sizeof(line), fp))
+        return;
     
     while (!done) {
         prev_heap = which_heap;
@@ -214,105 +215,66 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
             {
                 which_heap = HEAP_SO;
                 is_swappable = 1;
-            }
-            else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".jar"))
-            {
+            } else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".jar")) {
                 which_heap = HEAP_JAR;
                 is_swappable = 1;
-            }
-            else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".apk"))
-            {
+            } else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".apk")) {
                 which_heap = HEAP_APK;
                 is_swappable = 1;
-            }
-            else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".ttf"))
-            {
+            } else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".ttf")) {
                 which_heap = HEAP_TTF;
                 is_swappable = 1;
-            }
-            else if((name_len > 4 && NULL != strstr(name, ".dex")) ||
-                    (name_len > 5 && 0 == strcmp(name + name_len - 5, ".odex")))
-            {
+            } else if((name_len > 4 && NULL != strstr(name, ".dex")) ||
+                    (name_len > 5 && 0 == strcmp(name + name_len - 5, ".odex"))) {
                 which_heap = HEAP_DEX;
                 sub_heap = HEAP_DEX_APP_DEX;
                 is_swappable = 1;
-            }
-            else if(name_len > 5 && 0 == strcmp(name + name_len - 5, ".vdex"))
-            {
+            } else if(name_len > 5 && 0 == strcmp(name + name_len - 5, ".vdex")) {
                 which_heap = HEAP_DEX;
-                if(NULL != strstr(name, "@boot") || NULL != strstr(name, "/boot"))
-                {
+                if (NULL != strstr(name, "@boot") || NULL != strstr(name, "/boot")) {
                     sub_heap = HEAP_DEX_BOOT_VDEX;
-                }
-                else
-                {
+                } else {
                     sub_heap = HEAP_DEX_APP_VDEX;
                 }
                 is_swappable = 1;
-            }
-            else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".oat"))
-            {
+            } else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".oat")) {
                 which_heap = HEAP_OAT;
                 is_swappable = 1;
-            }
-            else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".art"))
-            {
+            } else if(name_len > 4 && 0 == strcmp(name + name_len - 4, ".art")) {
                 which_heap = HEAP_ART;
-                if(NULL != strstr(name, "@boot") || NULL != strstr(name, "/boot"))
-                {
+                if(NULL != strstr(name, "@boot") || NULL != strstr(name, "/boot")) {
                     sub_heap = HEAP_ART_BOOT;
-                }
-                else
-                {
+                } else {
                     sub_heap = HEAP_ART_APP;
                 }
                 is_swappable = 1;
-            }
-            else if(0 == strncmp(name, "/dev/", 5))
-            {
-                if(0 == strncmp(name, "/dev/kgsl-3d0", 13))
-                {
+            } else if(0 == strncmp(name, "/dev/", 5)) {
+                if(0 == strncmp(name, "/dev/kgsl-3d0", 13)) {
                     which_heap = HEAP_GL_DEV;
-                }
-                else if(0 == strncmp(name, "/dev/ashmem", 11))
-                {
-                    if(0 == strncmp(name, "/dev/ashmem/dalvik-", 19))
-                    {
-                        if(0 == strncmp(name, "/dev/ashmem/dalvik-LinearAlloc", 30))
-                        {
+                } else if(0 == strncmp(name, "/dev/ashmem", 11)) {
+                    if(0 == strncmp(name, "/dev/ashmem/dalvik-", 19)) {
+                        if(0 == strncmp(name, "/dev/ashmem/dalvik-LinearAlloc", 30)) {
                             which_heap = HEAP_DALVIK_OTHER;
                             sub_heap = HEAP_DALVIK_OTHER_LINEARALLOC;
-                        }
-                        else if(0 == strncmp(name, "/dev/ashmem/dalvik-alloc space", 30) ||
-                                0 == strncmp(name, "/dev/ashmem/dalvik-main space", 29))
-                        {
+                        } else if (0 == strncmp(name, "/dev/ashmem/dalvik-alloc space", 30) ||
+                                0 == strncmp(name, "/dev/ashmem/dalvik-main space", 29)) {
                             which_heap = HEAP_DALVIK;
                             sub_heap = HEAP_DALVIK_NORMAL;
-                        }
-                        else if(0 == strncmp(name, "/dev/ashmem/dalvik-large object space", 37) ||
-                                0 == strncmp(name, "/dev/ashmem/dalvik-free list large object space", 47))
-                        {
+                        } else if(0 == strncmp(name, "/dev/ashmem/dalvik-large object space", 37) ||
+                                0 == strncmp(name, "/dev/ashmem/dalvik-free list large object space", 47)) {
                             which_heap = HEAP_DALVIK;
                             sub_heap = HEAP_DALVIK_LARGE;
-                        }
-                        else if(0 == strncmp(name, "/dev/ashmem/dalvik-non moving space", 35))
-                        {
+                        } else if(0 == strncmp(name, "/dev/ashmem/dalvik-non moving space", 35)) {
                             which_heap = HEAP_DALVIK;
                             sub_heap = HEAP_DALVIK_NON_MOVING;
-                        }
-                        else if(0 == strncmp(name, "/dev/ashmem/dalvik-zygote space", 31))
-                        {
+                        } else if(0 == strncmp(name, "/dev/ashmem/dalvik-zygote space", 31)) {
                             which_heap = HEAP_DALVIK;
                             sub_heap = HEAP_DALVIK_ZYGOTE;
-                        }
-                        else if(0 == strncmp(name, "/dev/ashmem/dalvik-indirect ref", 31))
-                        {
+                        } else if(0 == strncmp(name, "/dev/ashmem/dalvik-indirect ref", 31)) {
                             which_heap = HEAP_DALVIK_OTHER;
                             sub_heap = HEAP_DALVIK_OTHER_INDIRECT_REFERENCE_TABLE;
-                        }
-                        else if(0 == strncmp(name, "/dev/ashmem/dalvik-jit-code-cache", 33) ||
-                                0 == strncmp(name, "/dev/ashmem/dalvik-data-code-cache", 34))
-                        {
+                        } else if(0 == strncmp(name, "/dev/ashmem/dalvik-jit-code-cache", 33) ||
+                                0 == strncmp(name, "/dev/ashmem/dalvik-data-code-cache", 34)) {
                             which_heap = HEAP_DALVIK_OTHER;
                             sub_heap = HEAP_DALVIK_OTHER_CODE_CACHE;
                         }
@@ -396,20 +358,16 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
                 break; // looks like a new mapping
         }
 
-        if(!skip)
-        {
+        if (!skip) {
             //get swappable_pss
-            if(is_swappable && (pss > 0))
-            {
+            if (is_swappable && (pss > 0)) {
                 sharing_proportion = 0.0;
-                if((shared_clean > 0) || (shared_dirty > 0))
-                {
-                    sharing_proportion = (pss - private_clean - private_dirty) / (shared_clean + shared_dirty);
+                if ((shared_clean > 0) || (shared_dirty > 0)) {
+                    sharing_proportion = (pss - private_clean - private_dirty)
+                            / (shared_clean + shared_dirty);
                 }
                 swappable_pss = (size_t)((sharing_proportion * shared_clean) + private_clean);
-            }
-            else
-            {
+            } else {
                 swappable_pss = 0;
             }
 
@@ -421,11 +379,12 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
             stats[which_heap].shared_clean += shared_clean;
             stats[which_heap].swapped_out += swapped_out;
             stats[which_heap].swapped_out_pss += swapped_out_pss;
+
             if (which_heap == HEAP_DALVIK ||
-                which_heap == HEAP_DALVIK_OTHER ||
-                which_heap == HEAP_DEX ||
-                which_heap == HEAP_ART)
-            {
+                    which_heap == HEAP_DALVIK_OTHER ||
+                    which_heap == HEAP_DEX ||
+                    which_heap == HEAP_ART) {
+
                 stats[sub_heap].pss += pss;
                 stats[sub_heap].swappable_pss += swappable_pss;
                 stats[sub_heap].private_dirty += private_dirty;
@@ -439,29 +398,29 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
     }
 }
 
-static int xcc_meminfo_record_sys(int log_fd)
-{
-    return xcc_util_record_sub_section_from(log_fd, "/proc/meminfo", " System Summary (From: /proc/meminfo)\n", 0);
+static int xcc_meminfo_record_sys(int log_fd) {
+    return xcc_util_record_sub_section_from(log_fd,
+            "/proc/meminfo",
+            " System Summary (From: /proc/meminfo)\n", 0);
 }
 
-static int xcc_meminfo_record_proc_status(int log_fd, pid_t pid)
-{
+static int xcc_meminfo_record_proc_status(int log_fd, pid_t pid) {
     char  path[64];
     snprintf(path, sizeof(path), "/proc/%d/status", pid);
 
-    return xcc_util_record_sub_section_from(log_fd, path, " Process Status (From: /proc/PID/status)\n", 0);
+    return xcc_util_record_sub_section_from(log_fd, path,
+            " Process Status (From: /proc/PID/status)\n", 0);
 }
 
-static int xcc_meminfo_record_proc_limits(int log_fd, pid_t pid)
-{
+static int xcc_meminfo_record_proc_limits(int log_fd, pid_t pid) {
     char  path[64];
     snprintf(path, sizeof(path), "/proc/%d/limits", pid);
 
-    return xcc_util_record_sub_section_from(log_fd, path, " Process Limits (From: /proc/PID/limits)\n", 0);
+    return xcc_util_record_sub_section_from(log_fd, path,
+            " Process Limits (From: /proc/PID/limits)\n", 0);
 }
 
-int xcc_meminfo_record(int log_fd, pid_t pid)
-{
+int xcc_meminfo_record(int log_fd, pid_t pid) {
     char           path[64];
     FILE          *fp = NULL;
     xcc_meminfo_t  stats[_NUM_HEAP];
@@ -479,8 +438,7 @@ int xcc_meminfo_record(int log_fd, pid_t pid)
     xcc_meminfo_load(fp, stats, &found_swap_pss);
     fclose(fp);
 
-    for(i = 0; i < _NUM_EXCLUSIVE_HEAP; i++)
-    {
+    for (i = 0; i < _NUM_EXCLUSIVE_HEAP; i++) {
         total.pss += (stats[i].pss + stats[i].swapped_out_pss);
         total.swappable_pss += stats[i].swappable_pss;
         total.private_dirty += stats[i].private_dirty;
@@ -492,100 +450,146 @@ int xcc_meminfo_record(int log_fd, pid_t pid)
     }
 
     //dump
-    if(0 != (r = xcc_util_write_str(log_fd, "memory info:\n"))) return r;
+    if (0 != (r = xcc_util_write_str(log_fd, "memory info:\n")))
+        return r;
     if(0 != (r = xcc_meminfo_record_sys(log_fd))) return r;
     if(0 != (r = xcc_meminfo_record_proc_status(log_fd, pid))) return r;
     if(0 != (r = xcc_meminfo_record_proc_limits(log_fd, pid))) return r;
     if(0 != (r = xcc_util_write_str(log_fd, " Process Details (From: /proc/PID/smaps)\n"))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT, "", "Pss", "Pss", "Shared", "Private", "Shared", "Private", found_swap_pss ? "SwapPss" : "Swap"))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT, "", "Total", "Clean", "Dirty", "Dirty", "Clean", "Clean", "Dirty"))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT, "", "------", "------", "------", "------", "------", "------", "------"))) return r;
-    for(i = 0; i < _NUM_EXCLUSIVE_HEAP; i++)
-    {
-        if(HEAP_NATIVE == i || HEAP_DALVIK == i || HEAP_UNKNOWN == i ||
-           0 != stats[i].pss || 0 != stats[i].swappable_pss || 0 != stats[i].shared_dirty ||
-           0 != stats[i].private_dirty || 0 != stats[i].shared_clean || 0 != stats[i].private_clean ||
-           0 != (found_swap_pss ? stats[i].swapped_out_pss : stats[i].swapped_out))
-        {
-            if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_DATA_FMT, xcc_meminfo_label[i],
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT,
+            "", "Pss", "Pss", "Shared", "Private", "Shared", "Private",
+            found_swap_pss ? "SwapPss" : "Swap"))) return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT,
+            "", "Total", "Clean", "Dirty", "Dirty", "Clean", "Clean", "Dirty")))
+        return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT,
+            "", "------", "------", "------", "------", "------", "------", "------")))
+        return r;
+
+    for (i = 0; i < _NUM_EXCLUSIVE_HEAP; i++) {
+        if (HEAP_NATIVE == i ||
+                HEAP_DALVIK == i ||
+                HEAP_UNKNOWN == i ||
+                0 != stats[i].pss ||
+                0 != stats[i].swappable_pss ||
+                0 != stats[i].shared_dirty ||
+                0 != stats[i].private_dirty ||
+                0 != stats[i].shared_clean ||
+                0 != stats[i].private_clean ||
+                0 != (found_swap_pss ? stats[i].swapped_out_pss : stats[i].swapped_out)) {
+
+            if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_DATA_FMT, xcc_meminfo_label[i],
                                                stats[i].pss,
                                                stats[i].swappable_pss,
                                                stats[i].shared_dirty,
                                                stats[i].private_dirty,
                                                stats[i].shared_clean,
                                                stats[i].private_clean,
-                                               found_swap_pss ? stats[i].swapped_out_pss : stats[i].swapped_out))) return r;
+
+                                               found_swap_pss ?
+                                                    stats[i].swapped_out_pss :
+                                                    stats[i].swapped_out)))
+                return r;
         }
     }
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_DATA_FMT, "TOTAL",
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_DATA_FMT, "TOTAL",
                                        total.pss,
                                        total.swappable_pss,
                                        total.shared_dirty,
                                        total.private_dirty,
                                        total.shared_clean,
                                        total.private_clean,
-                                       found_swap_pss ? total.swapped_out_pss : total.swapped_out))) return r;
-    if(0 != (r = xcc_util_write_str(log_fd, "-\n Process Dalvik Details (From: /proc/PID/smaps)\n"))) return r;
-    for(i = _NUM_EXCLUSIVE_HEAP; i < _NUM_HEAP; i++)
-    {
-        if(0 != stats[i].pss || 0 != stats[i].swappable_pss || 0 != stats[i].shared_dirty ||
-           0 != stats[i].private_dirty || 0 != stats[i].shared_clean || 0 != stats[i].private_clean ||
-           0 != (found_swap_pss ? stats[i].swapped_out_pss : stats[i].swapped_out))
-        {
-            if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_DATA_FMT, xcc_meminfo_label[i],
+                                       found_swap_pss ? total.swapped_out_pss : total.swapped_out)))
+        return r;
+
+    if (0 != (r = xcc_util_write_str(log_fd, "-\n Process Dalvik Details (From: /proc/PID/smaps)\n")))
+        return r;
+    for (i = _NUM_EXCLUSIVE_HEAP; i < _NUM_HEAP; i++) {
+        if (0 != stats[i].pss ||
+                0 != stats[i].swappable_pss ||
+                0 != stats[i].shared_dirty ||
+                0 != stats[i].private_dirty ||
+                0 != stats[i].shared_clean ||
+                0 != stats[i].private_clean ||
+                0 != (found_swap_pss ? stats[i].swapped_out_pss : stats[i].swapped_out)) {
+
+            if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_DATA_FMT, xcc_meminfo_label[i],
                                                stats[i].pss,
                                                stats[i].swappable_pss,
                                                stats[i].shared_dirty,
                                                stats[i].private_dirty,
                                                stats[i].shared_clean,
                                                stats[i].private_clean,
-                                               found_swap_pss ? stats[i].swapped_out_pss : stats[i].swapped_out))) return r;
+
+                                               found_swap_pss ?
+                                                    stats[i].swapped_out_pss :
+                                                    stats[i].swapped_out)))
+                return r;
         }
     }
-    if(0 != (r = xcc_util_write_str(log_fd, "-\n Process Summary (From: /proc/PID/smaps)\n"))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_HEAD_FMT, "", "Pss(KB)"))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_HEAD_FMT, "", "------"))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Java Heap:",
-                                       stats[HEAP_DALVIK].private_dirty +
-                                       stats[HEAP_ART].private_dirty + stats[HEAP_ART].private_clean))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Native Heap:",
-                                       stats[HEAP_NATIVE].private_dirty))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Code:",
-                                       stats[HEAP_SO].private_dirty + stats[HEAP_SO].private_clean +
-                                       stats[HEAP_JAR].private_dirty + stats[HEAP_JAR].private_clean +
-                                       stats[HEAP_APK].private_dirty + stats[HEAP_APK].private_clean +
-                                       stats[HEAP_TTF].private_dirty + stats[HEAP_TTF].private_clean +
-                                       stats[HEAP_DEX].private_dirty + stats[HEAP_DEX].private_clean +
-                                       stats[HEAP_OAT].private_dirty + stats[HEAP_OAT].private_clean))) return r;
+    if (0 != (r = xcc_util_write_str(log_fd, "-\n Process Summary (From: /proc/PID/smaps)\n")))
+        return r;
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_HEAD_FMT, "", "Pss(KB)")))
+        return r;
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_HEAD_FMT, "", "------")))
+        return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Java Heap:",
+            stats[HEAP_DALVIK].private_dirty +
+            stats[HEAP_ART].private_dirty + stats[HEAP_ART].private_clean)))
+        return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Native Heap:",
+                                       stats[HEAP_NATIVE].private_dirty)))
+        return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Code:",
+            stats[HEAP_SO].private_dirty + stats[HEAP_SO].private_clean +
+            stats[HEAP_JAR].private_dirty + stats[HEAP_JAR].private_clean +
+            stats[HEAP_APK].private_dirty + stats[HEAP_APK].private_clean +
+            stats[HEAP_TTF].private_dirty + stats[HEAP_TTF].private_clean +
+            stats[HEAP_DEX].private_dirty + stats[HEAP_DEX].private_clean +
+            stats[HEAP_OAT].private_dirty + stats[HEAP_OAT].private_clean)))
+        return r;
+
     if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Stack:",
-                                       stats[HEAP_STACK].private_dirty))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Private Other:", 
-                                       stats[HEAP_DALVIK_OTHER].private_dirty + stats[HEAP_DALVIK_OTHER].private_clean +
-                                       stats[HEAP_CURSOR].private_dirty + stats[HEAP_CURSOR].private_clean +
-                                       stats[HEAP_ASHMEM].private_dirty + stats[HEAP_ASHMEM].private_clean +
-                                       stats[HEAP_GL_DEV].private_dirty + stats[HEAP_GL_DEV].private_clean +
-                                       stats[HEAP_UNKNOWN_DEV].private_dirty + stats[HEAP_UNKNOWN_DEV].private_clean +
-                                       stats[HEAP_UNKNOWN_MAP].private_dirty + stats[HEAP_UNKNOWN_MAP].private_clean +
-                                       stats[HEAP_UNKNOWN].private_dirty + stats[HEAP_UNKNOWN].private_clean))) return r;
-    if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "System:",
-                                       total.pss - total.private_dirty - total.private_clean))) return r;
-    if(found_swap_pss)
-    {
+                                       stats[HEAP_STACK].private_dirty)))
+        return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT, "Private Other:",
+            stats[HEAP_DALVIK_OTHER].private_dirty + stats[HEAP_DALVIK_OTHER].private_clean +
+            stats[HEAP_CURSOR].private_dirty + stats[HEAP_CURSOR].private_clean +
+            stats[HEAP_ASHMEM].private_dirty + stats[HEAP_ASHMEM].private_clean +
+            stats[HEAP_GL_DEV].private_dirty + stats[HEAP_GL_DEV].private_clean +
+            stats[HEAP_UNKNOWN_DEV].private_dirty + stats[HEAP_UNKNOWN_DEV].private_clean +
+            stats[HEAP_UNKNOWN_MAP].private_dirty + stats[HEAP_UNKNOWN_MAP].private_clean +
+            stats[HEAP_UNKNOWN].private_dirty + stats[HEAP_UNKNOWN].private_clean)))
+        return r;
+
+    if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA_FMT,
+            "System:",total.pss - total.private_dirty - total.private_clean)))
+        return r;
+
+    if (found_swap_pss) {
         if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA2_FMT,
                                            "TOTAL:",
                                            total.pss,
                                            "TOTAL SWAP PSS:",
-                                           total.swapped_out_pss))) return r;
-    }
-    else
-    {
-        if(0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA2_FMT,
+                                           total.swapped_out_pss)))
+            return r;
+    } else {
+        if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_SUM_DATA2_FMT,
                                            "TOTAL:",
                                            total.pss,
                                            "TOTAL SWAP:",
-                                           total.swapped_out))) return r;
+                                           total.swapped_out)))
+            return r;
     }
-    if(0 != (r = xcc_util_write_str(log_fd, "-\n\n"))) return r;
+    if (0 != (r = xcc_util_write_str(log_fd, "-\n\n")))
+        return r;
     
     return 0;
 }

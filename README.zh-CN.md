@@ -121,11 +121,6 @@ Tombstone 文件默认将被写入到 `Context#getFilesDir() + "/tombstones"` �
 
 ## 技术支持
 
-1. 查看 [xcrash-sample](xcrash_sample)。
-2. 在 [GitHub issues](https://github.com/hexhacking/xCrash/issues) 交流。
-3. 邮件: <a href="mailto:caikelun@gmail.com">caikelun@gmail.com</a>
-4. QQ 群: 603635869。
-
 
 ## 贡献
 
