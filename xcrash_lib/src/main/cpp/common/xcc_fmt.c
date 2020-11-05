@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -29,8 +29,8 @@
 #include "xcc_fmt.h"
 #include "xcc_libc_support.h"
 
-static unsigned xcc_fmt_parse_decimal(const char *format, int *ppos) {
-    const char *p = format + *ppos;
+static unsigned xcc_fmt_parse_decimal(const char* format, int* ppos) {
+    const char* p = format + *ppos;
     unsigned result = 0;
     for(;;) {
         int ch = *p;
@@ -45,24 +45,19 @@ static unsigned xcc_fmt_parse_decimal(const char *format, int *ppos) {
     return result;
 }
 
-static void xcc_fmt_format_unsigned(char *buf, size_t buf_size, uint64_t value, int base, int caps) {
+static void xcc_fmt_format_unsigned(char* buf, size_t buf_size, uint64_t value, int base, int caps) {
     char* p = buf;
     char* end = buf + buf_size - 1;
     
     // Generate digit string in reverse order.
-    while (value)
-    {
+    while (value) {
         unsigned d = (unsigned)(value % (uint64_t)base);
         value /= (uint64_t)base;
-        if (p != end)
-        {
+        if (p != end) {
             char ch;
-            if (d < 10)
-            {
+            if (d < 10) {
                 ch = '0' + (char)d;
-            }
-            else
-            {
+            } else {
                 ch = (caps ? 'A' : 'a') + (char)(d - 10);
             }
             *p++ = ch;
@@ -70,10 +65,8 @@ static void xcc_fmt_format_unsigned(char *buf, size_t buf_size, uint64_t value, 
     }
     
     // Special case for 0.
-    if (p == buf)
-    {
-        if (p != end)
-        {
+    if (p == buf) {
+        if (p != end) {
             *p++ = '0';
         }
     }
@@ -113,9 +106,9 @@ static void xcc_fmt_format_integer(char* buf, size_t buf_size, uint64_t value, c
 
 //format stream
 typedef struct {
-    size_t  total;
-    char   *pos;
-    size_t  avail;
+    size_t total;
+    char* pos;
+    size_t avail;
 } xcc_fmt_stream_t;
 
 static void xcc_fmt_stream_init(xcc_fmt_stream_t *self, char *buffer, size_t buffer_size) {
@@ -123,7 +116,8 @@ static void xcc_fmt_stream_init(xcc_fmt_stream_t *self, char *buffer, size_t buf
     self->pos   = buffer;
     self->avail = buffer_size;
 
-    if(self->avail > 0) self->pos[0] = '\0';
+    if (self->avail > 0)
+        self->pos[0] = '\0';
 }
 
 static size_t xcc_fmt_stream_total(xcc_fmt_stream_t *self) {
@@ -131,20 +125,17 @@ static size_t xcc_fmt_stream_total(xcc_fmt_stream_t *self) {
 }
 
 static void xcc_fmt_stream_send(xcc_fmt_stream_t *self, const char *data, int len) {
-    if(len < 0)
-    {
+    if( len < 0) {
         len = (int)strlen(data);
     }
     self->total += (size_t)len;
     
-    if(self->avail <= 1)
-    {
+    if (self->avail <= 1) {
         //no space to put anything else
         return;
     }
     
-    if((size_t)len >= self->avail)
-    {
+    if ((size_t)len >= self->avail) {
         len = (int)(self->avail - 1);
     }
     
@@ -154,15 +145,14 @@ static void xcc_fmt_stream_send(xcc_fmt_stream_t *self, const char *data, int le
     self->avail -= (size_t)len;
 }
 
-static void xcc_fmt_stream_send_repeat(xcc_fmt_stream_t *self, char ch, int count) {
+static void xcc_fmt_stream_send_repeat(xcc_fmt_stream_t* self, char ch, int count) {
     char pad[8];
     xcc_libc_support_memset(pad, ch, sizeof(pad));
     
     const int pad_size = (int)(sizeof(pad));
     while(count > 0) {
         int avail = count;
-        if (avail > pad_size)
-        {
+        if (avail > pad_size) {
             avail = pad_size;
         }
         xcc_fmt_stream_send(self, pad, avail);
@@ -192,7 +182,7 @@ static void xcc_fmt_stream_vformat(xcc_fmt_stream_t *self, const char *format, v
             if(c == '\0' || c == '%') break;
             mm++;
         } while(1);
-        if(mm > nn) {
+        if (mm > nn) {
             xcc_fmt_stream_send(self, format + nn, mm - nn);
             nn = mm;
         }
@@ -241,8 +231,7 @@ static void xcc_fmt_stream_vformat(xcc_fmt_stream_t *self, const char *format, v
         switch(c) {
         case 'h':
             bytelen = sizeof(short);
-            if(format[nn] == 'h')
-            {
+            if (format[nn] == 'h') {
                 bytelen = sizeof(char);
                 nn += 1;
             }
@@ -250,8 +239,7 @@ static void xcc_fmt_stream_vformat(xcc_fmt_stream_t *self, const char *format, v
             break;
         case 'l':
             bytelen = sizeof(long);
-            if(format[nn] == 'l')
-            {
+            if (format[nn] == 'l') {
                 bytelen = sizeof(long long);
                 nn += 1;
             }
@@ -342,14 +330,14 @@ static void xcc_fmt_stream_vformat(xcc_fmt_stream_t *self, const char *format, v
     }
 }
 
-size_t xcc_fmt_vsnprintf(char *buffer, size_t buffer_size, const char *format, va_list args) {
+size_t xcc_fmt_vsnprintf(char* buffer, size_t buffer_size, const char* format, va_list args) {
     xcc_fmt_stream_t stream;
     xcc_fmt_stream_init(&stream, buffer, buffer_size);
     xcc_fmt_stream_vformat(&stream, format, args);
     return xcc_fmt_stream_total(&stream);
 }
 
-size_t xcc_fmt_snprintf(char *buffer, size_t buffer_size, const char *format, ...) {
+size_t xcc_fmt_snprintf(char* buffer, size_t buffer_size, const char* format, ...) {
     va_list args;
     va_start(args, format);
     size_t buffer_len = xcc_fmt_vsnprintf(buffer, buffer_size, format, args);

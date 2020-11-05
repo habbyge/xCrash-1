@@ -130,7 +130,10 @@ static int xc_crash_fork(int (*fn)(void*)) {
 }
 
 /**
- * crash进程处理函数
+ * 在一个新的子进程中运行......
+ * crash进程处理函数：dump crash
+ * 这个函数首先通过pipe将一系列的参数，比如进程pid，崩溃线程tid等，写入到标准的输入当中，其目的是为了子进程
+ * 从标准的输入当中去读取参数。然后通过 execl() 进入到真正的 dumper 程序
  */
 static int xc_crash_exec_dumper(void* arg) {
     (void) arg;
@@ -144,32 +147,46 @@ static int xc_crash_exec_dumper(void* arg) {
         }
     }
 
-    //hold the fd 0, 1, 2
+    // hold the fd 0, 1, 2
     errno = 0;
     int devnull = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR));
     if (devnull < 0) {
         xcc_util_write_format_safe(xc_crash_log_fd,
-                XC_CRASH_ERR_TITLE"open /dev/null failed, errno=%d\n\n", errno);
+                XC_CRASH_ERR_TITLE"open /dev/null failed, errno=%d\n\n",
+                errno);
         return 90;
     } else if(0 != devnull) {
         xcc_util_write_format_safe(xc_crash_log_fd,
-                XC_CRASH_ERR_TITLE"/dev/null fd NOT 0, errno=%d\n\n", errno);
+                XC_CRASH_ERR_TITLE"/dev/null fd NOT 0, errno=%d\n\n",
+                errno);
         return 91;
     }
+    // 在具体说dup/dup2之前，我认为有必要先了解一下文件描述符在内核中的形态。一个进程在此存在期间，会有一些文件被打开，
+    // 从而会返回一些文件描述符，从shell中运行一个进程，默认会有3个文件描述符存在(0、１、2)，0与进程的标准输入相关联，
+    // １与进程的标准输出相关联，2与进程的标准错误输出相关联，一个进程当前有哪些打开的文件描述符可以通过
+    // /proc/进程ID/fd目录查看，每个打开的文件描述符(fd标志)在进程表中都有自己的文件表项，由文件指针指向.
+    // dup2/dup用于复制一个文件的描述符，经常用来重定向进程的stdin、stdout和stderr，
+    // int dup(int oldfd);
+    // int dup2(int oldfd, int newfd);
+    // 当调用dup函数时，内核在进程中创建一个新的文件描述符newfd，此描述符是当前可用文件描述符的最小数值，这个文件描述
+    // 符指向oldfd所拥有的文件表项.
+    // 实际上，调用dup(oldfd)等效于，fcntl(oldfd, F_DUPFD, 0)
+    // 而调用dup2(oldfd, newfd)等效于，close(oldfd)；fcntl(oldfd, F_DUPFD, newfd)；
     XCC_UTIL_TEMP_FAILURE_RETRY(dup2(devnull, STDOUT_FILENO));
     XCC_UTIL_TEMP_FAILURE_RETRY(dup2(devnull, STDERR_FILENO));
     
-    //create args pipe
+    // create args pipe
     int pipefd[2];
     errno = 0;
     if (0 != pipe2(pipefd, O_CLOEXEC)) {
         xcc_util_write_format_safe(xc_crash_log_fd,
-                XC_CRASH_ERR_TITLE"create args pipe failed, errno=%d\n\n", errno);
+                XC_CRASH_ERR_TITLE"create args pipe failed, errno=%d\n\n",
+                errno);
         return 92;
     }
 
-    //set args pipe size
-    //range: pagesize (4K) ~ /proc/sys/fs/pipe-max-size (1024K)
+    // set args pipe size
+    // range: pagesize (4K) ~ /proc/sys/fs/pipe-max-size (1024K)
     int write_len = (int)(sizeof(xcc_spot_t) +
                           xc_crash_spot.log_pathname_len +
                           xc_crash_spot.os_version_len +
@@ -211,20 +228,33 @@ static int xc_crash_exec_dumper(void* arg) {
     int iovs_cnt = (0 == xc_crash_spot.dump_all_threads_allowlist_len ? 11 : 12);
     errno = 0;
     ssize_t ret = XCC_UTIL_TEMP_FAILURE_RETRY(writev(pipefd[1], iovs, iovs_cnt));
-    if ((ssize_t)write_len != ret) {
-        xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                "write args to pipe failed, return=%d, errno=%d\n\n", ret, errno);
+    if ((ssize_t) write_len != ret) {
+        xcc_util_write_format_safe(xc_crash_log_fd,
+                XC_CRASH_ERR_TITLE"write args to pipe failed, return=%d, errno=%d\n\n",
+                ret, errno);
         return 94;
     }
 
-    //copy the read-side of the args-pipe to stdin (fd: 0)
+    // copy the read-side of the args-pipe to stdin (fd: 0)
+    // 把管道(pipefd)的read接口{pipefd[0]}重定向到标准输入，这样libxcrash_dumper.so中的main函数就可以直接从stdin
+    // 中直接读取这里写入的参数
     XCC_UTIL_TEMP_FAILURE_RETRY(dup2(pipefd[0], STDIN_FILENO));
     
     syscall(SYS_close, pipefd[0]);
     syscall(SYS_close, pipefd[1]);
 
-    //escape to the dumper process
+    // escape to the dumper process 退出dumper子进程
     errno = 0;
+    // exec函数族的作用是根据指定的文件名找到可执行文件，并用它来取代调用进程的内容，换句话说，就是在调用进
+    // 程内部执行一个可执行文件。 这里的可执行文件既可以是二进制文件，也可以是任何Linux下可执行的脚本文件.
+    // 值得注意的是：这里不是新起一个进程，而是使用这个可执行文件替换当前进程内容.
+    //
+    // 对于exec函数族来说，它的作用通俗来说就是使另一个可执行程序替换当前的进程，当我们在执行一个进程的过程中，通过exec
+    // 函数使得另一个可执行程序A的数据段、代码段和堆栈段取代当前进程B的数据段、代码段和堆栈段，那么当前的进程就开始执行A
+    // 中的内容，这一过程中不会创建新的进程，而且PID也没有改变。一般exec函数族的用途有以下两种：
+    // 1. 当进程不需要再往下继续运行时，调用exec函数族中的函数让自己得以延续下去。
+    // 2. 如果当一个进程想执行另一个可执行程序时，可以使用fork函数先创建一个子进程，然后通过子进程来调用exec函数从而实
+    //    现可执行程序的功能。
     execl(xc_crash_dumper_pathname, XCC_UTIL_XCRASH_DUMPER_FILENAME, NULL);
     return 100 + errno;
 }
@@ -409,12 +439,14 @@ static int xc_crash_check_backtrace_valid() {
  * @param sig 信号字
  * @param si 信号信息
  * @param uc Crash发生(捕获信号字)时的上下文参数
+ *
+ * 这个函数除了做一些打开文件fd等基本的操作之外，其最主要做的事就是通过xc_crash_fork创建一个子进程并等待子进程返回
  */
 static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     struct timespec crash_tp;
     int restore_orig_ptracer = 0;
     int restore_orig_dumpable = 0;
-    int orig_dumpable;
+    int orig_dumpable = 0;
     int dump_ok = 0;
 
     (void) sig;
@@ -519,11 +551,12 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
 
     // spawn(产卵)crash dumper process
     errno = 0;
-    // 关键点：fork一个新的进程，专门用于dump发生crash的进程，dumper_pid即新进程的pid
+    // 关键点：fork一个新的进程，专门用于dump发生crash的进程，dumper_pid即新的dump子进程的pid
     pid_t dumper_pid = xc_crash_fork(xc_crash_exec_dumper);
     if (-1 == dumper_pid) {
-        xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                "fork failed, errno=%d\n\n", errno);
+        xcc_util_write_format_safe(xc_crash_log_fd,
+                XC_CRASH_ERR_TITLE"fork failed, errno=%d\n\n",
+                errno);
 
         goto end;
     }

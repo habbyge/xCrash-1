@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-20.
+// Created on 2019-08-20.
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -87,7 +87,7 @@ static int xc_common_trace_prepared_fd = -1;
  */
 static void xc_common_open_prepared_fd(int is_crash) {
     int fd = (is_crash ? xc_common_crash_prepared_fd : xc_common_trace_prepared_fd);
-    if(fd >= 0)
+    if (fd >= 0)
         return;
     
     fd = XCC_UTIL_TEMP_FAILURE_RETRY(open("/dev/null", O_RDWR));
@@ -143,10 +143,10 @@ int xc_common_init(int         api_level,
                    const char* app_lib_dir,
                    const char* log_dir) {
 
-    int             r = 0;
-    struct timeval  tv;
-    struct tm       tm;
-    char            buf[256];
+    int r;
+    struct timeval tv;
+    struct tm tm;
+    char buf[256];
     char* kernel_version;
     char* process_name;
 
@@ -240,26 +240,26 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
                               char* pathname, size_t pathname_len,
                               int* from_placeholder) {
 
-    int                fd = -1;
-    char               buf[512];
-    char               placeholder_pathname[1024];
-    long               n, i;
+    int fd;
+    char buf[512];
+    char placeholder_pathname[1024];
+    long n, i;
     xcc_util_dirent_t* ent;
 
     xcc_fmt_snprintf(pathname, pathname_len, "%s/"XC_COMMON_LOG_PREFIX"_%020"PRIu64"_%s__%s%s",
                      xc_common_log_dir, timestamp, xc_common_app_version, xc_common_process_name,
                      is_crash ? XC_COMMON_LOG_SUFFIX_CRASH : XC_COMMON_LOG_SUFFIX_TRACE);
 
-    //open dir
+    // open dir
     if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0) {
-        //try again with the prepared fd
+        // try again with the prepared fd
         if (0 != xc_common_close_prepared_fd(is_crash))
             goto create_new_file;
         if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0)
             goto create_new_file;
     }
 
-    //try to rename a placeholder file and open it
+    // try to rename a placeholder file and open it
     while ((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd, buf, sizeof(buf))) > 0) {
         for (i = 0; i < n; i += ent->d_reclen) {
             ent = (xcc_util_dirent_t *)(buf + i);
@@ -285,17 +285,22 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
     close(fd);
     xc_common_open_prepared_fd(is_crash);
     
- create_new_file:
-    if(NULL != from_placeholder) *from_placeholder = 0;
+create_new_file:
+    if (NULL != from_placeholder)
+        *from_placeholder = 0;
     
     if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname,
             XC_COMMON_OPEN_NEW_FILE_FLAGS,
-            XC_COMMON_OPEN_NEW_FILE_MODE))) >= 0)
-        return fd;
+            XC_COMMON_OPEN_NEW_FILE_MODE))) >= 0) {
 
-    //try again with the prepared fd
-    if (0 != xc_common_close_prepared_fd(is_crash))
+        return fd;
+    }
+
+    // try again with the prepared fd
+    if (0 != xc_common_close_prepared_fd(is_crash)) {
         return -1;
+    }
+
     return XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname,
             XC_COMMON_OPEN_NEW_FILE_FLAGS,
             XC_COMMON_OPEN_NEW_FILE_MODE));
@@ -310,7 +315,7 @@ int xc_common_open_crash_log(char *pathname, size_t pathname_len, int *from_plac
     return xc_common_open_log(1, xc_common_start_time, pathname, pathname_len, from_placeholder);
 }
 
-int xc_common_open_trace_log(char *pathname, size_t pathname_len, uint64_t trace_time) {
+int xc_common_open_trace_log(char* pathname, size_t pathname_len, uint64_t trace_time) {
     return xc_common_open_log(0, trace_time, pathname, pathname_len, NULL);
 }
 

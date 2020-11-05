@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-08-02.
+// Created on 2019-08-02.
 
 #include <string.h>
 #include <ctype.h>
@@ -57,30 +57,34 @@
 #define UNW_CURSOR_LEN 127
 #endif
 
-typedef struct
-{
+typedef struct {
     uintptr_t opaque[UNW_CURSOR_LEN];
 } unw_cursor_t;
 
 #if defined(__arm__)
-typedef struct
-{
+typedef struct {
     uintptr_t r[16];
 } unw_context_t;
 #else
 typedef ucontext_t unw_context_t;
 #endif
 
-typedef int (*t_unw_init_local)(unw_cursor_t *, unw_context_t *);
-typedef int (*t_unw_get_reg)(unw_cursor_t *, int, uintptr_t *);
-typedef int (*t_unw_step)(unw_cursor_t *);
+typedef int (*t_unw_init_local)(unw_cursor_t*, unw_context_t*);
+typedef int (*t_unw_get_reg)(unw_cursor_t*, int, uintptr_t*);
+typedef int (*t_unw_step)(unw_cursor_t*);
 
-static void             *libunwind      = NULL;
+static void* libunwind = NULL;
 static t_unw_init_local  unw_init_local = NULL;
 static t_unw_get_reg     unw_get_reg    = NULL;
 static t_unw_step        unw_step       = NULL;
 
 void xcc_unwind_libunwind_init() {
+    // dlopen()中几个flag的区别:
+    // RTLD_LAZY: 在dlopen返回前，对于动态库中存在的未定义的变量(如外部变量extern，也可以是函数)不执行解析，
+    //            就是不解析这个变量的地址
+    // RTLD_NOW: 在dlopen返回前，解析出每个未定义变量的地址，如果解析不出来，在dlopen会返回NULL，错误为：
+    //           :undefined symbol: xxxx.......
+    // RTLD_GLOBAL: 它的含义是使得库中的解析的定义变量在随后的其它的链接库中变得可以使用
     if (NULL == (libunwind = dlopen("libunwind.so", RTLD_NOW)))
         return;
     if (NULL == (unw_init_local = (t_unw_init_local) dlsym(libunwind, "_U"UNW_TARGET"_init_local")))
@@ -100,8 +104,8 @@ size_t xcc_unwind_libunwind_record(ucontext_t* uc, char* buf, size_t buf_len) {
     unw_cursor_t* cursor = NULL;
     unw_context_t* context = NULL;
     size_t         buf_used = 0, len, i = 0;
-    uintptr_t      pc;
-    Dl_info        info;
+    uintptr_t pc;
+    Dl_info info;
 
     if (NULL == libunwind)
         return 0;
@@ -132,15 +136,18 @@ size_t xcc_unwind_libunwind_record(ucontext_t* uc, char* buf, size_t buf_len) {
     memcpy(context, uc, sizeof(ucontext_t));
 #endif
 
-    if (unw_init_local(cursor, context) < 0)
+    if (unw_init_local(cursor, context) < 0) {
         goto end;
+    }
+
     do {
         // get current pc
         if (unw_get_reg(cursor, UNW_REG_IP, &pc) < 0) // 获取当前pc指针
             goto end;
         
-        //append line for current frame
-        if (0 == dladdr((void *)pc, &info) || (uintptr_t)info.dli_fbase > pc) {
+        // append line for current frame
+        // dladdr()只对动态链接程序起作用，获取某个符号地址(pc)的符号信息(存入info)
+        if (0 == dladdr((void*) pc, &info) || (uintptr_t)info.dli_fbase > pc) {
             len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
                                    "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <unknown>\n",
                                    i, pc);

@@ -19,7 +19,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2020-10-04.
+// Created on 2020-10-04.
 
 #include <unistd.h>
 #include <stdint.h>
@@ -70,7 +70,7 @@ static int bh_dl_util_get_api_level_from_build_prop() {
     if (NULL == fp)
         goto end;
 
-    while(fgets(buf, sizeof(buf), fp)) {
+    while (fgets(buf, sizeof(buf), fp)) {
         if (xc_dl_util_starts_with(buf, "ro.build.version.sdk=")) {
             api_level = atoi(buf + 21);
             break;
@@ -137,7 +137,7 @@ static void* xc_dl_util_lzma_code = NULL;
 
 // LZMA init
 static void xc_dl_util_lzma_init() {
-    xc_dl_t *lzma = xc_dl_open(XC_DL_CONST_PATHNAME_LZMA, XC_DL_DYNSYM);
+    xc_dl_t* lzma = xc_dl_open(XC_DL_CONST_PATHNAME_LZMA, XC_DL_DYNSYM);
     if(NULL == lzma) return;
 
     xc_dl_util_lzma_crcgen_t crcgen = NULL;

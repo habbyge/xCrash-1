@@ -192,21 +192,20 @@ int xcc_util_signal_has_sender(const siginfo_t* si, pid_t caller_pid)
     return (SI_FROMUSER(si) && (si->si_pid != 0) && (si->si_pid != caller_pid)) ? 1 : 0;
 }
 
-int xcc_util_atoi(const char *str, int *i)
-{
+int xcc_util_atoi(const char* str, int* i) {
     //We have to do this job very carefully for some unusual version of stdlib.
     
     long  val = 0;
-    char *endptr = NULL;
+    char* endptr = NULL;
     const char *p = str;
 
     //check
     if(NULL == str || NULL == i) return XCC_ERRNO_INVAL;
     if((*p < '0' || *p > '9') && *p != '-') return XCC_ERRNO_INVAL;
     p++;
-    while(*p)
-    {
-        if(*p < '0' || *p > '9') return XCC_ERRNO_INVAL;
+    while(*p) {
+        if (*p < '0' || *p > '9')
+            return XCC_ERRNO_INVAL;
         p++;
     }
 
@@ -308,12 +307,12 @@ int xcc_util_write_format_safe(int fd, const char *format, ...) {
     char    buf[1024];
     size_t  len;
 
-    if(fd < 0) return XCC_ERRNO_INVAL;
+    if (fd < 0) return XCC_ERRNO_INVAL;
     
     va_start(ap, format);
     len = xcc_fmt_vsnprintf(buf, sizeof(buf), format, ap);
     va_end(ap);
-    if(0 == len) return 0;
+    if (0 == len) return 0;
     
     return xcc_util_write(fd, buf, len);
 }
@@ -611,9 +610,8 @@ int xcc_util_record_logcat(int fd,
     return 0;
 }
 
-int xcc_util_record_fds(int fd, pid_t pid)
-{
-    int                fd2 = -1;
+int xcc_util_record_fds(int fd, pid_t pid) {
+    int                fd2;
     char               path[128];
     char               fd_path[512];
     char               buf[512];
@@ -627,32 +625,38 @@ int xcc_util_record_fds(int fd, pid_t pid)
     if(0 != (r = xcc_util_write_str(fd, "open files:\n"))) return r;
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/fd", pid);
-    if((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0)
+    if ((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0)
         goto end;
-    
-    while((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd2, buf, sizeof(buf))) > 0) {
-        for(i = 0; i < n;) {
-            ent = (xcc_util_dirent_t *)(buf + i);
 
-            //get the fd
-            if('\0' == ent->d_name[0] || '.' == ent->d_name[0]) goto next;
-            if(0 != xcc_util_atoi(ent->d_name, &fd_num)) goto next;
-            if(fd_num < 0) goto next;
+    // SYS_getdents64系统调用，是ls命令实现的核心，它读取目录文件(fd2指向的)中的一个个目录项(directory entry)
+    // 并返回，所以我们运行ls后才看到文件.
+    while ((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd2, buf, sizeof(buf))) > 0) {
+        for (i = 0; i < n; ) {
+            ent = (xcc_util_dirent_t*) (buf + i);
 
-            //count
-            total++;
-            if(total > 1024) goto next;
+            // get the fd
+            if ('\0' == ent->d_name[0] || '.' == ent->d_name[0])
+                goto next;
+            if (0 != xcc_util_atoi(ent->d_name, &fd_num))
+                goto next;
+            if (fd_num < 0)
+                goto next;
 
-            //read link of the path
+            // count
+            total++; // 记录ls命令执行后，该目录下的文件数量
+            if (total > 1024)
+                goto next;
+
+            // read link of the path
             xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/fd/%d", pid, fd_num);
             len = readlink(path, fd_path, sizeof(fd_path) - 1);
-            if(len <= 0 || len > (ssize_t)(sizeof(fd_path) - 1))
+            if (len <= 0 || len > (ssize_t)(sizeof(fd_path) - 1))
                 strncpy(fd_path, "???", sizeof(fd_path));
             else
                 fd_path[len] = '\0';
             
             //dump
-            if(0 != (r = xcc_util_write_format_safe(fd, "    fd %d: %s\n", fd_num, fd_path)))
+            if (0 != (r = xcc_util_write_format_safe(fd, "    fd %d: %s\n", fd_num, fd_path)))
                 goto clean;
             
         next:
@@ -661,13 +665,19 @@ int xcc_util_record_fds(int fd, pid_t pid)
     }
 
  end:
-    if(total > 1024)
-        if(0 != (r = xcc_util_write_str(fd, "    ......\n"))) goto clean;
-    if(0 != (r = xcc_util_write_format_safe(fd, "    (number of FDs: %zu)\n", total))) goto clean;
+    if (total > 1024) {
+        if (0 != (r = xcc_util_write_str(fd, "    ......\n"))) {
+            goto clean;
+        }
+    }
+    if (0 != (r = xcc_util_write_format_safe(fd, "    (number of FDs: %zu)\n", total))) {
+        goto clean;
+    }
     r = xcc_util_write_str(fd, "\n");
 
  clean:
-    if(fd2 >= 0) close(fd2);
+    if (fd2 >= 0)
+        close(fd2);
     return r;
 }
 

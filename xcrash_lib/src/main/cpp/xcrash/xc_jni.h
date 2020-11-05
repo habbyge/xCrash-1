@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #ifndef XC_JNI_H
 #define XC_JNI_H 1

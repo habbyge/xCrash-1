@@ -67,11 +67,11 @@ extern "C" {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
 typedef struct {
-    ino64_t        d_ino;
-    off64_t        d_off;
+    ino64_t d_ino;
+    off64_t d_off;
     unsigned short d_reclen;
-    unsigned char  d_type;
-    char           d_name[1];
+    unsigned char d_type;
+    char d_name[1];
 } xcc_util_dirent_t;
 #pragma clang diagnostic pop
 
@@ -85,13 +85,33 @@ typedef struct {
             __typeof__ (b) _b = (b); \
             _a < _b ? _a : _b; })
 
+/**
+ * __typeof__()、__typeof()、typeof()都是C的扩展，且意思是相同的，标准C不包括这样的运算符.
+ * GUN C的扩展，它可以取得变量的类型，或者表达式的类型
+ *
+ * - EINTR:
+ * 慢系统调用(slow system call): 此术语适用于那些可能永远阻塞的系统调用。永远阻塞的系统调用是指调用有可能永远
+ * 无法返回，多数网络支持函数都属于这一类。如：若没有客户连接到服务器上，那么服务器的accept调用就没有返回的保证.
+ * - EINTR错误的产生：当阻塞于某个慢系统调用的一个进程捕获某个信号且相应信号处理函数返回时，该系统调用可能返回一
+ * 个EINTR错误。例如：在socket服务器端，设置了信号捕获机制，有子进程，当在父进程阻塞于慢系统调用时由父进程捕获到
+ * 了一个有效信号时，内核会致使accept返回一个EINTR错误(被中断的系统调用).
+ * 当碰到EINTR错误的时候，可以采取有一些可以重启的系统调用要进行重启，而对于有一些系统调用是不能够重启的。例如:
+ * accept、read、write、select、和open之类的函数来说，是可以进行重启的。不过对于套接字编程中的connect函数我
+ * 们是不能重启的，若connect函数返回一个EINTR错误的时候，我们不能再次调用它，否则将立即返回一个错误。针对connect
+ * 不能重启的处理方法是，必须调用select来等待连接完成
+ *
+ * errno变量是Linux系统提供的一个全局错误码变量，system call会设置该变量的值.
+ *
+ * 通过上面对这个EINTR(是errno的一种)，这里举一反三，取其意.
+ */
 #define XCC_UTIL_TEMP_FAILURE_RETRY(exp) ({         \
             __typeof__(exp) _rc;                    \
             do {                                    \
                 errno = 0;                          \
                 _rc = (exp);                        \
             } while (_rc == -1 && errno == EINTR);  \
-            _rc; })
+            _rc;                                    \
+        })
 
 #ifndef __LP64__
 #define XCC_UTIL_LIBC     "/system/lib/libc.so"
@@ -115,10 +135,18 @@ typedef struct {
 #define XCC_UTIL_LIBC_SET_ABORT_MSG      "android_set_abort_message"
 #define XCC_UTIL_LIBCPP_CERR             "_ZNSt3__14cerrE"
 #define XCC_UTIL_LIBART_RUNTIME_INSTANCE "_ZN3art7Runtime9instance_E"
-#define XCC_UTIL_LIBART_RUNTIME_DUMP     "_ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE"
+
+#define XCC_UTIL_LIBART_RUNTIME_DUMP \
+        "_ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE"
+
 #define XCC_UTIL_LIBART_THREAD_CURRENT   "_ZN3art6Thread14CurrentFromGdbEv"
-#define XCC_UTIL_LIBART_THREAD_DUMP      "_ZNK3art6Thread13DumpJavaStackERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE"
-#define XCC_UTIL_LIBART_THREAD_DUMP2     "_ZNK3art6Thread13DumpJavaStackERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEEbb"
+
+#define XCC_UTIL_LIBART_THREAD_DUMP \
+        "_ZNK3art6Thread13DumpJavaStackERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE"
+
+#define XCC_UTIL_LIBART_THREAD_DUMP2 \
+        "_ZNK3art6Thread13DumpJavaStackERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEEbb"
+
 #define XCC_UTIL_LIBART_DBG_SUSPEND      "_ZN3art3Dbg9SuspendVMEv"
 #define XCC_UTIL_LIBART_DBG_RESUME       "_ZN3art3Dbg8ResumeVMEv"
 

@@ -28,5 +28,5 @@
 #define XC_DL_DEFAULT     0x00
 #define XC_DL_WITH_LINKER 0x01
 
-typedef int (*xc_dl_iterate_cb_t)(struct dl_phdr_info *info, size_t size, void *arg);
+typedef int (*xc_dl_iterate_cb_t)(struct dl_phdr_info* info, size_t size, void* arg);
 int xc_dl_iterate(xc_dl_iterate_cb_t cb, void *cb_arg, int flags);

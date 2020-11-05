@@ -94,18 +94,18 @@ static void xc_trace_load_signal_catcher_tid() {
     if (NULL == (dir = opendir(buf)))
         return;
     while (NULL != (ent = readdir(dir))) {
-        //get and check thread id
+        // get and check thread id
         if (0 != xcc_util_atoi(ent->d_name, &tid))
             continue;
         if (tid < 0)
             continue;
 
-        //check thread name
+        // check thread name
         xcc_util_get_thread_name(tid, buf, sizeof(buf));
         if (0 != strcmp(buf, XC_TRACE_SIGNAL_CATCHER_THREAD_NAME))
             continue;
 
-        //check signal block masks
+        // check signal block masks
         sigblk = 0;
         snprintf(buf, sizeof(buf), "/proc/%d/status", tid);
         if (NULL == (f = fopen(buf, "r")))
@@ -136,20 +136,20 @@ static void xc_trace_send_sigquit() {
 
 /**
  * 加载符号表
- * xc_dl_create() 和 xc_dl_sym() 是里面比较重要的两个函数实现。xc_dl_create 是寻找到 so 被 mmap 所加载的虚
+ * xc_dl_open() 和 xc_dl_sym() 是里面比较重要的两个函数实现。xc_dl_open 是寻找到 so 被 mmap 所加载的虚
  * 拟地址，xc_dl_sym 是计算 so 中相应符号(函数)的虚拟地址。其主要是从 libc++.so 中查找符号 _ZNSt3__14cerrE，
  * 对的，就是 cerr；从 libart.so 中查找符号 _ZN3art7Runtime9instance_E 以及
  * _ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE 在进程虚拟空间中
- * 的地址。针对 L 还需要 _ZN3art3Dbg9SuspendVMEv 和 _ZN3art3Dbg8ResumeVMEv.
+ * 的地址。针对L还需要 _ZN3art3Dbg9SuspendVMEv 和 _ZN3art3Dbg8ResumeVMEv.
  *
  * xc_dl_create() 的具体实现在 xc_dl_find_map_start() 获取 so 的基地址、xc_dl_file_open() 通过 mmap 加载
- * so、xc_dl_parse_elf() 解析 so。这里的解析 so ，其实就是解析  elf 文件，这个比较复杂，需要对 elf 文件格式熟悉.
+ * so、xc_dl_parse_elf() 解析so。这里的解析so，其实就是解析elf文件，这个比较复杂，需要对elf文件格式熟悉.
  */
-static int xc_trace_load_symbols() {
+static int xc_trace_load_symbols() { // TODO: ing......
     xc_dl_t* libcpp = NULL;
     xc_dl_t* libart = NULL;
 
-    //only once
+    // only once
     if (xc_trace_symbols_loaded)
         return xc_trace_symbols_status;
     xc_trace_symbols_loaded = 1;
@@ -195,8 +195,10 @@ static int xc_trace_load_symbols() {
     xc_trace_symbols_status = 0;
 
  end:
-    if(NULL != libcpp) xc_dl_close(&libcpp);
-    if(NULL != libart) xc_dl_close(&libart);
+    if (NULL != libcpp)
+        xc_dl_close(&libcpp);
+    if (NULL != libart)
+        xc_dl_close(&libart);
     return xc_trace_symbols_status;
 }
 
@@ -207,7 +209,8 @@ static int xc_trace_logs_filter(const struct dirent* entry) {
         return 0;
 
     len = strlen(entry->d_name);
-    if(len < XC_COMMON_LOG_NAME_MIN_TRACE) return 0;
+    if (len < XC_COMMON_LOG_NAME_MIN_TRACE)
+        return 0;
     
     if (0 != memcmp(entry->d_name, XC_COMMON_LOG_PREFIX"_", XC_COMMON_LOG_PREFIX_LEN + 1))
         return 0;
@@ -219,15 +222,21 @@ static int xc_trace_logs_filter(const struct dirent* entry) {
 }
 
 static int xc_trace_logs_clean(void) {
-    struct dirent** entry_list;
-    char            pathname[1024];
-    int             n, i, r = 0;
+    struct dirent** entry_list; // dirent不仅仅指向目录，还指向目录中的具体文件
+    char pathname[1024];
+    int n, i, r = 0;
 
-    if (0 > (n = scandir(xc_common_log_dir, &entry_list, xc_trace_logs_filter, alphasort)))
+    if (0 > (n = scandir(xc_common_log_dir, &entry_list, xc_trace_logs_filter, alphasort))) {
         return XCC_ERRNO_SYS;
-    for(i = 0; i < n; i++) {
+    }
+    for (i = 0; i < n; i++) {
         snprintf(pathname, sizeof(pathname), "%s/%s", xc_common_log_dir, entry_list[i]->d_name);
-        if(0 != unlink(pathname)) r = XCC_ERRNO_SYS;
+        // unlink() C语言的库函数<unistd.h>，删除参数pathname指定的文件，如果该文件名为最后连接点, 但有其
+        // 他进程打开了此文件, 则在所有关于此文件的文件描述词皆关闭后才会删除，如果参数pathname为一符号连接,
+        // 则此连接会被删除。返回值：成功则返回0, 失败返回-1, 错误原因存于errno
+        if (0 != unlink(pathname)) {
+            r = XCC_ERRNO_SYS;
+        }
     }
     free(entry_list);
     return r;
@@ -252,8 +261,9 @@ static int xc_trace_write_header(int fd, uint64_t trace_time) {
                              xc_common_brand,
                              xc_common_model,
                              xc_common_build_fingerprint);
-    if(0 != (r = xcc_util_write_str(fd, buf))) return r;
-    
+    if (0 != (r = xcc_util_write_str(fd, buf)))
+        return r;
+
     return xcc_util_write_format(fd, "pid: %d  >>> %s <<<\n\n",
             xc_common_process_id, xc_common_process_name);
 }
@@ -293,6 +303,7 @@ static void* xc_trace_dumper(void* arg) {
     while (1) {
         // block here, waiting for sigquit信号
         XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_trace_notifier, &data, sizeof(data)));
+        // 收到eventid(xc_trace_notifier)，继续下面的执行......
         
         // check if process already crashed
         if (xc_common_native_crashed || xc_common_java_crashed) {
@@ -302,10 +313,10 @@ static void* xc_trace_dumper(void* arg) {
         // trace time
         if (0 != gettimeofday(&tv, NULL))
             break;
-        trace_time = (uint64_t)(tv.tv_sec) * 1000 * 1000 + (uint64_t) tv.tv_usec;
+        trace_time = (uint64_t) (tv.tv_sec) * 1000 * 1000 + (uint64_t) tv.tv_usec;
 
-        // Keep only one current trace.
-        if (0 != xc_trace_logs_clean()) // TODO: ing......
+        // Keep only one current trace 只keep一个当前的追踪，清理掉还保留的旧的trace日志
+        if (0 != xc_trace_logs_clean())
             continue;
 
         // create and open log file
@@ -316,26 +327,32 @@ static void* xc_trace_dumper(void* arg) {
         if (0 != xc_trace_write_header(fd, trace_time))
             goto end;
 
-        // write trace info from ART runtime TODO: 这里是重点
+        // write trace info from ART runtime
         if (0 != xcc_util_write_format(fd, XCC_UTIL_THREAD_SEP"Cmd line: %s\n", xc_common_process_name))
             goto end;
         if (0 != xcc_util_write_str(fd, "Mode: ART DumpForSigQuit\n"))
             goto end;
-        if (0 != xc_trace_load_symbols()) { // 加载符号表
+        if (0 != xc_trace_load_symbols()) { // 加载符号表 TODO: ing......
             if (0 != xcc_util_write_str(fd, "Failed to load symbols.\n"))
                 goto end;
             goto skip;
         }
+
         if (dup2(fd, STDERR_FILENO) < 0) {
             if (0 != xcc_util_write_str(fd, "Failed to duplicate FD.\n"))
                 goto end;
             goto skip;
         }
-        if (xc_trace_is_lollipop)
+        if (xc_trace_is_lollipop) {
             xc_trace_libart_dbg_suspend();
+        }
+        // 开始dump，就是_ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
+        // 也就是调用 dump 将对 SIGQUIT 的处理输出到cerr中。这里有一个细节，就是在dump节，其通过dup2()函数将标准的
+        // 错误输出重定向到了自己的fd中
         xc_trace_libart_runtime_dump(*xc_trace_libart_runtime_instance, xc_trace_libcpp_cerr);
-        if (xc_trace_is_lollipop)
+        if (xc_trace_is_lollipop) {
             xc_trace_libart_dbg_resume();
+        }
         dup2(xc_common_fd_null, STDERR_FILENO);
                             
     skip:

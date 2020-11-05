@@ -56,24 +56,24 @@ struct xc_dl {
     // (1) for searching symbols from .dynsym
     //
 
-    ElfW(Sym)  *dynsym;  // .dynsym
-    const char *dynstr;  // .dynstr
+    ElfW(Sym)* dynsym;  // .dynsym
+    const char* dynstr;  // .dynstr
 
     // .hash (SYSV hash for .dynstr)
     struct {
-        const uint32_t *buckets;
+        const uint32_t* buckets;
         uint32_t        buckets_cnt;
-        const uint32_t *chains;
+        const uint32_t* chains;
         uint32_t        chains_cnt;
     } sysv_hash;
 
     // .gnu.hash (GNU hash for .dynstr)
     struct {
-        const uint32_t   *buckets;
+        const uint32_t*   buckets;
         uint32_t          buckets_cnt;
-        const uint32_t   *chains;
+        const uint32_t*   chains;
         uint32_t          symoffset;
-        const ElfW(Addr) *bloom;
+        const ElfW(Addr)* bloom;
         uint32_t          bloom_cnt;
         uint32_t          bloom_shift;
     } gnu_hash;
@@ -85,15 +85,15 @@ struct xc_dl {
     uintptr_t  base;
 
     int        file_fd;
-    uint8_t   *file;
+    uint8_t*   file;
     size_t     file_sz;
 
-    uint8_t   *debugdata; // decompressed .gnu_debugdata
+    uint8_t*   debugdata; // decompressed .gnu_debugdata
     size_t     debugdata_sz;
 
-    ElfW(Sym) *symtab;  // .symtab
+    ElfW(Sym)* symtab;  // .symtab
     size_t     symtab_cnt;
-    char      *strtab;  // .strtab
+    char*      strtab;  // .strtab
     size_t     strtab_sz;
 };
 
@@ -114,7 +114,7 @@ static int xc_dl_dynsym_load(xc_dl_t* self, struct dl_phdr_info* info) {
         return -1;
 
     // iterate the dynamic segment
-    for(ElfW(Dyn) * entry = dynamic; entry && entry->d_tag != DT_NULL; entry++) {
+    for (ElfW(Dyn) * entry = dynamic; entry && entry->d_tag != DT_NULL; entry++) {
         switch (entry->d_tag) {
         case DT_SYMTAB: //.dynsym
             self->dynsym = (ElfW(Sym) *)(self->load_bias + entry->d_un.d_ptr);
@@ -247,7 +247,7 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info *info, ElfW(Shdr
     return -1; // not found
 }
 
-static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
+static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) { // TODO:
     (void) size;
 
     uintptr_t* pkg = (uintptr_t *) arg;
@@ -298,7 +298,7 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
     return 1;
 }
 
-xc_dl_t *xc_dl_open(const char* pathname, int flags) {
+xc_dl_t* xc_dl_open(const char* pathname, int flags) {
     if (NULL == pathname || 0 == flags)
         return NULL;
 
@@ -309,8 +309,9 @@ xc_dl_t *xc_dl_open(const char* pathname, int flags) {
         (uintptr_t) flags
     };
 
+    // 是否是linker后缀
     bool is_linker = xc_dl_util_ends_with(pathname, XC_DL_CONST_BASENAME_LINKER);
-    xc_dl_iterate(xc_dl_iterate_cb, pkg,is_linker ? (int) XC_DL_WITH_LINKER : (int)XC_DL_DEFAULT);
+    xc_dl_iterate(xc_dl_iterate_cb, pkg, is_linker ? (int) XC_DL_WITH_LINKER : (int) XC_DL_DEFAULT);
 
     return self;
 }
@@ -410,8 +411,9 @@ static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
     return NULL;
 }
 
-static void *xc_dl_dynsym(xc_dl_t *self, const char *sym_name, bool need_func) {
-    if (0 == (self->flags & XC_DL_DYNSYM)) return NULL;
+static void* xc_dl_dynsym(xc_dl_t* self, const char* sym_name, bool need_func) {
+    if (0 == (self->flags & XC_DL_DYNSYM))
+        return NULL;
 
     ElfW(Sym) *sym = NULL;
     if (self->gnu_hash.buckets_cnt > 0) {
@@ -425,7 +427,7 @@ static void *xc_dl_dynsym(xc_dl_t *self, const char *sym_name, bool need_func) {
     if (NULL == sym || !XC_DL_DYNSYM_IS_EXPORT_SYM(sym->st_shndx))
         return NULL;
 
-    return (void *)(self->load_bias + sym->st_value);
+    return (void*) (self->load_bias + sym->st_value);
 }
 
 void* xc_dl_dynsym_func(xc_dl_t* self, const char* sym_name) {
