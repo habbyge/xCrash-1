@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 
 #include <inttypes.h>
 #include <unistd.h>
@@ -135,14 +135,16 @@ int xcd_thread_record_info(xcd_thread_t *self, int log_fd, const char *pname) {
 }
 
 int xcd_thread_record_regs(xcd_thread_t *self, int log_fd) {
-    if (XCD_THREAD_STATUS_OK != self->status)
+    if (XCD_THREAD_STATUS_OK != self->status) {
         return 0; //ignore
+    }
     
     return xcd_regs_record(&(self->regs), log_fd);
 }
 
 int xcd_thread_record_backtrace(xcd_thread_t *self, int log_fd) {
-    if(XCD_THREAD_STATUS_OK != self->status) return 0; //ignore
+    if (XCD_THREAD_STATUS_OK != self->status)
+        return 0; //ignore
 
     return xcd_frames_record_backtrace(self->frames, log_fd);
 }
@@ -156,7 +158,7 @@ int xcd_thread_record_buildid(xcd_thread_t *self, int log_fd,
     return xcd_frames_record_buildid(self->frames, log_fd, dump_elf_hash, fault_addr);
 }
 
-int xcd_thread_record_stack(xcd_thread_t *self, int log_fd) {
+int xcd_thread_record_stack(xcd_thread_t* self, int log_fd) {
     if (XCD_THREAD_STATUS_OK != self->status)
         return 0; //ignore
     
@@ -246,8 +248,8 @@ static int xcd_thread_record_memory_by_addr(xcd_thread_t *self, int log_fd,
                 
                 // Fill out the ascii string from the data.
                 ptr = (uint8_t *)data_ptr;
-                for(k = 0; k < sizeof(uintptr_t); k++, ptr++) {
-                    if(*ptr >= 0x20 && *ptr < 0x7f) {
+                for (k = 0; k < sizeof(uintptr_t); k++, ptr++) {
+                    if (*ptr >= 0x20 && *ptr < 0x7f) {
                         ascii[ascii_idx++] = (char)(*ptr);
                     } else {
                         ascii[ascii_idx++] = '.';

@@ -37,6 +37,15 @@
 #include "xc_dl_util.h"
 #include "xc_dl_const.h"
 
+// 定位内存泄漏基本上是从宏观到微观，进而定位到代码位置。
+// 从/proc/meminfo可以看到整个系统内存消耗情况，使用top可以看到每个进程的VIRT(虚拟内存)和RES(实际占用内存)，基本
+// 上就可以将泄漏内存定位到进程范围。之前也大概了解过/proc/self/maps，基于里面信息能大概判断泄露的内存的属性，是哪
+// 个区域在泄漏、对应哪个文件。
+// /proc/[pid]/maps文件格式：
+// address               perms offset   dev   inode   pathname
+// 00400000-00452000     r-xp  00000000 08:02 173521  /usr/bin/dbus-daemon
+// 35b1800000-35b1820000 r-xp  00000000 08:02 135522  /usr/lib64/ld-2.15.so
+
 /*
  * =================================================================================================
  * API-LEVEL  ANDROID-VERSION  SOLUTION
@@ -59,7 +68,7 @@
  * =================================================================================================
  */
 
-extern __attribute((weak)) int dl_iterate_phdr(int (*)(struct dl_phdr_info *, size_t, void *), void *);
+extern __attribute((weak)) int dl_iterate_phdr(int (*)(struct dl_phdr_info*, size_t, void*), void*);
 
 // Android 5.0/5.1 linker's global mutex in .symtab
 static pthread_mutex_t* xc_dl_iterate_linker_mutex = NULL;
@@ -163,7 +172,8 @@ static int xc_dl_iterate_by_linker_cb(struct dl_phdr_info* info, size_t size, vo
 
 static uintptr_t xc_dl_iterate_find_linker_base(FILE** maps) {
     // open or rewind maps-file
-    if(0 != xc_dl_iterate_open_or_rewind_maps(maps)) return 0; // failed
+    if (0 != xc_dl_iterate_open_or_rewind_maps(maps))
+        return 0; // failed
 
     size_t linker_pathname_len = strlen(" "XC_DL_CONST_PATHNAME_LINKER);
 
@@ -171,7 +181,8 @@ static uintptr_t xc_dl_iterate_find_linker_base(FILE** maps) {
     while (fgets(line, sizeof(line), *maps)) {
         // check pathname
         size_t line_len = xc_dl_util_trim_ending(line);
-        if(line_len < linker_pathname_len)continue;
+        if (line_len < linker_pathname_len)
+            continue;
 
         if (0 != memcmp(line + line_len - linker_pathname_len,
                 " "XC_DL_CONST_PATHNAME_LINKER, linker_pathname_len)) {

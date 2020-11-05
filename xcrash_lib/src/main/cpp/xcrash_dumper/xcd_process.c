@@ -83,9 +83,12 @@ static int xcd_process_load_threads(xcd_process_t* self) {
     if (NULL == (dir = opendir(buf)))
         return XCC_ERRNO_SYS;
     while (NULL != (ent = readdir(dir))) {
-        if(0 == strcmp(ent->d_name, ".")) continue;
-        if(0 == strcmp(ent->d_name, "..")) continue;
-        if(0 != xcc_util_atoi(ent->d_name, &tid)) continue;
+        if (0 == strcmp(ent->d_name, "."))
+            continue;
+        if (0 == strcmp(ent->d_name, ".."))
+            continue;
+        if (0 != xcc_util_atoi(ent->d_name, &tid))
+            continue;
         
         if (NULL == (thd = malloc(sizeof(xcd_thread_info_t))))
             return XCC_ERRNO_NOMEM;
@@ -136,8 +139,9 @@ int xcd_process_create(xcd_process_t** self, pid_t pid,
     int r;
     xcd_thread_info_t* thd;
     
-    if (NULL == (*self = malloc(sizeof(xcd_process_t))))
+    if (NULL == (*self = malloc(sizeof(xcd_process_t)))) {
         return XCC_ERRNO_NOMEM;
+    }
     (*self)->pid       = pid;
     (*self)->pname     = NULL;
     (*self)->crash_tid = crash_tid;
@@ -153,7 +157,7 @@ int xcd_process_create(xcd_process_t** self, pid_t pid,
 
     //check if crashed thread existed
     TAILQ_FOREACH(thd, &((*self)->thds), link) {
-        if(thd->t.tid == (*self)->crash_tid)
+        if (thd->t.tid == (*self)->crash_tid)
             return 0; //OK
     }
 
@@ -174,8 +178,9 @@ void xcd_process_suspend_threads(xcd_process_t* self) {
 
 void xcd_process_resume_threads(xcd_process_t* self) {
     xcd_thread_info_t *thd;
-    TAILQ_FOREACH(thd, &(self->thds), link)
+    TAILQ_FOREACH(thd, &(self->thds), link) {
         xcd_thread_resume(&(thd->t));
+    }
 }
 
 int xcd_process_load_info(xcd_process_t* self) {
@@ -256,13 +261,16 @@ static int xcd_process_get_abort_message_29(xcd_process_t *self, char *buf, size
 
     //get abort_msg_t *p
     uintptr_t p = xcd_maps_find_abort_msg(self->maps);
-    if(0 == p) return XCC_ERRNO_NOTFND;
+    if (0 == p)
+        return XCC_ERRNO_NOTFND;
     p += (sizeof(uint64_t) * 2);
 
     //get size
     size_t size = 0;
-    if(0 != (r = xcd_util_ptrace_read_fully(self->pid, p, &size, sizeof(size_t)))) return r;
-    if(size < (sizeof(uint64_t) * 2 + sizeof(size_t) + 1 + 1)) return XCC_ERRNO_NOTFND;
+    if (0 != (r = xcd_util_ptrace_read_fully(self->pid, p, &size, sizeof(size_t))))
+        return r;
+    if (size < (sizeof(uint64_t) * 2 + sizeof(size_t) + 1 + 1))
+        return XCC_ERRNO_NOTFND;
     XCD_LOG_DEBUG("PROCESS: abort_msg, size = %zu", size);
 
     //get strlen(msg)
@@ -275,7 +283,7 @@ static int xcd_process_get_abort_message_29(xcd_process_t *self, char *buf, size
     return 0;
 }
 
-static int xcd_process_get_abort_message_14(xcd_process_t *self, char *buf, size_t buf_len) {
+static int xcd_process_get_abort_message_14(xcd_process_t* self, char* buf, size_t buf_len) {
     //
     // struct abort_msg_t {
     //     size_t size;
@@ -294,19 +302,24 @@ static int xcd_process_get_abort_message_14(xcd_process_t *self, char *buf, size
     //get abort_msg_t ***ppp (&__abort_message_ptr)
     uintptr_t ppp = 0;
     ppp = xcd_maps_find_pc(self->maps, XCC_UTIL_LIBC, XCC_UTIL_LIBC_ABORT_MSG_PTR);
-    if(0 == ppp) return XCC_ERRNO_NOTFND;
+    if (0 == ppp)
+        return XCC_ERRNO_NOTFND;
     XCD_LOG_DEBUG("PROCESS: abort_msg, ppp = %"PRIxPTR, ppp);
 
     //get abort_msg_t **pp (__abort_message_ptr)
     uintptr_t pp = 0;
-    if(0 != (r = xcd_util_ptrace_read_fully(self->pid, ppp, &pp, sizeof(uintptr_t)))) return r;
-    if(0 == pp) return XCC_ERRNO_NOTFND;
+    if (0 != (r = xcd_util_ptrace_read_fully(self->pid, ppp, &pp, sizeof(uintptr_t))))
+        return r;
+    if (0 == pp)
+        return XCC_ERRNO_NOTFND;
     XCD_LOG_DEBUG("PROCESS: abort_msg, pp = %"PRIxPTR, pp);
 
     //get abort_msg_t *p (*__abort_message_ptr)
     uintptr_t p = 0;
-    if(0 != (r = xcd_util_ptrace_read_fully(self->pid, pp, &p, sizeof(uintptr_t)))) return r;
-    if(0 == p) return XCC_ERRNO_NOTFND;
+    if (0 != (r = xcd_util_ptrace_read_fully(self->pid, pp, &p, sizeof(uintptr_t))))
+        return r;
+    if (0 == p)
+        return XCC_ERRNO_NOTFND;
     XCD_LOG_DEBUG("PROCESS: abort_msg, p = %"PRIxPTR, p);
 
     //get p->size
@@ -457,29 +470,27 @@ int xcd_process_record(xcd_process_t *self,
     //parse thread name allowlist regex
     re = xcd_process_build_allowlist_regex(dump_all_threads_allowlist, &re_cnt);
 
-    TAILQ_FOREACH(thd, &(self->thds), link)
-    {
-        if(thd->t.tid != self->crash_tid)
-        {
+    TAILQ_FOREACH(thd, &(self->thds), link) {
+        if (thd->t.tid != self->crash_tid) {
             //check regex for thread name
-            if(NULL != re && re_cnt > 0 && !xcd_process_if_need_dump(thd->t.tname, re, re_cnt))
-            {
+            if (NULL != re && re_cnt > 0 && !xcd_process_if_need_dump(thd->t.tname, re, re_cnt)) {
                 continue;
             }
             thd_matched_regex++;
 
             //check dump count limit
-            if(dump_all_threads_count_max > 0 && thd_dumped >= dump_all_threads_count_max)
-            {
+            if (dump_all_threads_count_max > 0 && thd_dumped >= dump_all_threads_count_max) {
                 thd_ignored_by_limit++;
                 continue;
             }
 
-            if(0 != (r = xcc_util_write_str(log_fd, XCC_UTIL_THREAD_SEP))) goto end;
-            if(0 != (r = xcd_thread_record_info(&(thd->t), log_fd, self->pname))) goto end;
-            if(0 != (r = xcd_thread_record_regs(&(thd->t), log_fd))) goto end;
-            if(0 == xcd_thread_load_frames(&(thd->t), self->maps))
-            {
+            if (0 != (r = xcc_util_write_str(log_fd, XCC_UTIL_THREAD_SEP)))
+                goto end;
+            if (0 != (r = xcd_thread_record_info(&(thd->t), log_fd, self->pname)))
+                goto end;
+            if (0 != (r = xcd_thread_record_regs(&(thd->t), log_fd)))
+                goto end;
+            if (0 == xcd_thread_load_frames(&(thd->t), self->maps)) {
                 if(0 != (r = xcd_thread_record_backtrace(&(thd->t), log_fd))) goto end;
                 if(0 != (r = xcd_thread_record_stack(&(thd->t), log_fd))) goto end;
             }
@@ -489,8 +500,9 @@ int xcd_process_record(xcd_process_t *self,
 
  end:
     if(self->nthds > 1) {
-        if(0 == thd_dumped)
-            if(0 != (r = xcc_util_write_str(log_fd, XCC_UTIL_THREAD_SEP))) goto ret;
+        if (0 == thd_dumped)
+            if (0 != (r = xcc_util_write_str(log_fd, XCC_UTIL_THREAD_SEP)))
+                goto ret;
 
         if (0 != (r = xcc_util_write_format(log_fd,
                 "total threads (exclude the crashed thread): %zu\n",

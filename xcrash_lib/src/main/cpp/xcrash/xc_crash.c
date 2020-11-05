@@ -113,6 +113,7 @@ static int xc_crash_fork(int (*fn)(void*)) {
         return -1;
     } else if(0 == dumper_pid) { // child process ...
         char msg = 'a';
+        // dump进程向主进程通知(pipe方式)，dump进程已经ok了
         XCC_UTIL_TEMP_FAILURE_RETRY(write(xc_crash_child_notifier[1], &msg, sizeof(char)));
         syscall(SYS_close, xc_crash_child_notifier[0]);
         syscall(SYS_close, xc_crash_child_notifier[1]);
@@ -120,6 +121,7 @@ static int xc_crash_fork(int (*fn)(void*)) {
         _exit(fn(NULL));
     } else { // parent process ...
         char msg;
+        // 主进程阻塞式读等待pipe写入...
         XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_crash_child_notifier[0], &msg, sizeof(char)));
         syscall(SYS_close, xc_crash_child_notifier[0]);
         syscall(SYS_close, xc_crash_child_notifier[1]);
@@ -202,7 +204,8 @@ static int xc_crash_exec_dumper(void* arg) {
     errno = 0;
     if (fcntl(pipefd[1], F_SETPIPE_SZ, write_len) < write_len) {
         xcc_util_write_format_safe(xc_crash_log_fd,
-                XC_CRASH_ERR_TITLE"set args pipe size failed, errno=%d\n\n", errno);
+                XC_CRASH_ERR_TITLE"set args pipe size failed, errno=%d\n\n",
+                errno);
         return 93;
     }
 
@@ -514,8 +517,9 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     // 很多Linux系统默认不生成Core文件，此时App遇到Crash问题没有Core文件，就很难确定问题根因，因此需要开启CoreDump，
     //
     if (0 != prctl(PR_SET_DUMPABLE, 1)) {
-        xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                "set dumpable failed, errno=%d\n\n", errno); // 该进程不支持dump
+        xcc_util_write_format_safe(xc_crash_log_fd,
+                XC_CRASH_ERR_TITLE"set dumpable failed, errno=%d\n\n",
+                errno); // 该进程不支持dump
 
         goto end;
     }
@@ -531,8 +535,9 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     // PR_SET_PTRACER_ANY: 所有进程都允许attach到当前进程
     if (0 != prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY)) { // 设置当前进程可trace
         if (EINVAL != errno) {
-            xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                    "set traceable failed, errno=%d\n\n", errno);
+            xcc_util_write_format_safe(xc_crash_log_fd,
+                    XC_CRASH_ERR_TITLE"set traceable failed, errno=%d\n\n",
+                    errno);
 
             goto end;
         } /*else {
@@ -552,7 +557,7 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     // spawn(产卵)crash dumper process
     errno = 0;
     // 关键点：fork一个新的进程，专门用于dump发生crash的进程，dumper_pid即新的dump子进程的pid
-    pid_t dumper_pid = xc_crash_fork(xc_crash_exec_dumper);
+    pid_t dumper_pid = xc_crash_fork(xc_crash_exec_dumper); // 返回dump进程id
     if (-1 == dumper_pid) {
         xcc_util_write_format_safe(xc_crash_log_fd,
                 XC_CRASH_ERR_TITLE"fork failed, errno=%d\n\n",
@@ -564,9 +569,9 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     // parent process ... 此时是发生crash的父进程
 
     // wait the crash dumper process terminated
-    // 父进程(当前进程)一直阻塞等待，直到子进程(dump进程)执行完返回
     errno = 0;
     int status = 0;
+    // 父进程(当前进程)一直阻塞等待，直到子进程(dump进程)执行完返回
     int wait_r = XCC_UTIL_TEMP_FAILURE_RETRY(waitpid(dumper_pid, &status, __WALL));
 
     // the crash dumper process should have written a lot of logs, so we need to seek
@@ -579,7 +584,8 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     
     if (-1 == wait_r) {
         xcc_util_write_format_safe(xc_crash_log_fd,
-                XC_CRASH_ERR_TITLE"waitpid failed, errno=%d\n\n", errno);
+                XC_CRASH_ERR_TITLE"waitpid failed, errno=%d\n\n",
+                errno);
         goto end;
     }
 
@@ -588,20 +594,21 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     if (!(WIFEXITED(status)) || 0 != WEXITSTATUS(status)) {
         if (WIFEXITED(status) && 0 != WEXITSTATUS(status)) {
             // terminated normally, but return / exit / _exit NON-zero
-            xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                "child terminated normally with non-zero exit status(%d), "
-                "dumper=%s\n\n", WEXITSTATUS(status), xc_crash_dumper_pathname);
+            xcc_util_write_format_safe(xc_crash_log_fd,
+                    XC_CRASH_ERR_TITLE"child terminated normally with non-zero exit status(%d), "
+                    "dumper=%s\n\n", WEXITSTATUS(status), xc_crash_dumper_pathname);
 
             goto end;
         } else if(WIFSIGNALED(status)) {
             // terminated by a signal
-            xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                    "child terminated by a signal(%d)\n\n", WTERMSIG(status));
+            xcc_util_write_format_safe(xc_crash_log_fd,
+                    XC_CRASH_ERR_TITLE"child terminated by a signal(%d)\n\n",
+                    WTERMSIG(status));
 
             goto end;
         } else {
-            xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE
-                    "child terminated with other error status(%d), dumper=%s\n\n",
+            xcc_util_write_format_safe(xc_crash_log_fd,
+                    XC_CRASH_ERR_TITLE"child terminated with other error status(%d), dumper=%s\n\n",
                     status, xc_crash_dumper_pathname);
 
             goto end;
@@ -868,7 +875,5 @@ int xc_crash_init(JNIEnv* env,
     // 比较重要的信号注册
     return xcc_signal_crash_register(xc_crash_signal_handler);
 }
-
-#pragma clang diagnostic pop
 
 #pragma clang diagnostic pop

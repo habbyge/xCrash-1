@@ -425,7 +425,8 @@
 /*
  * Tail queue functions.
  */
-#define TAILQ_INIT(head) do {                                           \
+#define TAILQ_INIT(head)                                                \
+    do {                                                                \
         TAILQ_FIRST((head)) = NULL;                                     \
         (head)->tqh_last = &TAILQ_FIRST((head));                        \
     } while (0)
@@ -437,10 +438,10 @@
 #define TAILQ_NEXT(elm, field) ((elm)->field.tqe_next)
 
 #define TAILQ_PREV(elm, headname, field)                                \
-        (*(((struct headname *)((elm)->field.tqe_prev))->tqh_last))
+        (*(((struct headname*)((elm)->field.tqe_prev))->tqh_last))
 
 #define TAILQ_LAST(head, headname)                                      \
-    (*(((struct headname *)((head)->tqh_last))->tqh_last))
+    (*(((struct headname*) ((head)->tqh_last))->tqh_last))
 
 #define TAILQ_FOREACH(var, head, field)                                 \
     for ((var) = TAILQ_FIRST((head));                                   \
@@ -482,7 +483,8 @@
          (var) && ((tvar) = TAILQ_PREV((var), headname, field), 1);     \
          (var) = (tvar))
 
-#define TAILQ_INSERT_HEAD(head, elm, field) do {                        \
+#define TAILQ_INSERT_HEAD(head, elm, field)                             \
+    do {                                                                \
         if ((TAILQ_NEXT((elm), field) = TAILQ_FIRST((head))) != NULL)   \
             TAILQ_FIRST((head))->field.tqe_prev =                       \
                 &TAILQ_NEXT((elm), field);                              \

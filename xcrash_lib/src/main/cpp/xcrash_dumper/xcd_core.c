@@ -177,7 +177,7 @@ static void xcd_core_signal_handler(int sig, siginfo_t* si, void* uc) {
 }
 
 /**
- * dumper进程的入口
+ * dumper进程的入口，最核心的获取线程的 regs、backtrace 等信息是通过 ptrace 技术来获取的
  */
 int main(int argc, char** argv) {
     (void) argc;
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
     // register signal handler for catching self-crashing
     xcc_unwind_init(xcd_core_spot.api_level);
     xcc_signal_crash_register(xcd_core_signal_handler);
-
+// TODO: ing......
     // create process object
     if (0 != xcd_process_create(&xcd_core_proc,
                                 xcd_core_spot.crash_pid,

@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-07.
+// Created on 2019-03-07.
 package xcrash;
 
 import android.app.Application;
@@ -29,8 +29,16 @@ import android.os.Build;
 import android.text.TextUtils;
 
 /**
+ * 在Android平台，Native Crash一直是crash里的大头。Native Crash具有上下文不全、出错信息模糊、难以捕捉等特点，
+ * 比Java Crash更难修复。所以一个合格的异常捕获组件也要能达到以下目的:
+ * - 支持在Crash时进行更多扩展操作
+ *   - 打印logcat和应用日志
+ *   - 上报crash次数
+ *   - 对不同的crash做不同的恢复措施
+ * - 可以针对业务不断改进和适应
+ *
  * 分析: https://juejin.im/post/6844904077428686862
- * xCrash is a crash reporting library for Android APP.
+ * xCrash is a crash reporting library for Android APP
  * xCrash提供捕获异常的配置和初始化的功能
  * 该sdk的入口类
  * xCrash是爱奇艺开源的在android平台上面捕获异常的开源库。xCrash能为安卓APP提供捕获Java崩溃异常，native崩溃
@@ -38,6 +46,7 @@ import android.text.TextUtils;
  * tombstone 文件类似）。Tombstone文件默认将被写入到 Context#getFilesDir() + “/tombstones” 目录。（通常
  * 在：/data/data/PACKAGE_NAME/files/tombstones）
  * xCrash分为两个module，是xcrash_lib，xcrash_sample。xcrash_lib是核心库，xcrash_sample是提供的测试工程.
+ * 进程分为crash进程(app) 和 dump进程.
  */
 public final class XCrash {
     private static boolean initialized = false; // xcrash 初始化标志
@@ -82,7 +91,7 @@ public final class XCrash {
      * 5. 内存信息
      * 6. app应用进程信息
      * 7. 异常回调填充信息
-     * // TODO: 2020/10/30 ing......这里继续分析......
+     *
      * - Native异常输出日志
      * 日志分为：
      * 1. 头部信息（为应用的基本信息）
@@ -154,7 +163,6 @@ public final class XCrash {
      *         defined in: {@link xcrash.Errno}.
      */
     public static synchronized int init(Context ctx, InitParameters params) {
-
         // 判断是否已初始化过，如果初始化过，不允许初始化两次
         if (XCrash.initialized) {
             return Errno.OK;
@@ -363,7 +371,7 @@ public final class XCrash {
         }
 
         /**
-         * Set delay in milliseconds before the log file maintain task is to be executed. (Default: 5000)
+         * Set delay in milliseconds before the log file maintain task is to be executed.(Default: 5000)
          *
          * @param logFileMaintainDelayMs Delay in milliseconds before the log file
          *                               maintain task is to be executed.

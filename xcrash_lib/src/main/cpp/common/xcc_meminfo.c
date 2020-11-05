@@ -20,7 +20,7 @@
 // SOFTWARE.
 //
 
-// Created by caikelun on 2019-03-22.
+// Created on 2019-03-22.
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -40,8 +40,7 @@
 #define XCC_MEMINFO_SUM_DATA_FMT   "%21s %8zu\n"
 #define XCC_MEMINFO_SUM_DATA2_FMT  "%21s %8zu %21s %8zu\n"
 
-typedef struct
-{
+typedef struct {
     size_t pss;
     size_t swappable_pss;
     size_t private_dirty;
@@ -52,8 +51,7 @@ typedef struct
     size_t swapped_out_pss;
 } xcc_meminfo_t;
 
-static const char *xcc_meminfo_label[] =
-{
+static const char* xcc_meminfo_label[] = {
     "Native Heap",
     "Dalvik Heap",
     "Dalvik Other",
@@ -142,14 +140,13 @@ enum {
     _NUM_EXCLUSIVE_HEAP = HEAP_UNKNOWN + 1
 };
 
-static void xcc_meminfo_load(FILE *fp, xcc_meminfo_t *stats, int *found_swap_pss)
-{
+static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss) {
     char       line[1024];
     size_t     len;
     size_t     temp;
     
-    uintptr_t  start = 0, end = 0, prev_end = 0;
-    char      *name;
+    uintptr_t start = 0, end = 0, prev_end = 0;
+    char* name;
     size_t     name_len, name_pos;
     int        pos = 0;
 
@@ -173,8 +170,7 @@ static void xcc_meminfo_load(FILE *fp, xcc_meminfo_t *stats, int *found_swap_pss
 
     if(NULL == fgets(line, sizeof(line), fp)) return;
     
-    while(!done)
-    {
+    while (!done) {
         prev_heap = which_heap;
         prev_end = end;
         which_heap = HEAP_UNKNOWN;
@@ -186,12 +182,9 @@ static void xcc_meminfo_load(FILE *fp, xcc_meminfo_t *stats, int *found_swap_pss
         if (len < 1) return;
         line[--len] = '\0';
         
-        if(sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d%n", &start, &end, &pos) != 2)
-        {
+        if (sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d%n", &start, &end, &pos) != 2) {
             skip = 1;
-        }
-        else
-        {
+        } else {
             name_pos = (size_t)pos;
             
             //get name and name length
@@ -201,9 +194,9 @@ static void xcc_meminfo_load(FILE *fp, xcc_meminfo_t *stats, int *found_swap_pss
             name_len = strlen(name);
             
             //trim the end of the line if it is " (deleted)"
-            if(name_len > XCC_MEMINFO_DELETE_STR_LEN &&
-               0 == strcmp(name + name_len - XCC_MEMINFO_DELETE_STR_LEN, XCC_MEMINFO_DELETE_STR))
-            {
+            if (name_len > XCC_MEMINFO_DELETE_STR_LEN && 0 == strcmp(name +
+                    name_len - XCC_MEMINFO_DELETE_STR_LEN, XCC_MEMINFO_DELETE_STR)) {
+
                 name_len -= XCC_MEMINFO_DELETE_STR_LEN;
                 name[name_len] = '\0';
             }

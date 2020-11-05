@@ -38,15 +38,15 @@ extern "C" {
 #pragma clang diagnostic ignored "-Wpadded"
 
 typedef struct {
-    //set when crashed
-    pid_t        crash_tid;
-    siginfo_t    siginfo;
-    ucontext_t   ucontext; // crash发生的上下文
-    uint64_t     crash_time;
+    // set when crashed
+    pid_t        crash_tid;  // 发生crash的线程id
+    siginfo_t    siginfo;    // 信号
+    ucontext_t   ucontext;   // crash发生的上下文
+    uint64_t     crash_time; // 时间戳
 
-    //set when inited
+    // set when inited
     int          api_level;
-    pid_t        crash_pid;
+    pid_t        crash_pid; // 发生crash的进程id
     uint64_t     start_time;
     long         time_zone;
     unsigned int logcat_system_lines;
@@ -62,7 +62,7 @@ typedef struct {
     // set when crashed (content lenghts after this struct)
     size_t       log_pathname_len;
     
-    //set when inited (content lenghts after this struct)
+    // set when inited (content lenghts after this struct)
     size_t       os_version_len;
     size_t       kernel_version_len;
     size_t       abi_list_len;
