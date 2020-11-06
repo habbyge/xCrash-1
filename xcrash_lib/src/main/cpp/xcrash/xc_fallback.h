@@ -32,15 +32,15 @@
 extern "C" {
 #endif
 
-size_t xc_fallback_get_emergency(siginfo_t *si,
-                                 ucontext_t *uc,
+size_t xc_fallback_get_emergency(siginfo_t* si,
+                                 ucontext_t* uc,
                                  pid_t tid,
                                  uint64_t crash_time,
-                                 char *emergency,
+                                 char* emergency,
                                  size_t emergency_len);
 
 int xc_fallback_record(int log_fd,
-                       char *emergency,
+                       char* emergency,
                        unsigned int logcat_system_lines,
                        unsigned int logcat_events_lines,
                        unsigned int logcat_main_lines,

@@ -22,6 +22,7 @@
 // Created on 2020-10-04.
 
 #pragma once
+
 #include <stddef.h>
 #include <link.h>
 
@@ -29,4 +30,5 @@
 #define XC_DL_WITH_LINKER 0x01
 
 typedef int (*xc_dl_iterate_cb_t)(struct dl_phdr_info* info, size_t size, void* arg);
-int xc_dl_iterate(xc_dl_iterate_cb_t cb, void *cb_arg, int flags);
+
+int xc_dl_iterate(xc_dl_iterate_cb_t cb, void* cb_arg, int flags);

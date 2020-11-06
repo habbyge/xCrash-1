@@ -111,17 +111,17 @@ class Util {
     }
 
     private static final String[] suPathname = {
-        "/data/local/su",
-        "/data/local/bin/su",
-        "/data/local/xbin/su",
-        "/system/xbin/su",
-        "/system/bin/su",
-        "/system/bin/.ext/su",
-        "/system/bin/failsafe/su",
-        "/system/sd/xbin/su",
-        "/system/usr/we-need-root/su",
-        "/sbin/su",
-        "/su/bin/su"};
+            "/data/local/su",
+            "/data/local/bin/su",
+            "/data/local/xbin/su",
+            "/system/xbin/su",
+            "/system/bin/su",
+            "/system/bin/.ext/su",
+            "/system/bin/failsafe/su",
+            "/system/sd/xbin/su",
+            "/system/usr/we-need-root/su",
+            "/sbin/su",
+            "/su/bin/su"};
 
     /**
      * 手机是否root
@@ -314,65 +314,65 @@ class Util {
         DateFormat timeFormatter = new SimpleDateFormat(Util.timeFormatterStr, Locale.US);
 
         return Util.sepHead + "\n"
-            + "Tombstone maker: '" + Version.fullVersion + "'\n"
-            + "Crash type: '" + crashType + "'\n"
-            + "Start time: '" + timeFormatter.format(startTime) + "'\n"
-            + "Crash time: '" + timeFormatter.format(crashTime) + "'\n"
-            + "App ID: '" + appId + "'\n"
-            + "App version: '" + appVersion + "'\n"
-            + "Rooted: '" + (Util.isRoot() ? "Yes" : "No") + "'\n"
-            + "API level: '" + Build.VERSION.SDK_INT + "'\n"
-            + "OS version: '" + Build.VERSION.RELEASE + "'\n"
-            + "ABI list: '" + Util.getAbiList() + "'\n"
-            + "Manufacturer: '" + Build.MANUFACTURER + "'\n"
-            + "Brand: '" + Build.BRAND + "'\n"
-            + "Model: '" + Build.MODEL + "'\n"
-            + "Build fingerprint: '" + Build.FINGERPRINT + "'\n";
+                + "Tombstone maker: '" + Version.fullVersion + "'\n"
+                + "Crash type: '" + crashType + "'\n"
+                + "Start time: '" + timeFormatter.format(startTime) + "'\n"
+                + "Crash time: '" + timeFormatter.format(crashTime) + "'\n"
+                + "App ID: '" + appId + "'\n"
+                + "App version: '" + appVersion + "'\n"
+                + "Rooted: '" + (Util.isRoot() ? "Yes" : "No") + "'\n"
+                + "API level: '" + Build.VERSION.SDK_INT + "'\n"
+                + "OS version: '" + Build.VERSION.RELEASE + "'\n"
+                + "ABI list: '" + Util.getAbiList() + "'\n"
+                + "Manufacturer: '" + Build.MANUFACTURER + "'\n"
+                + "Brand: '" + Build.BRAND + "'\n"
+                + "Model: '" + Build.MODEL + "'\n"
+                + "Build fingerprint: '" + Build.FINGERPRINT + "'\n";
     }
 
     static String getMemoryInfo() {
         return "memory info:\n"
-            + " System Summary (From: /proc/meminfo)\n"
-            + Util.getFileContent("/proc/meminfo")
-            + "-\n"
-            + " Process Status (From: /proc/PID/status)\n"
-            + Util.getFileContent("/proc/self/status")
-            + "-\n"
-            + " Process Limits (From: /proc/PID/limits)\n"
-            + Util.getFileContent("/proc/self/limits")
-            + "-\n"
-            + Util.getProcessMemoryInfo()
-            + "\n";
+                + " System Summary (From: /proc/meminfo)\n"
+                + Util.getFileContent("/proc/meminfo")
+                + "-\n"
+                + " Process Status (From: /proc/PID/status)\n"
+                + Util.getFileContent("/proc/self/status")
+                + "-\n"
+                + " Process Limits (From: /proc/PID/limits)\n"
+                + Util.getFileContent("/proc/self/limits")
+                + "-\n"
+                + Util.getProcessMemoryInfo()
+                + "\n";
     }
 
     static String getNetworkInfo() {
         if (Build.VERSION.SDK_INT >= 29) {
             return "network info:\n"
-                + "Not supported on Android Q (API level 29) and later.\n"
-                + "\n";
+                    + "Not supported on Android Q (API level 29) and later.\n"
+                    + "\n";
         } else {
             return "network info:\n"
-                + " TCP over IPv4 (From: /proc/PID/net/tcp)\n"
-                + Util.getFileContent("/proc/self/net/tcp", 1024)
-                + "-\n"
-                + " TCP over IPv6 (From: /proc/PID/net/tcp6)\n"
-                + Util.getFileContent("/proc/self/net/tcp6", 1024)
-                + "-\n"
-                + " UDP over IPv4 (From: /proc/PID/net/udp)\n"
-                + Util.getFileContent("/proc/self/net/udp", 1024)
-                + "-\n"
-                + " UDP over IPv6 (From: /proc/PID/net/udp6)\n"
-                + Util.getFileContent("/proc/self/net/udp6", 1024)
-                + "-\n"
-                + " ICMP in IPv4 (From: /proc/PID/net/icmp)\n"
-                + Util.getFileContent("/proc/self/net/icmp", 256)
-                + "-\n"
-                + " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n"
-                + Util.getFileContent("/proc/self/net/icmp6", 256)
-                + "-\n"
-                + " UNIX domain (From: /proc/PID/net/unix)\n"
-                + Util.getFileContent("/proc/self/net/unix", 256)
-                + "\n";
+                    + " TCP over IPv4 (From: /proc/PID/net/tcp)\n"
+                    + Util.getFileContent("/proc/self/net/tcp", 1024)
+                    + "-\n"
+                    + " TCP over IPv6 (From: /proc/PID/net/tcp6)\n"
+                    + Util.getFileContent("/proc/self/net/tcp6", 1024)
+                    + "-\n"
+                    + " UDP over IPv4 (From: /proc/PID/net/udp)\n"
+                    + Util.getFileContent("/proc/self/net/udp", 1024)
+                    + "-\n"
+                    + " UDP over IPv6 (From: /proc/PID/net/udp6)\n"
+                    + Util.getFileContent("/proc/self/net/udp6", 1024)
+                    + "-\n"
+                    + " ICMP in IPv4 (From: /proc/PID/net/icmp)\n"
+                    + Util.getFileContent("/proc/self/net/icmp", 256)
+                    + "-\n"
+                    + " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n"
+                    + Util.getFileContent("/proc/self/net/icmp6", 256)
+                    + "-\n"
+                    + " UNIX domain (From: /proc/PID/net/unix)\n"
+                    + Util.getFileContent("/proc/self/net/unix", 256)
+                    + "\n";
         }
     }
 
@@ -401,7 +401,7 @@ class Util {
                     } catch (Exception ignored) {
                     }
                     sb.append("    fd ").append(fd.getName()).append(": ")
-                        .append(TextUtils.isEmpty(path) ? "???" : path.trim()).append('\n');
+                            .append(TextUtils.isEmpty(path) ? "???" : path.trim()).append('\n');
 
                     count++;
                     if (count > 1024) {

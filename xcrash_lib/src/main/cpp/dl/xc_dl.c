@@ -161,9 +161,9 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info *info, ElfW(Shdr
         // get base address
         uintptr_t vaddr_min = UINTPTR_MAX;
         for (size_t i = 0; i < info->dlpi_phnum; i++) {
-            const ElfW(Phdr) *phdr = &(info->dlpi_phdr[i]);
-            if(PT_LOAD == phdr->p_type) {
-                if(vaddr_min > phdr->p_vaddr) vaddr_min = phdr->p_vaddr;
+            const ElfW(Phdr)* phdr = &(info->dlpi_phdr[i]);
+            if (PT_LOAD == phdr->p_type) {
+                if (vaddr_min > phdr->p_vaddr) vaddr_min = phdr->p_vaddr;
             }
         }
         if (UINTPTR_MAX == vaddr_min)
@@ -176,24 +176,30 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info *info, ElfW(Shdr
 
         // get file size
         struct stat st;
-        if(0 != fstat(self->file_fd, &st)) return -1;
-        self->file_sz = (size_t)st.st_size;
+        if (0 != fstat(self->file_fd, &st)) return -1;
+        self->file_sz = (size_t) st.st_size;
 
         // mmap file
-        if (MAP_FAILED == (self->file = (uint8_t *) mmap(NULL,
-                self->file_sz, PROT_READ, MAP_PRIVATE, self->file_fd, 0)))
-
+        if (MAP_FAILED == (self->file = (uint8_t*) mmap(NULL,
+                                                        self->file_sz,
+                                                        PROT_READ,
+                                                        MAP_PRIVATE,
+                                                        self->file_fd, 0))) {
             return -1;
+        }
 
         // for ELF parsing
-        ehdr = (ElfW(Ehdr) *)self->base;
+        ehdr = (ElfW(Ehdr)*) self->base;
         elf = self->file;
         elf_sz = self->file_sz;
     } else {
         // decompress the .gnu_debugdata section
         if (0 != xc_dl_util_lzma_decompress(self->file + shdr_debugdata->sh_offset,
-                shdr_debugdata->sh_size, &self->debugdata, &self->debugdata_sz))
+                                            shdr_debugdata->sh_size,
+                                            &self->debugdata,
+                                            &self->debugdata_sz)) {
             return -1;
+        }
 
         // for ELF parsing
 #pragma clang diagnostic push

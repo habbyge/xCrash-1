@@ -411,7 +411,7 @@
     struct name {                                                       \
         struct type *qual tqh_first; /* first element */                \
         struct type *qual *tqh_last; /* addr of last next element */    \
-}
+    }
 
 #define TAILQ_HEAD_INITIALIZER(head)                                    \
     { NULL, &(head).tqh_first }

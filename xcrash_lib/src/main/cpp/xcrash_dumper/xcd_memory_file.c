@@ -39,20 +39,17 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
-struct xcd_memory_file
-{
-    xcd_memory_t *base;
-    int           fd;
-    uint8_t      *data;
-    size_t        offset;
-    size_t        size;
+struct xcd_memory_file {
+    xcd_memory_t* base;
+    int fd;
+    uint8_t* data;
+    size_t offset;
+    size_t size;
 };
 #pragma clang diagnostic pop
 
-static void xcd_memory_file_uninit(xcd_memory_file_t *self)
-{
-    if(NULL != self->data)
-    {
+static void xcd_memory_file_uninit(xcd_memory_file_t* self) {
+    if (NULL != self->data) {
         munmap(self->data - self->offset, self->size + self->offset);
         self->data = NULL;
         self->offset = 0;
@@ -60,45 +57,45 @@ static void xcd_memory_file_uninit(xcd_memory_file_t *self)
     }
 }
 
-static int xcd_memory_file_init(xcd_memory_file_t *self, size_t size, size_t offset, uint64_t file_size)
-{
+static int xcd_memory_file_init(xcd_memory_file_t* self, size_t size,
+                                size_t offset, uint64_t file_size) {
+
     xcd_memory_file_uninit(self);
 
-    if(offset >= (size_t)file_size) return XCC_ERRNO_RANGE;
+    if (offset >= (size_t) file_size) return XCC_ERRNO_RANGE;
 
-    size_t aligned_offset = offset & (~(size_t)(getpagesize() - 1));
-    if(aligned_offset > (size_t)file_size) return XCC_ERRNO_RANGE;
+    size_t aligned_offset = offset & (~(size_t) (getpagesize() - 1));
+    if (aligned_offset > (size_t) file_size) return XCC_ERRNO_RANGE;
 
-    self->offset = offset & (size_t)(getpagesize() - 1);
-    self->size = (size_t)file_size - aligned_offset;
-    
+    self->offset = offset & (size_t) (getpagesize() - 1);
+    self->size = (size_t) file_size - aligned_offset;
+
     size_t max_size;
-    if(!__builtin_add_overflow(size, self->offset, &max_size) && max_size < self->size)
+    if (!__builtin_add_overflow(size, self->offset, &max_size) && max_size < self->size)
         self->size = max_size;
 
-    void* map = mmap(NULL, self->size, PROT_READ, MAP_PRIVATE, self->fd, (off_t)aligned_offset);
-    if(map == MAP_FAILED) return XCC_ERRNO_SYS;
+    void* map = mmap(NULL, self->size, PROT_READ, MAP_PRIVATE, self->fd, (off_t) aligned_offset);
+    if (map == MAP_FAILED) return XCC_ERRNO_SYS;
 
-    self->data = (uint8_t *)map + self->offset;
+    self->data = (uint8_t*) map + self->offset;
     self->size -= self->offset;
 
     return 0;
 }
 
-int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_maps_t *maps)
-{
-    xcd_memory_file_t **self = (xcd_memory_file_t **)obj;
-    size_t              map_size = map->end - map->start;
-    xcd_map_t          *prev_map;
-    size_t              prev_map_size;
-    struct stat         st;
-    uint64_t            file_size;
-    size_t              max_size;
-    int                 r;
+int xcd_memory_file_create(void** obj, xcd_memory_t* base, xcd_map_t* map, xcd_maps_t* maps) {
+    xcd_memory_file_t** self = (xcd_memory_file_t**) obj;
+    size_t map_size = map->end - map->start;
+    xcd_map_t* prev_map;
+    size_t prev_map_size;
+    struct stat st;
+    uint64_t file_size;
+    size_t max_size;
+    int r;
 
-    if(NULL == map->name || 0 == strlen(map->name)) return XCC_ERRNO_INVAL;
-    
-    if(NULL == (*self = malloc(sizeof(xcd_memory_file_t)))) return XCC_ERRNO_NOMEM;
+    if (NULL == map->name || 0 == strlen(map->name)) return XCC_ERRNO_INVAL;
+
+    if (NULL == (*self = malloc(sizeof(xcd_memory_file_t)))) return XCC_ERRNO_NOMEM;
     (*self)->base = base;
     (*self)->fd = -1;
     (*self)->data = NULL;
@@ -108,20 +105,18 @@ int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_m
     //open file
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
-    if(0 > ((*self)->fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(map->name, O_RDONLY | O_CLOEXEC))))
-    {
+    if (0 > ((*self)->fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(map->name, O_RDONLY | O_CLOEXEC)))) {
         r = XCC_ERRNO_SYS;
         goto err;
     }
 #pragma clang diagnostic pop
 
     //get file size
-    if(0 != fstat((*self)->fd, &st))
-    {
+    if (0 != fstat((*self)->fd, &st)) {
         r = XCC_ERRNO_SYS;
         goto err;
     }
-    file_size = (uint64_t)st.st_size;
+    file_size = (uint64_t) st.st_size;
 
     //CASE 1: Offset is zero.
     //        The whole file is an ELF?
@@ -130,11 +125,9 @@ int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_m
     //        d9bb6000-d9bb7000 r--p 00019000 fd:00 2666  /system/lib/libjavacrypto.so
     //        d9bb7000-d9bb8000 rw-p 0001a000 fd:00 2666  /system/lib/libjavacrypto.so
     //
-    if(0 == map->offset)
-    {
-        if(0 != (r = xcd_memory_file_init(*self, SIZE_MAX, 0, file_size))) goto err;
-        if(!xcd_elf_is_valid(base))
-        {
+    if (0 == map->offset) {
+        if (0 != (r = xcd_memory_file_init(*self, SIZE_MAX, 0, file_size))) goto err;
+        if (!xcd_elf_is_valid(base)) {
             r = XCC_ERRNO_MEM;
             goto err;
         }
@@ -149,19 +142,16 @@ int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_m
     // -->    d02aa000-d286d000 r-xp 048b3000 fd:00 623      /system/app/WebViewGoogle/WebViewGoogle.apk
     //        d286d000-d286e000 ---p 00000000 00:00 0
     //
-    if(0 != (r = xcd_memory_file_init(*self, map_size, map->offset, file_size))) goto err;
-    if(xcd_elf_is_valid(base))
-    {
+    if (0 != (r = xcd_memory_file_init(*self, map_size, map->offset, file_size))) goto err;
+    if (xcd_elf_is_valid(base)) {
         map->elf_start_offset = map->offset;
-        
+
         max_size = xcd_elf_get_max_size(base);
-        if(max_size > map_size)
-        {
+        if (max_size > map_size) {
             //try to map the whole file
-            if(0 != xcd_memory_file_init(*self, max_size, map->offset, file_size))
-            {
+            if (0 != xcd_memory_file_init(*self, max_size, map->offset, file_size)) {
                 //rollback
-                if(0 != (r = xcd_memory_file_init(*self, map_size, map->offset, file_size))) goto err;
+                if (0 != (r = xcd_memory_file_init(*self, map_size, map->offset, file_size))) goto err;
             }
         }
         return 0;
@@ -176,9 +166,8 @@ int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_m
     //        72a36000-72a37000 r--p 00024000 fd:00 1955  /system/framework/arm/boot-apache-xml.oat
     //        72a37000-72a38000 rw-p 00025000 fd:00 1955  /system/framework/arm/boot-apache-xml.oat
     //
-    if(0 != (r = xcd_memory_file_init(*self, SIZE_MAX, 0, file_size))) goto err;
-    if(xcd_elf_is_valid(base))
-    {
+    if (0 != (r = xcd_memory_file_init(*self, SIZE_MAX, 0, file_size))) goto err;
+    if (xcd_elf_is_valid(base)) {
         map->elf_offset = map->offset;
         return 0;
     }
@@ -186,24 +175,24 @@ int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_m
     //CASE 4: Offset is not zero.
     //        No ELF header at the start of this map.
     //        The whole file is not an ELF.
-    //        The start of the previous map is an ELF header? (this map is part of an ELF which embedded in another file)
+    //        The start of the previous map is an ELF header? (this map is part of an ELF
+    //        which embedded in another file)
     //
     //        d1ea6000-d256d000 r--p 0095b000 fc:00 1158  /system/app/Chrome/Chrome.apk
     // -->    d256d000-d5ff0000 r-xp 01022000 fc:00 1158  /system/app/Chrome/Chrome.apk
     //        d5ff0000-d6009000 rw-p 04aa5000 fc:00 1158  /system/app/Chrome/Chrome.apk
     //
     prev_map = xcd_maps_get_prev_map(maps, map);
-    if(NULL != prev_map && PROT_READ == prev_map->flags && map->offset > prev_map->offset &&
-       NULL != prev_map->name && 0 == strcmp(prev_map->name, map->name))
-    {
+    if (NULL != prev_map && PROT_READ == prev_map->flags && map->offset > prev_map->offset &&
+        NULL != prev_map->name && 0 == strcmp(prev_map->name, map->name)) {
         prev_map_size = prev_map->end - prev_map->start;
-        if(0 != (r = xcd_memory_file_init(*self, prev_map_size, prev_map->offset, file_size))) goto err;
-        if(xcd_elf_is_valid(base))
-        {
+        if (0 != (r = xcd_memory_file_init(*self, prev_map_size, prev_map->offset, file_size)))
+            goto err;
+        if (xcd_elf_is_valid(base)) {
             max_size = xcd_elf_get_max_size(base);
-            if(max_size > prev_map_size)
-            {
-                if(0 != (r = xcd_memory_file_init(*self, max_size, prev_map->offset, file_size))) goto err;
+            if (max_size > prev_map_size) {
+                if (0 != (r = xcd_memory_file_init(*self, max_size, prev_map->offset, file_size)))
+                    goto err;
                 map->elf_offset = map->offset - prev_map->offset;
                 map->elf_start_offset = prev_map->offset;
                 return 0;
@@ -220,35 +209,34 @@ int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_m
     // -->    ......
     //
     r = XCC_ERRNO_NOTFND;
-    
- err:
+
+    err:
     map->elf_offset = 0;
     map->elf_start_offset = 0;
     xcd_memory_file_uninit(*self);
-    if((*self)->fd < 0) close((*self)->fd);
+    if ((*self)->fd < 0)
+        close((*self)->fd);
     free(*self);
     *self = NULL;
     return r;
 }
 
-void xcd_memory_file_destroy(void **obj)
-{
-    xcd_memory_file_t **self = (xcd_memory_file_t **)obj;
-    
+void xcd_memory_file_destroy(void** obj) {
+    xcd_memory_file_t** self = (xcd_memory_file_t**) obj;
+
     xcd_memory_file_uninit(*self);
     close((*self)->fd);
     free(*self);
     *self = NULL;
 }
 
-size_t xcd_memory_file_read(void *obj, uintptr_t addr, void *dst, size_t size)
-{
-    xcd_memory_file_t *self = (xcd_memory_file_t *)obj;
-    
-    if(addr >= self->size) return 0;
+size_t xcd_memory_file_read(void* obj, uintptr_t addr, void* dst, size_t size) {
+    xcd_memory_file_t* self = (xcd_memory_file_t*) obj;
 
-    size_t bytes_left = self->size - (size_t)addr;
-    uint8_t *actual_base = self->data + addr;
+    if (addr >= self->size) return 0;
+
+    size_t bytes_left = self->size - (size_t) addr;
+    uint8_t* actual_base = self->data + addr;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
@@ -262,7 +250,7 @@ size_t xcd_memory_file_read(void *obj, uintptr_t addr, void *dst, size_t size)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-variable-declarations"
 const xcd_memory_handlers_t xcd_memory_file_handlers = {
-    xcd_memory_file_destroy,
-    xcd_memory_file_read
+        xcd_memory_file_destroy,
+        xcd_memory_file_read
 };
 #pragma clang diagnostic pop

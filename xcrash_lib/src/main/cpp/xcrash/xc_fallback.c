@@ -53,19 +53,19 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
 
-static size_t xc_fallback_get_process_thread(char *buf, size_t len, pid_t tid) {
-    char  tname[64];
-    
+static size_t xc_fallback_get_process_thread(char* buf, size_t len, pid_t tid) {
+    char tname[64];
+
     xcc_util_get_thread_name(tid, tname, sizeof(tname));
 
     return xcc_fmt_snprintf(buf, len, "pid: %d, tid: %d, name: %s  >>> %s <<<\n",
                             xc_common_process_id, tid, tname, xc_common_process_name);
 }
 
-static size_t xc_fallback_get_signal(char *buf, size_t len, siginfo_t *si) {
+static size_t xc_fallback_get_signal(char* buf, size_t len, siginfo_t* si) {
     //fault addr
     char addr_desc[64];
-    if(xcc_util_signal_has_si_addr(si))
+    if (xcc_util_signal_has_si_addr(si))
         xcc_fmt_snprintf(addr_desc, sizeof(addr_desc), "%p", si->si_addr);
     else
         xcc_fmt_snprintf(addr_desc, sizeof(addr_desc), "--------");
@@ -74,7 +74,7 @@ static size_t xc_fallback_get_signal(char *buf, size_t len, siginfo_t *si) {
     char sender_desc[64] = "";
     if (xcc_util_signal_has_sender(si, xc_common_process_id))
         xcc_fmt_snprintf(sender_desc, sizeof(sender_desc),
-                " from pid %d, uid %d", si->si_pid, si->si_uid);
+                         " from pid %d, uid %d", si->si_pid, si->si_uid);
 
     return xcc_fmt_snprintf(buf, len, "signal %d (%s), code %d (%s%s), fault addr %s\n",
                             si->si_signo, xcc_util_get_signame(si),
@@ -82,6 +82,7 @@ static size_t xc_fallback_get_signal(char *buf, size_t len, siginfo_t *si) {
 }
 
 static size_t xc_fallback_get_regs(char* buf, size_t len, ucontext_t* uc) {
+    // 在Android平台的机器上，通常只需要处理：arm/arm64/i386/x64即可
 #if defined(__arm__)
     return xcc_fmt_snprintf(buf, len, 
                             "    r0  %08x  r1  %08x  r2  %08x  r3  %08x\n"
@@ -149,7 +150,7 @@ static size_t xc_fallback_get_regs(char* buf, size_t len, ucontext_t* uc) {
                             uc->uc_mcontext.regs[30], //lr
                             uc->uc_mcontext.pc);
 #elif defined(__i386__)
-    return xcc_fmt_snprintf(buf, len, 
+    return xcc_fmt_snprintf(buf, len,
                             "    eax %08x  ebx %08x  ecx %08x  edx %08x\n"
                             "    edi %08x  esi %08x\n"
                             "    ebp %08x  esp %08x  eip %08x\n\n",
@@ -204,7 +205,7 @@ static size_t xc_fallback_get_backtrace(char* buf, size_t len, siginfo_t* si, uc
 }
 
 size_t xc_fallback_get_emergency(siginfo_t* si,
-                                 ucontext_t *uc,
+                                 ucontext_t* uc,
                                  pid_t tid,
                                  uint64_t crash_time,
                                  char* emergency,
@@ -243,27 +244,27 @@ int xc_fallback_record(int log_fd,
     int r;
 
     if (log_fd < 0) return XCC_ERRNO_INVAL;
-    
+
     if (0 != (r = xcc_util_write_str(log_fd, emergency)))
         return r;
-    
+
     //If we wrote the emergency info successfully, we don't need to return it from callback again.
     emergency[0] = '\0';
-    
+
     if (0 != (r = xcc_util_record_logcat(log_fd, xc_common_process_id,
-            xc_common_api_level, logcat_system_lines,
-            logcat_events_lines, logcat_main_lines))) {
+                                         xc_common_api_level, logcat_system_lines,
+                                         logcat_events_lines, logcat_main_lines))) {
         return r;
     }
 
     if (dump_fds)
-        if(0 != (r = xcc_util_record_fds(log_fd, xc_common_process_id))) return r;
+        if (0 != (r = xcc_util_record_fds(log_fd, xc_common_process_id))) return r;
     if (dump_network_info)
         if (0 != (r = xcc_util_record_network_info(log_fd, xc_common_process_id, xc_common_api_level)))
             return r;
     if (0 != (r = xcc_meminfo_record(log_fd, xc_common_process_id)))
         return r;
-    
+
     return 0;
 }
 

@@ -298,39 +298,39 @@ public class TombstoneParser {
     private static final Pattern patAppVersionProcessName = Pattern.compile("^(\\d{20})_(.*)__(.*)$");
 
     private static final Set<String> keyHeadItems = new HashSet<String>(Arrays.asList(
-        keyTombstoneMaker,
-        keyCrashType,
-        keyStartTime,
-        keyCrashTime,
-        keyAppId,
-        keyAppVersion,
-        keyRooted,
-        keyApiLevel,
-        keyOsVersion,
-        keyKernelVersion,
-        keyAbiList,
-        keyManufacturer,
-        keyBrand,
-        keyModel,
-        keyBuildFingerprint,
-        keyAbi,
-        keyAbortMessage
+            keyTombstoneMaker,
+            keyCrashType,
+            keyStartTime,
+            keyCrashTime,
+            keyAppId,
+            keyAppVersion,
+            keyRooted,
+            keyApiLevel,
+            keyOsVersion,
+            keyKernelVersion,
+            keyAbiList,
+            keyManufacturer,
+            keyBrand,
+            keyModel,
+            keyBuildFingerprint,
+            keyAbi,
+            keyAbortMessage
     ));
 
     private static final Set<String> keySections = new HashSet<String>(Arrays.asList(
-        keyBacktrace,
-        keyBuildId,
-        keyStack,
-        keyMemoryMap,
-        keyLogcat,
-        keyOpenFiles,
-        keyJavaStacktrace,
-        keyXCrashError,
-        keyXCrashErrorDebug
+            keyBacktrace,
+            keyBuildId,
+            keyStack,
+            keyMemoryMap,
+            keyLogcat,
+            keyOpenFiles,
+            keyJavaStacktrace,
+            keyXCrashError,
+            keyXCrashErrorDebug
     ));
 
     private static final Set<String> keySingleLineSections = new HashSet<String>(Arrays.asList(
-        keyForeground
+            keyForeground
     ));
 
     private enum Status {
@@ -374,7 +374,7 @@ public class TombstoneParser {
      *
      * <p>Note: This method is generally used in {@link xcrash.ICrashCallback#onCrash(String, String)}.
      *
-     * @param logPath Absolute path of the crash log file.
+     * @param logPath   Absolute path of the crash log file.
      * @param emergency A buffer that holds basic crash information when disk exhausted.
      * @return The parsed map.
      * @throws IOException If an I/O error occurs.
@@ -572,131 +572,131 @@ public class TombstoneParser {
         for (boolean last = (line == null); !last; line = next) {
             last = ((next = (binary ? readLineInBinary(br) : br.readLine())) == null);
             switch (status) {
-                case UNKNOWN:
-                    if (line.equals(Util.sepHead)) {
-                        status = Status.HEAD;
-                    } else if (line.equals(Util.sepOtherThreads)) {
-                        //special case
-                        status = Status.SECTION;
-                        sectionTitle = keyOtherThreads;
-                        sectionContentEnding = Util.sepOtherThreadsEnding;
-                        sectionContentOutdent = false;
-                        sectionContentAppend = false;
-                        sectionContent.append(line).append('\n');
-                    } else if (line.length() > 1 && line.endsWith(":")) {
-                        status = Status.SECTION;
-                        sectionTitle = line.substring(0, line.length() - 1);
-                        sectionContentEnding = "";
-                        if (keySections.contains(sectionTitle)) {
-                            sectionContentOutdent = (sectionTitle.equals(keyBacktrace)
+            case UNKNOWN:
+                if (line.equals(Util.sepHead)) {
+                    status = Status.HEAD;
+                } else if (line.equals(Util.sepOtherThreads)) {
+                    //special case
+                    status = Status.SECTION;
+                    sectionTitle = keyOtherThreads;
+                    sectionContentEnding = Util.sepOtherThreadsEnding;
+                    sectionContentOutdent = false;
+                    sectionContentAppend = false;
+                    sectionContent.append(line).append('\n');
+                } else if (line.length() > 1 && line.endsWith(":")) {
+                    status = Status.SECTION;
+                    sectionTitle = line.substring(0, line.length() - 1);
+                    sectionContentEnding = "";
+                    if (keySections.contains(sectionTitle)) {
+                        sectionContentOutdent = (sectionTitle.equals(keyBacktrace)
                                 || sectionTitle.equals(keyBuildId)
                                 || sectionTitle.equals(keyStack)
                                 || sectionTitle.equals(keyMemoryMap)
                                 || sectionTitle.equals(keyOpenFiles)
                                 || sectionTitle.equals(keyJavaStacktrace)
                                 || sectionTitle.equals(keyXCrashErrorDebug));
-                            sectionContentAppend = sectionTitle.equals(keyXCrashError);
-                        } else if (sectionTitle.equals(keyMemoryInfo)) {
-                            sectionContentOutdent = false;
-                            sectionContentAppend = true;
-                        } else if (sectionTitle.startsWith("memory near ")) {
-                            //special case
-                            sectionTitle = keyMemoryNear;
-                            sectionContentOutdent = false;
-                            sectionContentAppend = true;
-                            sectionContent.append(line).append('\n');
-                        } else {
-                            //additional information section attached by users
-                            sectionContentOutdent = false;
-                            sectionContentAppend = false;
-                        }
-                    }
-                    break;
-                case HEAD:
-                    if (line.startsWith("pid: ")) {
-                        //try parse for native/java crash
-                        matcher = patProcessThread.matcher(line);
-                        if (matcher.find() && matcher.groupCount() == 4) {
-                            //pid, process name, tid, thread name
-                            putKeyValue(map, keyProcessId, matcher.group(1));
-                            putKeyValue(map, keyThreadId, matcher.group(2));
-                            putKeyValue(map, keyThreadName, matcher.group(3));
-                            putKeyValue(map, keyProcessName, matcher.group(4));
-                        } else {
-                            //try parse for ANR
-                            matcher = patProcess.matcher(line);
-                            if (matcher.find() && matcher.groupCount() == 2) {
-                                //pid, process name
-                                putKeyValue(map, keyProcessId, matcher.group(1));
-                                putKeyValue(map, keyProcessName, matcher.group(2));
-                            }
-                        }
-                    } else if (line.startsWith("signal ")) {
-                        matcher = patSignalCode.matcher(line);
-                        if (matcher.find() && matcher.groupCount() == 3) {
-                            //signal, code, fault address
-                            putKeyValue(map, keySignal, matcher.group(1));
-                            putKeyValue(map, keyCode, matcher.group(2));
-                            putKeyValue(map, keyFaultAddr, matcher.group(3));
-                        }
+                        sectionContentAppend = sectionTitle.equals(keyXCrashError);
+                    } else if (sectionTitle.equals(keyMemoryInfo)) {
+                        sectionContentOutdent = false;
+                        sectionContentAppend = true;
+                    } else if (sectionTitle.startsWith("memory near ")) {
+                        //special case
+                        sectionTitle = keyMemoryNear;
+                        sectionContentOutdent = false;
+                        sectionContentAppend = true;
+                        sectionContent.append(line).append('\n');
                     } else {
-                        //other items in head section
-                        matcher = patHeadItem.matcher(line);
-                        if (matcher.find() && matcher.groupCount() == 2) {
-                            if (keyHeadItems.contains(matcher.group(1))) {
-                                putKeyValue(map, matcher.group(1), matcher.group(2));
-                            }
-                        }
-                    }
-
-                    //special case
-                    if (next != null && (next.startsWith("    r0 ") ||
-                            next.startsWith("    x0 ") ||
-                            next.startsWith("    eax ") ||
-                            next.startsWith("    rax "))) {
-
-                        //registers
-                        status = Status.SECTION;
-                        sectionTitle = keyRegisters;
-                        sectionContentEnding = "";
-                        sectionContentOutdent = true;
+                        //additional information section attached by users
+                        sectionContentOutdent = false;
                         sectionContentAppend = false;
                     }
-
-                    if (next == null || next.isEmpty()) {
-                        //the end of head
-                        status = Status.UNKNOWN;
-                    }
-                    break;
-                case SECTION:
-                    if (line.equals(sectionContentEnding) || last) {
-                        if (keySingleLineSections.contains(sectionTitle)) {
-                            if (sectionContent.length() > 0 &&
-                                    sectionContent.charAt(sectionContent.length() - 1) == '\n') {
-
-                                // If there is only one line in the content, then delete
-                                // the newline character at the end.
-                                sectionContent.deleteCharAt(sectionContent.length() - 1);
-                            }
-                        }
-                        putKeyValue(map, sectionTitle, sectionContent.toString(), sectionContentAppend);
-                        sectionContent.setLength(0);
-                        status = Status.UNKNOWN;
+                }
+                break;
+            case HEAD:
+                if (line.startsWith("pid: ")) {
+                    //try parse for native/java crash
+                    matcher = patProcessThread.matcher(line);
+                    if (matcher.find() && matcher.groupCount() == 4) {
+                        //pid, process name, tid, thread name
+                        putKeyValue(map, keyProcessId, matcher.group(1));
+                        putKeyValue(map, keyThreadId, matcher.group(2));
+                        putKeyValue(map, keyThreadName, matcher.group(3));
+                        putKeyValue(map, keyProcessName, matcher.group(4));
                     } else {
-                        if (sectionContentOutdent) {
-                            if (sectionTitle.equals(keyJavaStacktrace) && line.startsWith(" ")) {
-                                //java stacktrace in native crash
-                                line = line.trim();
-                            } else if (line.startsWith("    ")) {
-                                //other sections
-                                line = line.substring(4);
-                            }
+                        //try parse for ANR
+                        matcher = patProcess.matcher(line);
+                        if (matcher.find() && matcher.groupCount() == 2) {
+                            //pid, process name
+                            putKeyValue(map, keyProcessId, matcher.group(1));
+                            putKeyValue(map, keyProcessName, matcher.group(2));
                         }
-                        sectionContent.append(line).append('\n');
                     }
-                    break;
-                default:
-                    break;
+                } else if (line.startsWith("signal ")) {
+                    matcher = patSignalCode.matcher(line);
+                    if (matcher.find() && matcher.groupCount() == 3) {
+                        //signal, code, fault address
+                        putKeyValue(map, keySignal, matcher.group(1));
+                        putKeyValue(map, keyCode, matcher.group(2));
+                        putKeyValue(map, keyFaultAddr, matcher.group(3));
+                    }
+                } else {
+                    //other items in head section
+                    matcher = patHeadItem.matcher(line);
+                    if (matcher.find() && matcher.groupCount() == 2) {
+                        if (keyHeadItems.contains(matcher.group(1))) {
+                            putKeyValue(map, matcher.group(1), matcher.group(2));
+                        }
+                    }
+                }
+
+                //special case
+                if (next != null && (next.startsWith("    r0 ") ||
+                        next.startsWith("    x0 ") ||
+                        next.startsWith("    eax ") ||
+                        next.startsWith("    rax "))) {
+
+                    //registers
+                    status = Status.SECTION;
+                    sectionTitle = keyRegisters;
+                    sectionContentEnding = "";
+                    sectionContentOutdent = true;
+                    sectionContentAppend = false;
+                }
+
+                if (next == null || next.isEmpty()) {
+                    //the end of head
+                    status = Status.UNKNOWN;
+                }
+                break;
+            case SECTION:
+                if (line.equals(sectionContentEnding) || last) {
+                    if (keySingleLineSections.contains(sectionTitle)) {
+                        if (sectionContent.length() > 0 &&
+                                sectionContent.charAt(sectionContent.length() - 1) == '\n') {
+
+                            // If there is only one line in the content, then delete
+                            // the newline character at the end.
+                            sectionContent.deleteCharAt(sectionContent.length() - 1);
+                        }
+                    }
+                    putKeyValue(map, sectionTitle, sectionContent.toString(), sectionContentAppend);
+                    sectionContent.setLength(0);
+                    status = Status.UNKNOWN;
+                } else {
+                    if (sectionContentOutdent) {
+                        if (sectionTitle.equals(keyJavaStacktrace) && line.startsWith(" ")) {
+                            //java stacktrace in native crash
+                            line = line.trim();
+                        } else if (line.startsWith("    ")) {
+                            //other sections
+                            line = line.substring(4);
+                        }
+                    }
+                    sectionContent.append(line).append('\n');
+                }
+                break;
+            default:
+                break;
             }
         }
     }
