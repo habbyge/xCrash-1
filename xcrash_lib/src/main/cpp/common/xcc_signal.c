@@ -276,6 +276,7 @@ int xcc_signal_crash_ignore() {
 
 int xcc_signal_crash_queue(siginfo_t* si) {
     if (SIGABRT == si->si_signo || SI_FROMUSER(si)) {
+        // 该系统调用函数位于: glibc-syscalls.h 中
         if (0 != syscall(SYS_rt_tgsigqueueinfo, getpid(), gettid(), si->si_signo, si)) {
             return XCC_ERRNO_SYS;
         }

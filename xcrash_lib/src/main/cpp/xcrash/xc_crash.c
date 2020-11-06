@@ -174,8 +174,8 @@ static int xc_crash_exec_dumper(void* arg) {
     // 符指向oldfd所拥有的文件表项.
     // 实际上，调用dup(oldfd)等效于，fcntl(oldfd, F_DUPFD, 0)
     // 而调用dup2(oldfd, newfd)等效于，close(oldfd)；fcntl(oldfd, F_DUPFD, newfd)；
-    XCC_UTIL_TEMP_FAILURE_RETRY(dup2(devnull, STDOUT_FILENO));
-    XCC_UTIL_TEMP_FAILURE_RETRY(dup2(devnull, STDERR_FILENO));
+    XCC_UTIL_TEMP_FAILURE_RETRY(dup2(devnull, STDOUT_FILENO)); // 忽略输出
+    XCC_UTIL_TEMP_FAILURE_RETRY(dup2(devnull, STDERR_FILENO)); // 忽略err
     
     // create args pipe
     int pipefd[2];
@@ -594,9 +594,11 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     if (!(WIFEXITED(status)) || 0 != WEXITSTATUS(status)) {
         if (WIFEXITED(status) && 0 != WEXITSTATUS(status)) {
             // terminated normally, but return / exit / _exit NON-zero
+
             xcc_util_write_format_safe(xc_crash_log_fd,
                     XC_CRASH_ERR_TITLE"child terminated normally with non-zero exit status(%d), "
-                    "dumper=%s\n\n", WEXITSTATUS(status), xc_crash_dumper_pathname);
+                    "dumper=%s\n\n", WEXITSTATUS(status),
+                    xc_crash_dumper_pathname);
 
             goto end;
         } else if(WIFSIGNALED(status)) {

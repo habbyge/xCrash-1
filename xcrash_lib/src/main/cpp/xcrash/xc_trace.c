@@ -182,23 +182,26 @@ static int xc_trace_load_symbols() { // TODO: ing......
 
     if (xc_trace_is_lollipop) {
         if (NULL == (xc_trace_libart_dbg_suspend = (xcc_util_libart_dbg_suspend_t)
-                xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_SUSPEND)))
-
+                xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_SUSPEND))) {
             goto end;
+        }
 
         if (NULL == (xc_trace_libart_dbg_resume = (xcc_util_libart_dbg_resume_t)
-                xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_RESUME)))
+                xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_RESUME))) {
             goto end;
+        }
     }
 
     //OK
     xc_trace_symbols_status = 0;
 
  end:
-    if (NULL != libcpp)
+    if (NULL != libcpp) {
         xc_dl_close(&libcpp);
-    if (NULL != libart)
+    }
+    if (NULL != libart) {
         xc_dl_close(&libart);
+    }
     return xc_trace_symbols_status;
 }
 

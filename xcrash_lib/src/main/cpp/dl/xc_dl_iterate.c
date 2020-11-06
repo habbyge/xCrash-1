@@ -186,7 +186,7 @@ static uintptr_t xc_dl_iterate_find_linker_base(FILE** maps) {
 
         if (0 != memcmp(line + line_len - linker_pathname_len,
                         " "XC_DL_CONST_PATHNAME_LINKER, linker_pathname_len)) {
-
+            // todo:
             continue;
         }
 
@@ -217,9 +217,11 @@ static int xc_dl_iterate_do_callback(xc_dl_iterate_cb_t cb, void* cb_arg,
 
     // get load bias
     uintptr_t min_vaddr = xc_dl_iterate_get_min_vaddr(&info);
-    if (UINTPTR_MAX == min_vaddr) return 0; // ignore invalid ELF
+    if (UINTPTR_MAX == min_vaddr)
+        return 0; // ignore invalid ELF
     info.dlpi_addr = (ElfW(Addr)) (base - min_vaddr);
-    if (NULL != load_bias) *load_bias = info.dlpi_addr;
+    if (NULL != load_bias)
+        *load_bias = info.dlpi_addr;
 
     return cb(&info, sizeof(struct dl_phdr_info), cb_arg);
 }
@@ -246,10 +248,10 @@ static int xc_dl_iterate_by_linker(xc_dl_iterate_cb_t cb, void* cb_arg, int flag
 
     // for other ELF
     uintptr_t pkg[4] = {
-        (uintptr_t) cb,
-        (uintptr_t) cb_arg,
-        (uintptr_t) &maps,
-        linker_load_bias
+            (uintptr_t) cb,
+            (uintptr_t) cb_arg,
+            (uintptr_t) &maps,
+            linker_load_bias
     };
     if (NULL != xc_dl_iterate_linker_mutex) {
         pthread_mutex_lock(xc_dl_iterate_linker_mutex);

@@ -49,7 +49,7 @@
 #pragma clang diagnostic ignored "-Wpadded"
 
 struct xc_dl {
-    int       flags;
+    int flags;
     uintptr_t load_bias;
 
     //
@@ -62,39 +62,39 @@ struct xc_dl {
     // .hash (SYSV hash for .dynstr)
     struct {
         const uint32_t* buckets;
-        uint32_t        buckets_cnt;
+        uint32_t buckets_cnt;
         const uint32_t* chains;
-        uint32_t        chains_cnt;
+        uint32_t chains_cnt;
     } sysv_hash;
 
     // .gnu.hash (GNU hash for .dynstr)
     struct {
-        const uint32_t*   buckets;
-        uint32_t          buckets_cnt;
-        const uint32_t*   chains;
-        uint32_t          symoffset;
+        const uint32_t* buckets;
+        uint32_t buckets_cnt;
+        const uint32_t* chains;
+        uint32_t symoffset;
         const ElfW(Addr)* bloom;
-        uint32_t          bloom_cnt;
-        uint32_t          bloom_shift;
+        uint32_t bloom_cnt;
+        uint32_t bloom_shift;
     } gnu_hash;
 
     //
     // (2) for searching symbols from .symtab
     //
 
-    uintptr_t  base;
+    uintptr_t base;
 
-    int        file_fd;
-    uint8_t*   file;
-    size_t     file_sz;
+    int file_fd;
+    uint8_t* file;
+    size_t file_sz;
 
-    uint8_t*   debugdata; // decompressed .gnu_debugdata
-    size_t     debugdata_sz;
+    uint8_t* debugdata; // decompressed .gnu_debugdata
+    size_t debugdata_sz;
 
     ElfW(Sym)* symtab;  // .symtab
-    size_t     symtab_cnt;
-    char*      strtab;  // .strtab
-    size_t     strtab_sz;
+    size_t symtab_cnt;
+    char* strtab;  // .strtab
+    size_t strtab_sz;
 };
 
 #pragma clang diagnostic pop
@@ -102,11 +102,11 @@ struct xc_dl {
 // load from memory
 static int xc_dl_dynsym_load(xc_dl_t* self, struct dl_phdr_info* info) {
     // find the dynamic segment
-    ElfW(Dyn) *dynamic = NULL;
+    ElfW(Dyn)* dynamic = NULL;
     for (size_t i = 0; i < info->dlpi_phnum; i++) {
-        const ElfW(Phdr) *phdr = &(info->dlpi_phdr[i]);
+        const ElfW(Phdr)* phdr = &(info->dlpi_phdr[i]);
         if (PT_DYNAMIC == phdr->p_type) {
-            dynamic = (ElfW(Dyn) *)(self->load_bias + phdr->p_vaddr);
+            dynamic = (ElfW(Dyn)*) (self->load_bias + phdr->p_vaddr);
             break;
         }
     }
@@ -114,37 +114,37 @@ static int xc_dl_dynsym_load(xc_dl_t* self, struct dl_phdr_info* info) {
         return -1;
 
     // iterate the dynamic segment
-    for (ElfW(Dyn) * entry = dynamic; entry && entry->d_tag != DT_NULL; entry++) {
+    for (ElfW(Dyn)* entry = dynamic; entry && entry->d_tag != DT_NULL; entry++) {
         switch (entry->d_tag) {
-        case DT_SYMTAB: //.dynsym
-            self->dynsym = (ElfW(Sym) *)(self->load_bias + entry->d_un.d_ptr);
-            break;
-        case DT_STRTAB: //.dynstr
-            self->dynstr = (const char *)(self->load_bias + entry->d_un.d_ptr);
-            break;
-        case DT_HASH: //.hash
-            self->sysv_hash.buckets_cnt = ((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[0];
-            self->sysv_hash.chains_cnt = ((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[1];
-            self->sysv_hash.buckets = &(((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[2]);
-            self->sysv_hash.chains = &(self->sysv_hash.buckets[self->sysv_hash.buckets_cnt]);
-            break;
-        case DT_GNU_HASH: //.gnu.hash
-            self->gnu_hash.buckets_cnt = ((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[0];
-            self->gnu_hash.symoffset = ((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[1];
-            self->gnu_hash.bloom_cnt = ((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[2];
-            self->gnu_hash.bloom_shift = ((const uint32_t *)(self->load_bias + entry->d_un.d_ptr))[3];
-            self->gnu_hash.bloom = (const ElfW(Addr) *)(self->load_bias + entry->d_un.d_ptr + 16);
-            self->gnu_hash.buckets = (const uint32_t *)
-                    (&(self->gnu_hash.bloom[self->gnu_hash.bloom_cnt]));
-            self->gnu_hash.chains = (const uint32_t *)
-                    (&(self->gnu_hash.buckets[self->gnu_hash.buckets_cnt]));
-        default:
-            break;
+            case DT_SYMTAB: //.dynsym
+                self->dynsym = (ElfW(Sym)*) (self->load_bias + entry->d_un.d_ptr);
+                break;
+            case DT_STRTAB: //.dynstr
+                self->dynstr = (const char*) (self->load_bias + entry->d_un.d_ptr);
+                break;
+            case DT_HASH: //.hash
+                self->sysv_hash.buckets_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[0];
+                self->sysv_hash.chains_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[1];
+                self->sysv_hash.buckets = &(((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[2]);
+                self->sysv_hash.chains = &(self->sysv_hash.buckets[self->sysv_hash.buckets_cnt]);
+                break;
+            case DT_GNU_HASH: //.gnu.hash
+                self->gnu_hash.buckets_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[0];
+                self->gnu_hash.symoffset = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[1];
+                self->gnu_hash.bloom_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[2];
+                self->gnu_hash.bloom_shift = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[3];
+                self->gnu_hash.bloom = (const ElfW(Addr)*) (self->load_bias + entry->d_un.d_ptr + 16);
+                self->gnu_hash.buckets = (const uint32_t*)
+                        (&(self->gnu_hash.bloom[self->gnu_hash.bloom_cnt]));
+                self->gnu_hash.chains = (const uint32_t*)
+                        (&(self->gnu_hash.buckets[self->gnu_hash.buckets_cnt]));
+            default:
+                break;
         }
     }
     if (NULL == self->dynsym ||
-            NULL == self->dynstr ||
-            (0 == self->sysv_hash.buckets_cnt && 0 == self->gnu_hash.buckets_cnt))
+        NULL == self->dynstr ||
+        (0 == self->sysv_hash.buckets_cnt && 0 == self->gnu_hash.buckets_cnt))
 
         return -1;
 
@@ -152,7 +152,7 @@ static int xc_dl_dynsym_load(xc_dl_t* self, struct dl_phdr_info* info) {
 }
 
 // load from disk and memory
-static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info *info, ElfW(Shdr) *shdr_debugdata) {
+static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info* info, ElfW(Shdr)* shdr_debugdata) {
     ElfW(Ehdr)* ehdr;
     uint8_t* elf;
     size_t elf_sz;
@@ -204,47 +204,47 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info *info, ElfW(Shdr
         // for ELF parsing
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcast-align"
-        ehdr = (ElfW(Ehdr) *)self->debugdata;
+        ehdr = (ElfW(Ehdr)*) self->debugdata;
 #pragma clang diagnostic pop
         elf = self->debugdata;
         elf_sz = self->debugdata_sz;
     }
 
     // check ELF size
-    if(0 == ehdr->e_shnum) return -1;
-    if(elf_sz < ehdr->e_shoff + ehdr->e_shentsize * ehdr->e_shnum) return -1;
+    if (0 == ehdr->e_shnum) return -1;
+    if (elf_sz < ehdr->e_shoff + ehdr->e_shentsize * ehdr->e_shnum) return -1;
 
     // get .shstrtab
     if (SHN_UNDEF == ehdr->e_shstrndx)
         return -1;
 
-    ElfW(Shdr) *shdr_shstrtab = (ElfW(Shdr) *)((uintptr_t) elf
-            + ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
+    ElfW(Shdr)* shdr_shstrtab = (ElfW(Shdr)*) ((uintptr_t) elf
+                                               + ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
 
-    char* shstrtab = (char *)((uintptr_t)elf + shdr_shstrtab->sh_offset);
+    char* shstrtab = (char*) ((uintptr_t) elf + shdr_shstrtab->sh_offset);
 
     for (size_t i = 0; i < ehdr->e_shnum; i++) {
-        ElfW(Shdr) *shdr = (ElfW(Shdr) *)((uintptr_t)elf + ehdr->e_shoff + i * ehdr->e_shentsize);
+        ElfW(Shdr)* shdr = (ElfW(Shdr)*) ((uintptr_t) elf + ehdr->e_shoff + i * ehdr->e_shentsize);
 
         if (SHT_SYMTAB == shdr->sh_type && 0 == strcmp(".symtab", shstrtab + shdr->sh_name)) {
             // get and check .strtab
             if (shdr->sh_link >= ehdr->e_shnum)
                 continue;
 
-            ElfW(Shdr) *shdr_strtab = (ElfW(Shdr) *)((uintptr_t)elf
-                    + ehdr->e_shoff + shdr->sh_link * ehdr->e_shentsize);
+            ElfW(Shdr)* shdr_strtab = (ElfW(Shdr)*) ((uintptr_t) elf
+                                                     + ehdr->e_shoff + shdr->sh_link * ehdr->e_shentsize);
 
-            if(SHT_STRTAB != shdr_strtab->sh_type) continue;
+            if (SHT_STRTAB != shdr_strtab->sh_type) continue;
 
             // found the .symtab and .strtab
-            self->symtab     = (ElfW(Sym) *)((uintptr_t)elf + shdr->sh_offset);
+            self->symtab = (ElfW(Sym)*) ((uintptr_t) elf + shdr->sh_offset);
             self->symtab_cnt = shdr->sh_size / shdr->sh_entsize;
-            self->strtab     = (char *)((uintptr_t)elf + shdr_strtab->sh_offset);
-            self->strtab_sz  = shdr_strtab->sh_size;
+            self->strtab = (char*) ((uintptr_t) elf + shdr_strtab->sh_offset);
+            self->strtab_sz = shdr_strtab->sh_size;
             return 0; // OK
         } else if (SHT_PROGBITS == shdr->sh_type
-                && 0 == strcmp(".gnu_debugdata", shstrtab + shdr->sh_name)
-                && NULL == shdr_debugdata) {
+                   && 0 == strcmp(".gnu_debugdata", shstrtab + shdr->sh_name)
+                   && NULL == shdr_debugdata) {
 
             return xc_dl_symtab_load(self, info, shdr);
         }
@@ -256,16 +256,16 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info *info, ElfW(Shdr
 static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) { // TODO:
     (void) size;
 
-    uintptr_t* pkg = (uintptr_t *) arg;
-    xc_dl_t** self = (xc_dl_t **) *pkg++;
-    const char *pathname = (const char *) *pkg++;
+    uintptr_t* pkg = (uintptr_t*) arg;
+    xc_dl_t** self = (xc_dl_t**) *pkg++;
+    const char* pathname = (const char*) *pkg++;
     int flags = (int) *pkg;
 
     // check load_bias and pathname
-    if(0 == info->dlpi_addr || NULL == info->dlpi_name) return 0;
-    if('/' == pathname[0] || '[' == pathname[0]) {
+    if (0 == info->dlpi_addr || NULL == info->dlpi_name) return 0;
+    if ('/' == pathname[0] || '[' == pathname[0]) {
         // full pathname
-        if(0 != strcmp(info->dlpi_name, pathname)) return 0;
+        if (0 != strcmp(info->dlpi_name, pathname)) return 0;
     } else {
         // basename ?
         size_t basename_len = strlen(pathname);
@@ -279,7 +279,7 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
     }
 
     // found the target ELF
-    if(NULL == ((*self) = calloc(1, sizeof(xc_dl_t)))) return 1;
+    if (NULL == ((*self) = calloc(1, sizeof(xc_dl_t)))) return 1;
     (*self)->flags = flags;
     (*self)->load_bias = info->dlpi_addr;
     (*self)->file_fd = -1;
@@ -299,7 +299,7 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
 
     return 1;
 
- err:
+    err:
     xc_dl_close(self);
     return 1;
 }
@@ -308,11 +308,11 @@ xc_dl_t* xc_dl_open(const char* pathname, int flags) {
     if (NULL == pathname || 0 == flags)
         return NULL;
 
-    xc_dl_t *self = NULL;
+    xc_dl_t* self = NULL;
     uintptr_t pkg[3] = {
-        (uintptr_t) &self,
-        (uintptr_t) pathname,
-        (uintptr_t) flags
+            (uintptr_t) &self,
+            (uintptr_t) pathname,
+            (uintptr_t) flags
     };
 
     // 是否是linker后缀
@@ -339,7 +339,7 @@ void xc_dl_close(xc_dl_t** self) {
 static uint32_t xc_dl_sysv_hash(const uint8_t* name) {
     uint32_t h = 0, g;
 
-    while(*name) {
+    while (*name) {
         h = (h << 4) + *name++;
         g = h & 0xf0000000;
         h ^= g;
@@ -351,7 +351,7 @@ static uint32_t xc_dl_sysv_hash(const uint8_t* name) {
 static uint32_t xc_dl_gnu_hash(const uint8_t* name) {
     uint32_t h = 5381;
 
-    while(*name) {
+    while (*name) {
         h += (h << 5) + *name++;
     }
     return h;
@@ -364,7 +364,7 @@ static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self,
     uint32_t hash = xc_dl_sysv_hash((const uint8_t*) sym_name);
 
     for (uint32_t i = self->sysv_hash.buckets[hash % self->sysv_hash.buckets_cnt];
-            0 != i; i = self->sysv_hash.chains[i]) {
+         0 != i; i = self->sysv_hash.chains[i]) {
 
         ElfW(Sym)* sym = self->dynsym + i;
         if ((need_func ? STT_FUNC : STT_OBJECT) != ELF_ST_TYPE(sym->st_info))
@@ -377,19 +377,19 @@ static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self,
     return NULL;
 }
 
-static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
+static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
                                                         const char* sym_name,
                                                         bool need_func) {
 
-    uint32_t hash = xc_dl_gnu_hash((const uint8_t *)sym_name);
+    uint32_t hash = xc_dl_gnu_hash((const uint8_t*) sym_name);
 
     static uint32_t elfclass_bits = sizeof(ElfW(Addr)) * 8;
     size_t word = self->gnu_hash.bloom[(hash / elfclass_bits) % self->gnu_hash.bloom_cnt];
-    size_t mask = 0 | (size_t)1 << (hash % elfclass_bits)
-                  | (size_t)1 << ((hash >> self->gnu_hash.bloom_shift) % elfclass_bits);
+    size_t mask = 0 | (size_t) 1 << (hash % elfclass_bits)
+                  | (size_t) 1 << ((hash >> self->gnu_hash.bloom_shift) % elfclass_bits);
 
     //if at least one bit is not set, this symbol is surely missing
-    if((word & mask) != mask) return NULL;
+    if ((word & mask) != mask) return NULL;
 
     //ignore STN_UNDEF
     uint32_t i = self->gnu_hash.buckets[hash % self->gnu_hash.buckets_cnt];
@@ -397,19 +397,19 @@ static ElfW(Sym) *xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
         return NULL;
 
     //loop through the chain
-    while(1) {
-        ElfW(Sym) *sym = self->dynsym + i;
+    while (1) {
+        ElfW(Sym)* sym = self->dynsym + i;
         uint32_t sym_hash = self->gnu_hash.chains[i - self->gnu_hash.symoffset];
 
-        if ((hash | (uint32_t)1) == (sym_hash | (uint32_t)1) &&
-                (need_func ? STT_FUNC : STT_OBJECT) == ELF_ST_TYPE(sym->st_info)) {
+        if ((hash | (uint32_t) 1) == (sym_hash | (uint32_t) 1) &&
+            (need_func ? STT_FUNC : STT_OBJECT) == ELF_ST_TYPE(sym->st_info)) {
             if (0 == strcmp(self->dynstr + sym->st_name, sym_name)) {
                 return sym;
             }
         }
 
         //chain ends with an element with the lowest bit set to 1
-        if(sym_hash & (uint32_t)1) break;
+        if (sym_hash & (uint32_t) 1) break;
 
         i++;
     }
@@ -421,7 +421,7 @@ static void* xc_dl_dynsym(xc_dl_t* self, const char* sym_name, bool need_func) {
     if (0 == (self->flags & XC_DL_DYNSYM))
         return NULL;
 
-    ElfW(Sym) *sym = NULL;
+    ElfW(Sym)* sym = NULL;
     if (self->gnu_hash.buckets_cnt > 0) {
         // use GNU hash (.gnu.hash -> .dynsym -> .dynstr), O(x) + O(1) + O(1)
         sym = xc_dl_dynsym_find_symbol_use_gnu_hash(self, sym_name, need_func);
@@ -444,31 +444,31 @@ void* xc_dl_dynsym_object(xc_dl_t* self, const char* sym_name) {
     return xc_dl_dynsym(self, sym_name, false);
 }
 
-static void *xc_dl_symtab(xc_dl_t* self, const char* sym_name, bool need_func) {
+static void* xc_dl_symtab(xc_dl_t* self, const char* sym_name, bool need_func) {
     if (0 == (self->flags & XC_DL_SYMTAB))
         return NULL;
 
     for (size_t i = 0; i < self->symtab_cnt; i++) {
-        ElfW(Sym) *sym = self->symtab + i;
+        ElfW(Sym)* sym = self->symtab + i;
 
         if (!XC_DL_SYMTAB_IS_EXPORT_SYM(sym->st_shndx))
             continue;
         if ((need_func ? STT_FUNC : STT_OBJECT) != ELF_ST_TYPE(sym->st_info))
             continue;
         if (0 != strncmp(self->strtab + sym->st_name, sym_name,
-                self->strtab_sz - sym->st_name))
+                         self->strtab_sz - sym->st_name))
             continue;
 
-        return (void *)(self->load_bias + sym->st_value);
+        return (void*) (self->load_bias + sym->st_value);
     }
 
     return NULL;
 }
 
-void *xc_dl_symtab_func(xc_dl_t *self, const char *sym_name) {
+void* xc_dl_symtab_func(xc_dl_t* self, const char* sym_name) {
     return xc_dl_symtab(self, sym_name, true);
 }
 
-void *xc_dl_symtab_object(xc_dl_t *self, const char *sym_name) {
+void* xc_dl_symtab_object(xc_dl_t* self, const char* sym_name) {
     return xc_dl_symtab(self, sym_name, false);
 }
