@@ -298,10 +298,40 @@ int xcc_signal_trace_register(void (*handler)(int, siginfo_t*, void*)) {
     struct sigaction act;
 
     // un-block the SIGQUIT mask for current thread, hope this is the main thread
+    // 用于将参数set信号集初始化并清空
     sigemptyset(&set);
+    // 用来将参数SIGQUIT信号加入至参数set信号集里
     sigaddset(&set, SIGQUIT); // 增加一个信号到信号集
-    if (0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset)))
+    // 在Linux的多线程中使用信号机制，与在进程中使用信号机制有着根本的区别，可以说是完全不同。在进程
+    // 环境中，对信号的处理是，先注册信号处理函数，当信号异步发生时，调用处理函数来处理信号。它完全是
+    // 异步的（我们完全不知到信号会在进程的那个执行点到来！）。然而信号处理函数的实现，有着许多的限制,
+    // 比如有一些函数不能在信号处理函数中调用；再比如一些函数read、recv等调用时会被异步的信号给中断
+    // (interrupt)，因此我们必须对在这些函数在调用时因为信号而中断的情况进行处理（判断函数返回时 
+    // enno 是否等于 EINTR）。但是在多线程中处理信号的原则却完全不同，它的基本原则是：将对信号的异
+    // 步处理，转换成同步处理，也就是说用一个线程专门的来“同步等待”信号的到来，而其它的线程可以完全
+    // 不被该信号中断/打断(interrupt)。这样就在相当程度上简化了在多线程环境中对信号的处理。而且可以
+    // 保证其它的线程不受信号的影响。这样我们对信号就可以完全预测，因为它不再是异步的，而是同步的（我
+    // 们完全知道信号会在哪个线程中的哪个执行点到来而被处理！）。而同步的编程模式总是比异步的编程模式
+    // 简单。其实多线程相比于多进程的其中一个优点就是：多线程可以将进程中异步的东西转换成同步的来处理。
+    // 
+    // 1.sigwait() 监听信号集set中所包含的信号，并将其存在signo中.
+    // sigwait()函数暂停调用线程的执行，直到信号集中指定的信号之一被传递为止。在多线程代码中，总是使
+    // 用sigwait或者sigwaitinfo或者sigtimedwait等函数来处理信号。而不是signal或者sigaction等
+    // 函数。因为在一个线程中调用signal或者sigaction等函数会改变所有线程中的信号处理函数。而不是仅
+    // 仅改变调用signal/sigaction的那个线程的信号处理函数。
+    // 注意：调用sigwait同步等待的信号必须在调用线程中被屏蔽，并且通常应该在所有的线程中被屏蔽（这样
+    // 可以保证信号绝不会被送到除了调用sigwait的任何其它线程），这是通过利用信号掩码的继承关系来达到
+    // 的。
+    // 2、pthread_sigmask函数：
+    // 每个线程均有自己的信号屏蔽集（信号掩码），可以使用pthread_sigmask函数来屏蔽某个线程对某些信
+    // 号的响应处理，仅留下需要处理该信号的线程来处理指定的信号。实现方式是：利用线程信号屏蔽集的继承
+    // 关系（在主进程中对sigmask进行设置后，主进程创建出来的线程将继承主进程的掩码）
+    // SIG_BLOCK:   结果集是当前集合参数集的并集
+    // SIG_UNBLOCK: 结果集是当前集合参数集的差集
+    // SIG_SETMASK: 结果集是由参数集指向的集
+    if (0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset))) {
         return r;
+    }
 
     //register new signal handler for SIGQUIT
     memset(&act, 0, sizeof(act));

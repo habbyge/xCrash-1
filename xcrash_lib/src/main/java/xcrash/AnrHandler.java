@@ -43,6 +43,9 @@ import static android.os.FileObserver.CLOSE_WRITE;
 /**
  * ANR（Application Not Responding）异常捕获处理器
  *
+ * Java 层的处理在 AnrHandler#handleAnr() 方法中，其也比较简单，就是解析 data/anr/trace.txt 文件，
+ * 看看有没有自己进程的信息。感兴趣的也可以自己去分析。
+ *
  * - ANR异常产生的类型（本质就是四大组件超时）：
  * 1. KeyDispatchTimeout，UI主线程对于输入事件，即InputDispatch事件超过5s没有处理产生ANR。
  * 2. BroadcastTimeout，在广播接收器BroadcastReceiver的onReceive在一定的时间内没有执行完程序就会发生ANR异常，

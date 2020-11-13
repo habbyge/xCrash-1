@@ -48,8 +48,8 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
 
-#define XC_TRACE_CALLBACK_METHOD_NAME         "traceCallback"
-#define XC_TRACE_CALLBACK_METHOD_SIGNATURE    "(Ljava/lang/String;Ljava/lang/String;)V"
+#define XC_TRACE_CALLBACK_METHOD_NAME      "traceCallback"
+#define XC_TRACE_CALLBACK_METHOD_SIGNATURE "(Ljava/lang/String;Ljava/lang/String;)V"
 
 #define XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD    (-2)
 #define XC_TRACE_SIGNAL_CATCHER_TID_UNKNOWN   (-1)
@@ -272,7 +272,7 @@ static int xc_trace_write_header(int fd, uint64_t trace_time) {
 }
 
 /**
- * SIGQUIT信号发生后，等待处理函数(注意：非信号处理函数)，在子线程中执行...
+ * 在子线程中执行: SIGQUIT信号发生后，等待处理函数(注意：非信号处理函数)
  */
 static void* xc_trace_dumper(void* arg) {
     JNIEnv* env = NULL;
@@ -287,18 +287,18 @@ static void* xc_trace_dumper(void* arg) {
     
     pthread_detach(pthread_self()); // 设置当前子线程不让其父线程等待
 
+    // 这个函数的作用是：绑定 JNIEnv 到当前线程上，为了让当前子线程获取env对象实例.
+    // 很多时候，你的Native代码建立自己的线程（比如这里建立anr dump线程），并在合适的时候回调Java代码，我们没
+    // 有办法像上面那样直接获得JNIEnv(不能夸线程使用，线程安全的)，获取它的实例需要让你的线程获取该JNIEvn，调
+    // 用: JavaVM::AttachCurrentThread()，使用完之后还需要调用 JavaVM::DetachCurrentThread()函数解绑
+    // 线程，需要注意的是对于一个已经绑定到JavaVM上的线程调用AttachCurrentThread不会有任何影响。如果你的线程
+    // 已经绑定到了JavaVM上，你还可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回
+    // JNI_EDETACHED.
     JavaVMAttachArgs attach_args = {
         .version = XC_JNI_VERSION,
         .name    = "xcrash_trace_dp",
         .group   = NULL
     };
-
-    // 这个函数的作用是：绑定 JavaVM 到当前线程上，为了让当前子线程获取env对象实例.
-    // 很多时候，你的native代码建立自己的线程（比如这里建立anr dump线程），并在合适的时候回调Java代码，我们没
-    // 有办法像上面那样直接获得JNIEnv，获取它的实例需要把你的线程Attach到JavaVM上去，调用的方法是
-    // JavaVM::AttachCurrentThread()，使用完之后还需要调用 JavaVM::DetachCurrentThread()函数解绑线程
-    // 需要注意的是对于一个已经绑定到JavaVM上的线程调用AttachCurrentThread不会有任何影响。如果你的线程已经绑定
-    // 到了JavaVM上，你还可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回JNI_EDETACHED.
     if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
         goto exit;
     }
@@ -314,13 +314,15 @@ static void* xc_trace_dumper(void* arg) {
         }
 
         // trace time
-        if (0 != gettimeofday(&tv, NULL))
+        if (0 != gettimeofday(&tv, NULL)) {
             break;
+        }
         trace_time = (uint64_t) (tv.tv_sec) * 1000 * 1000 + (uint64_t) tv.tv_usec;
 
-        // Keep only one current trace 只keep一个当前的追踪，清理掉还保留的旧的trace日志
-        if (0 != xc_trace_logs_clean())
+        // Keep only one current trace 只keep一个当前的trace，清理掉还保留的旧的trace日志
+        if (0 != xc_trace_logs_clean()) {
             continue;
+        }
 
         // create and open log file
         if ((fd = xc_common_open_trace_log(pathname, sizeof(pathname), trace_time)) < 0)
@@ -335,15 +337,20 @@ static void* xc_trace_dumper(void* arg) {
             goto end;
         if (0 != xcc_util_write_str(fd, "Mode: ART DumpForSigQuit\n"))
             goto end;
-        if (0 != xc_trace_load_symbols()) { // 加载符号表 TODO: ing......
-            if (0 != xcc_util_write_str(fd, "Failed to load symbols.\n"))
+        
+        // 上面是打开日志trace文件，并写入头部信息，这里关注的重点是其怎么 dump art 的 trace......
+        if (0 != xc_trace_load_symbols()) { // TODO: 加载符号表 ing......
+            if (0 != xcc_util_write_str(fd, "Failed to load symbols.\n")) {
                 goto end;
+            }
             goto skip;
         }
 
+        // 关闭fd，并指向STDERR_FILENO，即把文件中的trace信息输出到 “标准错误输出”中，再即屏幕
         if (dup2(fd, STDERR_FILENO) < 0) {
-            if (0 != xcc_util_write_str(fd, "Failed to duplicate FD.\n"))
+            if (0 != xcc_util_write_str(fd, "Failed to duplicate FD.\n")) {
                 goto end;
+            }
             goto skip;
         }
         if (xc_trace_is_lollipop) {
@@ -359,7 +366,8 @@ static void* xc_trace_dumper(void* arg) {
         dup2(xc_common_fd_null, STDERR_FILENO);
                             
     skip:
-        if(0 != xcc_util_write_str(fd, "\n"XCC_UTIL_THREAD_END"\n")) goto end;
+        if (0 != xcc_util_write_str(fd, "\n"XCC_UTIL_THREAD_END"\n")) 
+            goto end;
 
         //write other info
         if (0 != xcc_util_record_logcat(fd, xc_common_process_id,
@@ -368,15 +376,18 @@ static void* xc_trace_dumper(void* arg) {
             goto end;
         }
         if (xc_trace_dump_fds) {
-            if (0 != xcc_util_record_fds(fd, xc_common_process_id))
+            if (0 != xcc_util_record_fds(fd, xc_common_process_id)) {
                 goto end;
+            }
         }
         if (xc_trace_dump_network_info) {
-            if (0 != xcc_util_record_network_info(fd, xc_common_process_id, xc_common_api_level))
+            if (0 != xcc_util_record_network_info(fd, xc_common_process_id, xc_common_api_level)) {
                 goto end;
+            }
         }
-        if (0 != xcc_meminfo_record(fd, xc_common_process_id))
+        if (0 != xcc_meminfo_record(fd, xc_common_process_id)) {
             goto end;
+        }
 
     end:
         //close log file
@@ -429,8 +440,10 @@ static void xc_trace_handler(int sig, siginfo_t* si, void* uc) {
 static void xc_trace_init_callback(JNIEnv* env) {
     if(NULL == xc_common_cb_class) return;
     
+    // 获取Java中的callback函数id
     xc_trace_cb_method = (*env)->GetStaticMethodID(env, xc_common_cb_class,
-            XC_TRACE_CALLBACK_METHOD_NAME, XC_TRACE_CALLBACK_METHOD_SIGNATURE);
+            XC_TRACE_CALLBACK_METHOD_NAME, 
+            XC_TRACE_CALLBACK_METHOD_SIGNATURE);
 
     XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_trace_cb_method, err);
     return;

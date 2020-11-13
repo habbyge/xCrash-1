@@ -50,33 +50,33 @@
 #define XC_COMMON_OPEN_NEW_FILE_MODE  (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) //644
 
 //system info
-int           xc_common_api_level         = 0;
-char*         xc_common_os_version        = NULL;
-char*         xc_common_abi_list          = NULL;
-char*         xc_common_manufacturer      = NULL;
-char*         xc_common_brand             = NULL;
-char*         xc_common_model             = NULL;
-char*         xc_common_build_fingerprint = NULL;
-char*         xc_common_kernel_version    = NULL;
-long          xc_common_time_zone         = 0;
+int xc_common_api_level = 0;
+char* xc_common_os_version = NULL;
+char* xc_common_abi_list = NULL;
+char* xc_common_manufacturer = NULL;
+char* xc_common_brand = NULL;
+char* xc_common_model = NULL;
+char* xc_common_build_fingerprint = NULL;
+char* xc_common_kernel_version = NULL;
+long xc_common_time_zone = 0;
 
 //app info
-char* xc_common_app_id      = NULL;
+char* xc_common_app_id = NULL;
 char* xc_common_app_version = NULL;
 char* xc_common_app_lib_dir = NULL;
-char* xc_common_log_dir     = NULL;
+char* xc_common_log_dir = NULL;
 
 //process info
-pid_t         xc_common_process_id        = 0;
-char*         xc_common_process_name      = NULL;
-uint64_t      xc_common_start_time        = 0;
-JavaVM*       xc_common_vm                = NULL;
-jclass        xc_common_cb_class          = NULL;
-int           xc_common_fd_null           = -1;
+pid_t xc_common_process_id = 0;
+char* xc_common_process_name = NULL;
+uint64_t xc_common_start_time = 0;
+JavaVM* xc_common_vm = NULL;
+jclass xc_common_cb_class = NULL;
+int xc_common_fd_null = -1;
 
 //process statue
-sig_atomic_t  xc_common_native_crashed    = 0;
-sig_atomic_t  xc_common_java_crashed      = 0;
+sig_atomic_t xc_common_native_crashed = 0;
+sig_atomic_t xc_common_java_crashed = 0;
 
 static int xc_common_crash_prepared_fd = -1;
 static int xc_common_trace_prepared_fd = -1;
@@ -117,14 +117,14 @@ static int xc_common_close_prepared_fd(int is_crash) {
     return 0;
 }
 
-void xc_common_set_vm(JavaVM *vm, JNIEnv *env, jclass cls) {
+void xc_common_set_vm(JavaVM* vm, JNIEnv* env, jclass cls) {
     xc_common_vm = vm;
 
     xc_common_cb_class = (*env)->NewGlobalRef(env, cls);
     XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_common_cb_class, err);
     return;
 
- err:
+    err:
     xc_common_cb_class = NULL;
 }
 
@@ -220,7 +220,7 @@ int xc_common_init(int api_level,
 
     return 0;
 
-err:
+    err:
     XC_COMMON_FREE_STR(os_version);
     XC_COMMON_FREE_STR(abi_list);
     XC_COMMON_FREE_STR(manufacturer);
@@ -263,16 +263,16 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
     // try to rename a placeholder file and open it
     while ((n = syscall(XCC_UTIL_SYSCALL_GETDENTS, fd, buf, sizeof(buf))) > 0) {
         for (i = 0; i < n; i += ent->d_reclen) {
-            ent = (xcc_util_dirent_t *)(buf + i);
+            ent = (xcc_util_dirent_t*) (buf + i);
 
             // placeholder_01234567890123456789.clean.xcrash
             // file name length: 45
             if (45 == strlen(ent->d_name) &&
-                    0 == memcmp(ent->d_name, XC_COMMON_PLACEHOLDER_PREFIX"_", 12) &&
-                    0 == memcmp(ent->d_name + 32, XC_COMMON_PLACEHOLDER_SUFFIX, 13)) {
+                0 == memcmp(ent->d_name, XC_COMMON_PLACEHOLDER_PREFIX"_", 12) &&
+                0 == memcmp(ent->d_name + 32, XC_COMMON_PLACEHOLDER_SUFFIX, 13)) {
 
                 xcc_fmt_snprintf(placeholder_pathname, sizeof(placeholder_pathname),
-                        "%s/%s", xc_common_log_dir, ent->d_name);
+                                 "%s/%s", xc_common_log_dir, ent->d_name);
 
                 if (rename(placeholder_pathname, pathname) == 0) {
                     close(fd);
@@ -287,13 +287,13 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
     close(fd);
     xc_common_open_prepared_fd(is_crash);
 
-create_new_file:
+    create_new_file:
     if (NULL != from_placeholder)
         *from_placeholder = 0;
 
     if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname,
-            XC_COMMON_OPEN_NEW_FILE_FLAGS,
-            XC_COMMON_OPEN_NEW_FILE_MODE))) >= 0) {
+                                               XC_COMMON_OPEN_NEW_FILE_FLAGS,
+                                               XC_COMMON_OPEN_NEW_FILE_MODE))) >= 0) {
 
         return fd;
     }
@@ -304,8 +304,8 @@ create_new_file:
     }
 
     return XCC_UTIL_TEMP_FAILURE_RETRY(open(pathname,
-            XC_COMMON_OPEN_NEW_FILE_FLAGS,
-            XC_COMMON_OPEN_NEW_FILE_MODE));
+                                            XC_COMMON_OPEN_NEW_FILE_FLAGS,
+                                            XC_COMMON_OPEN_NEW_FILE_MODE));
 }
 
 static void xc_common_close_log(int fd, int is_crash) {

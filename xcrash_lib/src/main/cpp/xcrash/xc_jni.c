@@ -347,6 +347,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
         return -1;
     }
 
+    // cls == NativeHandler
     xc_common_set_vm(vm, env, cls);
 
     return XC_JNI_VERSION;

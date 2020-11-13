@@ -116,30 +116,30 @@ static int xc_dl_dynsym_load(xc_dl_t* self, struct dl_phdr_info* info) {
     // iterate the dynamic segment
     for (ElfW(Dyn)* entry = dynamic; entry && entry->d_tag != DT_NULL; entry++) {
         switch (entry->d_tag) {
-            case DT_SYMTAB: //.dynsym
-                self->dynsym = (ElfW(Sym)*) (self->load_bias + entry->d_un.d_ptr);
-                break;
-            case DT_STRTAB: //.dynstr
-                self->dynstr = (const char*) (self->load_bias + entry->d_un.d_ptr);
-                break;
-            case DT_HASH: //.hash
-                self->sysv_hash.buckets_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[0];
-                self->sysv_hash.chains_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[1];
-                self->sysv_hash.buckets = &(((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[2]);
-                self->sysv_hash.chains = &(self->sysv_hash.buckets[self->sysv_hash.buckets_cnt]);
-                break;
-            case DT_GNU_HASH: //.gnu.hash
-                self->gnu_hash.buckets_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[0];
-                self->gnu_hash.symoffset = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[1];
-                self->gnu_hash.bloom_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[2];
-                self->gnu_hash.bloom_shift = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[3];
-                self->gnu_hash.bloom = (const ElfW(Addr)*) (self->load_bias + entry->d_un.d_ptr + 16);
-                self->gnu_hash.buckets = (const uint32_t*)
-                        (&(self->gnu_hash.bloom[self->gnu_hash.bloom_cnt]));
-                self->gnu_hash.chains = (const uint32_t*)
-                        (&(self->gnu_hash.buckets[self->gnu_hash.buckets_cnt]));
-            default:
-                break;
+        case DT_SYMTAB: //.dynsym
+            self->dynsym = (ElfW(Sym)*) (self->load_bias + entry->d_un.d_ptr);
+            break;
+        case DT_STRTAB: //.dynstr
+            self->dynstr = (const char*) (self->load_bias + entry->d_un.d_ptr);
+            break;
+        case DT_HASH: //.hash
+            self->sysv_hash.buckets_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[0];
+            self->sysv_hash.chains_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[1];
+            self->sysv_hash.buckets = &(((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[2]);
+            self->sysv_hash.chains = &(self->sysv_hash.buckets[self->sysv_hash.buckets_cnt]);
+            break;
+        case DT_GNU_HASH: //.gnu.hash
+            self->gnu_hash.buckets_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[0];
+            self->gnu_hash.symoffset = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[1];
+            self->gnu_hash.bloom_cnt = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[2];
+            self->gnu_hash.bloom_shift = ((const uint32_t*) (self->load_bias + entry->d_un.d_ptr))[3];
+            self->gnu_hash.bloom = (const ElfW(Addr)*) (self->load_bias + entry->d_un.d_ptr + 16);
+            self->gnu_hash.buckets = (const uint32_t*)
+                    (&(self->gnu_hash.bloom[self->gnu_hash.bloom_cnt]));
+            self->gnu_hash.chains = (const uint32_t*)
+                    (&(self->gnu_hash.buckets[self->gnu_hash.buckets_cnt]));
+        default:
+            break;
         }
     }
     if (NULL == self->dynsym ||
@@ -218,8 +218,8 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info* info, ElfW(Shdr
     if (SHN_UNDEF == ehdr->e_shstrndx)
         return -1;
 
-    ElfW(Shdr)* shdr_shstrtab = (ElfW(Shdr)*) ((uintptr_t) elf
-                                               + ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
+    ElfW(Shdr)* shdr_shstrtab = (ElfW(Shdr)*) ((uintptr_t) elf +
+            ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
 
     char* shstrtab = (char*) ((uintptr_t) elf + shdr_shstrtab->sh_offset);
 

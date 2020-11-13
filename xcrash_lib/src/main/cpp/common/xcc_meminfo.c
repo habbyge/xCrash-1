@@ -261,7 +261,8 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
                             which_heap = HEAP_DALVIK;
                             sub_heap = HEAP_DALVIK_NORMAL;
                         } else if(0 == strncmp(name, "/dev/ashmem/dalvik-large object space", 37) ||
-                                0 == strncmp(name, "/dev/ashmem/dalvik-free list large object space", 47)) {
+                            0 == strncmp(name, "/dev/ashmem/dalvik-free list large object space", 47)) {
+
                             which_heap = HEAP_DALVIK;
                             sub_heap = HEAP_DALVIK_LARGE;
                         } else if(0 == strncmp(name, "/dev/ashmem/dalvik-non moving space", 35)) {
@@ -363,8 +364,8 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
             if (is_swappable && (pss > 0)) {
                 sharing_proportion = 0.0;
                 if ((shared_clean > 0) || (shared_dirty > 0)) {
-                    sharing_proportion = (pss - private_clean - private_dirty)
-                            / (shared_clean + shared_dirty);
+                    sharing_proportion =
+                            (pss - private_clean - private_dirty) / (shared_clean + shared_dirty);
                 }
                 swappable_pss = (size_t)((sharing_proportion * shared_clean) + private_clean);
             } else {
