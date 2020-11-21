@@ -56,7 +56,7 @@ struct xc_dl {
     // (1) for searching symbols from .dynsym
     //
 
-    ElfW(Sym)* dynsym;  // .dynsym
+    ElfW(Sym)* dynsym;  // .dynsym Elf32_Sym
     const char* dynstr;  // .dynstr
 
     // .hash (SYSV hash for .dynstr)
@@ -136,17 +136,19 @@ static int xc_dl_dynsym_load(xc_dl_t* self, struct dl_phdr_info* info) {
             self->gnu_hash.bloom = (const ElfW(Addr)*) (self->load_bias + entry->d_un.d_ptr + 16);
             self->gnu_hash.buckets = (const uint32_t*)
                     (&(self->gnu_hash.bloom[self->gnu_hash.bloom_cnt]));
+
             self->gnu_hash.chains = (const uint32_t*)
                     (&(self->gnu_hash.buckets[self->gnu_hash.buckets_cnt]));
+
+            break;
         default:
             break;
         }
     }
-    if (NULL == self->dynsym ||
-        NULL == self->dynstr ||
-        (0 == self->sysv_hash.buckets_cnt && 0 == self->gnu_hash.buckets_cnt))
-
+    if (NULL == self->dynsym || NULL == self->dynstr ||
+            (0 == self->sysv_hash.buckets_cnt && 0 == self->gnu_hash.buckets_cnt)) {
         return -1;
+    }
 
     return 0;
 }
@@ -219,7 +221,7 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info* info, ElfW(Shdr
         return -1;
 
     ElfW(Shdr)* shdr_shstrtab = (ElfW(Shdr)*) ((uintptr_t) elf +
-            ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
+                                               ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
 
     char* shstrtab = (char*) ((uintptr_t) elf + shdr_shstrtab->sh_offset);
 
@@ -253,7 +255,7 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info* info, ElfW(Shdr
     return -1; // not found
 }
 
-static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) { // TODO:
+static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
     (void) size;
 
     uintptr_t* pkg = (uintptr_t*) arg;
@@ -262,10 +264,12 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
     int flags = (int) *pkg;
 
     // check load_bias and pathname
-    if (0 == info->dlpi_addr || NULL == info->dlpi_name) return 0;
+    if (0 == info->dlpi_addr || NULL == info->dlpi_name)
+        return 0;
     if ('/' == pathname[0] || '[' == pathname[0]) {
         // full pathname
-        if (0 != strcmp(info->dlpi_name, pathname)) return 0;
+        if (0 != strcmp(info->dlpi_name, pathname))
+            return 0;
     } else {
         // basename ?
         size_t basename_len = strlen(pathname);
@@ -279,16 +283,19 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
     }
 
     // found the target ELF
-    if (NULL == ((*self) = calloc(1, sizeof(xc_dl_t)))) return 1;
+    if (NULL == ((*self) = calloc(1, sizeof(xc_dl_t))))
+        return 1;
     (*self)->flags = flags;
     (*self)->load_bias = info->dlpi_addr;
     (*self)->file_fd = -1;
     (*self)->file = MAP_FAILED;
 
     // load info about .dynsym
-    if (0 != (flags & XC_DL_DYNSYM))
-        if (0 != xc_dl_dynsym_load(*self, info))
+    if (0 != (flags & XC_DL_DYNSYM)) {
+        if (0 != xc_dl_dynsym_load(*self, info)) {
             goto err;
+        }
+    }
 
     // load info about .symtab
     if (0 != (flags & XC_DL_SYMTAB)) {
@@ -305,17 +312,18 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
 }
 
 xc_dl_t* xc_dl_open(const char* pathname, int flags) {
-    if (NULL == pathname || 0 == flags)
+    if (NULL == pathname || 0 == flags) {
         return NULL;
+    }
 
     xc_dl_t* self = NULL;
-    uintptr_t pkg[3] = {
+    uintptr_t pkg[3] = { // unsigned int
             (uintptr_t) &self,
             (uintptr_t) pathname,
             (uintptr_t) flags
     };
 
-    // 是否是linker后缀
+    // 是否是 "linker" 后缀
     bool is_linker = xc_dl_util_ends_with(pathname, XC_DL_CONST_BASENAME_LINKER);
     xc_dl_iterate(xc_dl_iterate_cb, pkg, is_linker ? (int) XC_DL_WITH_LINKER : (int) XC_DL_DEFAULT);
 
@@ -364,7 +372,7 @@ static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self,
     uint32_t hash = xc_dl_sysv_hash((const uint8_t*) sym_name);
 
     for (uint32_t i = self->sysv_hash.buckets[hash % self->sysv_hash.buckets_cnt];
-         0 != i; i = self->sysv_hash.chains[i]) {
+            0 != i;i = self->sysv_hash.chains[i]) {
 
         ElfW(Sym)* sym = self->dynsym + i;
         if ((need_func ? STT_FUNC : STT_OBJECT) != ELF_ST_TYPE(sym->st_info))
@@ -389,7 +397,8 @@ static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
                   | (size_t) 1 << ((hash >> self->gnu_hash.bloom_shift) % elfclass_bits);
 
     //if at least one bit is not set, this symbol is surely missing
-    if ((word & mask) != mask) return NULL;
+    if ((word & mask) != mask)
+        return NULL;
 
     //ignore STN_UNDEF
     uint32_t i = self->gnu_hash.buckets[hash % self->gnu_hash.buckets_cnt];

@@ -235,6 +235,7 @@ static int xc_crash_exec_dumper(void* arg) {
         xcc_util_write_format_safe(xc_crash_log_fd,
                 XC_CRASH_ERR_TITLE"write args to pipe failed, return=%d, errno=%d\n\n",
                 ret, errno);
+
         return 94;
     }
 
@@ -297,11 +298,13 @@ static void xc_xcrash_record_java_stacktrace() {
     if (xc_common_api_level >= 30) libart = xc_dl_open(XCC_UTIL_LIBART_R, XC_DL_DYNSYM);
     if (NULL == libart && xc_common_api_level >= 29)
         libart = xc_dl_open(XCC_UTIL_LIBART_Q, XC_DL_DYNSYM);
-    if (NULL == libart && NULL == (libart = xc_dl_open(XCC_UTIL_LIBART, XC_DL_DYNSYM)))
+    if (NULL == libart && NULL == (libart = xc_dl_open(XCC_UTIL_LIBART, XC_DL_DYNSYM))) {
         goto end;
+    }
     if (NULL == (current = (xcc_util_libart_thread_current_t) xc_dl_dynsym_func(
-            libart, XCC_UTIL_LIBART_THREAD_CURRENT)))
+            libart, XCC_UTIL_LIBART_THREAD_CURRENT))) {
         goto end;
+    }
     if (NULL == (dump = (xcc_util_libart_thread_dump_t) xc_dl_dynsym_func(
             libart, XCC_UTIL_LIBART_THREAD_DUMP))) {
 #ifndef __i386__
@@ -347,36 +350,43 @@ static void* xc_crash_callback_thread(void* arg) {
     jstring j_thread_name = NULL;
     char c_thread_name[16] = "\0";
     
-    (void)arg;
+    (void) arg;
     
     JavaVMAttachArgs attach_args = {
         .version = XC_JNI_VERSION,
         .name    = "xcrash_crash_cb",
         .group   = NULL
     };
-    if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args))
+    if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
         return NULL;
+    }
 
     // block until native crashed
-    if (sizeof(data) != XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_crash_cb_notifier, &data, sizeof(data))))
+    if (sizeof(data) != XCC_UTIL_TEMP_FAILURE_RETRY(read(xc_crash_cb_notifier, &data, sizeof(data)))) {
         goto end;
+    }
 
     // prepare callback parameters
-    if (NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname)))
+    if (NULL == (j_pathname = (*env)->NewStringUTF(env, xc_crash_log_pathname))) {
         goto end;
+    }
     if ('\0' != xc_crash_emergency[0]) {
-        if(NULL == (j_emergency = (*env)->NewStringUTF(env, xc_crash_emergency))) goto end;
+        if(NULL == (j_emergency = (*env)->NewStringUTF(env, xc_crash_emergency))) {
+            goto end;
+        }
     }
     j_dump_java_stacktrace = (xc_crash_dump_java_stacktrace ? JNI_TRUE : JNI_FALSE);
     if (j_dump_java_stacktrace) {
         j_is_main_thread = (xc_common_process_id == xc_crash_tid ? JNI_TRUE : JNI_FALSE);
         if (!j_is_main_thread) {
             xcc_util_get_thread_name(xc_crash_tid, c_thread_name, sizeof(c_thread_name));
-            if(NULL == (j_thread_name = (*env)->NewStringUTF(env, c_thread_name))) goto end;
+            if (NULL == (j_thread_name = (*env)->NewStringUTF(env, c_thread_name))) {
+                goto end;
+            }
         }
     }
 
-    //do callback
+    // do callback to Java
     (*env)->CallStaticVoidMethod(env, xc_common_cb_class,
                                  xc_crash_cb_method,
                                  j_pathname,
@@ -682,7 +692,9 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     _exit(1);
 }
 
-static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, size_t allowlist_len) {
+static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist,
+                                                     size_t allowlist_len) {
+
     size_t i;
     size_t len;
     size_t encoded_len;
@@ -725,9 +737,12 @@ static void xc_crash_init_dump_all_threads_allowlist(const char** allowlist, siz
         if (0 == len)
             continue;
 
-        if (NULL != (tmp = xcc_b64_encode((const uint8_t *)(allowlist[i]), len, &encoded_len))) {
-            if (cur_encoded_len + encoded_len + 1 >= total_encoded_len)
+        if (NULL != (tmp = xcc_b64_encode((const uint8_t*)(allowlist[i]),
+                                          len, &encoded_len))) {
+
+            if (cur_encoded_len + encoded_len + 1 >= total_encoded_len) {
                 return; //impossible
+            }
             
             memcpy(total_encoded_allowlist + cur_encoded_len, tmp, encoded_len);
             cur_encoded_len += encoded_len;
@@ -763,15 +778,18 @@ static void xc_crash_init_callback(JNIEnv* env) {
 
     // 这里调用的是Java层的crashCallback()，进而把crash信息callback到业务层
     xc_crash_cb_method = (*env)->GetStaticMethodID(env, xc_common_cb_class,
-            XC_CRASH_CALLBACK_METHOD_NAME, XC_CRASH_CALLBACK_METHOD_SIGNATURE);
+                                                   XC_CRASH_CALLBACK_METHOD_NAME,
+                                                   XC_CRASH_CALLBACK_METHOD_SIGNATURE);
 
     XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_crash_cb_method, err);
     
     //eventfd and a new thread for callback
-    if (0 > (xc_crash_cb_notifier = eventfd(0, EFD_CLOEXEC)))
+    if (0 > (xc_crash_cb_notifier = eventfd(0, EFD_CLOEXEC))) {
         goto err;
-    if (0 != pthread_create(&xc_crash_cb_thd, NULL, xc_crash_callback_thread, NULL))
+    }
+    if (0 != pthread_create(&xc_crash_cb_thd, NULL, xc_crash_callback_thread, NULL)) {
         goto err;
+    }
     return;
 
  err:
@@ -847,13 +865,14 @@ int xc_crash_init(JNIEnv* env,
 #ifndef __i386__
     if (NULL == (xc_crash_child_stack = calloc(XC_CRASH_CHILD_STACK_LEN, 1)))
         return XCC_ERRNO_NOMEM;
-    xc_crash_child_stack = (void*) (((uint8_t*) xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
+    xc_crash_child_stack = (void*) (((uint8_t*)
+            xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
 #else
-    // 每个进程各自有不同的用户地址空间，任何一个进程的全局变量在另一个进程中都看不到，所以进程之间要交换数据必须
-    // 通过内核，在内核中开辟一块缓冲区，进程A把数据从用户空间拷到内核缓冲区，进程B再从内核缓冲区把数据读走，内核
-    // 提供的这种机制称为进程间通信.
-    // pipe创建一个管道，一种没有方向的数据通道，可用于进程间的通信，数组fd[2]被用于返回两个文件描述符，代表管道
-    // 的两端，fd[0]是管道的读端，fd[1]是管道的写端.
+    // 每个进程各自有不同的用户地址空间，任何一个进程的全局变量在另一个进程中都看不到，所以进程之间
+    // 要交换数据必须通过内核，在内核中开辟一块缓冲区，进程A把数据从用户空间拷到内核缓冲区，进程B再
+    // 从内核缓冲区把数据读走，内核提供的这种机制称为进程间通信.
+    // pipe创建一个管道，一种没有方向的数据通道，可用于进程间的通信，数组fd[2]被用于返回两个文件描
+    // 述符，代表管道的两端，fd[0]是管道的读端，fd[1]是管道的写端.
     //
     // 数据写入pipe的写端的时候被内核缓冲，直到被管道的读端读出.
     // - 管道的创建
@@ -863,11 +882,11 @@ int xc_crash_init(JNIEnv* env,
     // - 管道如何实现进程间的通信
     // 1. 父进程创建管道，得到两个⽂件描述符指向管道的两端(Linux世界一切皆文件的体现)
     // 2. 父进程fork出子进程，⼦进程也有两个⽂件描述符指向同⼀管道
-    // 3. 父进程关闭fd[0], 子进程关闭fd[1], 即⽗进程关闭管道读端，⼦进程关闭管道写端(因为管道只支持单向通信).
-    //    ⽗进程可以往管道⾥写，⼦进程可以从管道⾥读，管道是⽤环形队列实现的，数据从写端流⼊、从读端流出，这样就
-    //    实现了进程间通信.
-    // O_CLOEXEC: Set the close-on-exec (FD_CLOEXEC) flag on the two new file descriptors. 这个flag
-    // 主要是为了避免文件描述符泄漏，当进程exec其他进程时，当前进程对应的fd自动关闭.
+    // 3. 父进程关闭fd[0], 子进程关闭fd[1], 即⽗进程关闭管道读端，⼦进程关闭管道写端(因为管道只支
+    //    持单向通信). ⽗进程可以往管道⾥写，⼦进程可以从管道⾥读，管道是⽤环形队列实现的，数据从写
+    //    端流⼊、从读端流出，这样就实现了进程间通信.
+    // O_CLOEXEC: Set the close-on-exec (FD_CLOEXEC) flag on the two new file descriptors.
+    // 这个 flag 主要是为了避免文件描述符泄漏，当进程exec其他进程时，当前进程对应的fd自动关闭.
     if (0 != pipe2(xc_crash_child_notifier, O_CLOEXEC)) {
         return XCC_ERRNO_SYS;
     }

@@ -60,11 +60,15 @@ static int xc_trace_is_lollipop = 0;
 static pid_t xc_trace_signal_catcher_tid = XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD;
 
 // symbol address in libc++.so and libart.so
-static void* xc_trace_libcpp_cerr = NULL;
+// libc++.so中_ZNSt3__14cerr符号地址
+static void* xc_trace_libcpp_cerr = NULL; // c++的err函数地址
+// libart.so中_ZN3art7Runtime9instance_E符号地址
 static void** xc_trace_libart_runtime_instance = NULL;
+// art虚拟机中与err有关的符号地址
 static xcc_util_libart_runtime_dump_t xc_trace_libart_runtime_dump = NULL;
 static xcc_util_libart_dbg_suspend_t xc_trace_libart_dbg_suspend = NULL;
 static xcc_util_libart_dbg_resume_t xc_trace_libart_dbg_resume = NULL;
+
 static int xc_trace_symbols_loaded = 0;
 static int xc_trace_symbols_status = XCC_ERRNO_NOTFND;
 
@@ -91,8 +95,9 @@ static void xc_trace_load_signal_catcher_tid() {
     xc_trace_signal_catcher_tid = XC_TRACE_SIGNAL_CATCHER_TID_UNKNOWN;
 
     snprintf(buf, sizeof(buf), "/proc/%d/task", xc_common_process_id);
-    if (NULL == (dir = opendir(buf)))
+    if (NULL == (dir = opendir(buf))) {
         return;
+    }
     while (NULL != (ent = readdir(dir))) {
         // get and check thread id
         if (0 != xcc_util_atoi(ent->d_name, &tid))
@@ -108,8 +113,9 @@ static void xc_trace_load_signal_catcher_tid() {
         // check signal block masks
         sigblk = 0;
         snprintf(buf, sizeof(buf), "/proc/%d/status", tid);
-        if (NULL == (f = fopen(buf, "r")))
+        if (NULL == (f = fopen(buf, "r"))) {
             break;
+        }
         while (fgets(buf, sizeof(buf), f)) {
             if (1 == sscanf(buf, "SigBlk: %"SCNx64, &sigblk)) {
                 break;
@@ -127,40 +133,53 @@ static void xc_trace_load_signal_catcher_tid() {
 }
 
 static void xc_trace_send_sigquit() {
-    if (XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD == xc_trace_signal_catcher_tid)
+    if (XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD == xc_trace_signal_catcher_tid) {
         xc_trace_load_signal_catcher_tid();
+    }
 
-    if (xc_trace_signal_catcher_tid >= 0)
+    if (xc_trace_signal_catcher_tid >= 0) {
         syscall(SYS_tgkill, xc_common_process_id, xc_trace_signal_catcher_tid, SIGQUIT);
+    }
 }
 
 /**
  * 加载符号表
- * xc_dl_open() 和 xc_dl_sym() 是里面比较重要的两个函数实现。xc_dl_open 是寻找到 so 被 mmap 所加载的虚
- * 拟地址，xc_dl_sym 是计算 so 中相应符号(函数)的虚拟地址。其主要是从 libc++.so 中查找符号 _ZNSt3__14cerrE，
- * 对的，就是 cerr；从 libart.so 中查找符号 _ZN3art7Runtime9instance_E 以及
- * _ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE 在进程虚拟空间中
- * 的地址。针对L还需要 _ZN3art3Dbg9SuspendVMEv 和 _ZN3art3Dbg8ResumeVMEv.
+ * xc_dl_open() 和 xc_dl_sym() 是里面比较重要的两个函数实现。xc_dl_open 是寻找到 so 被 mmap
+ * 所加载的虚拟地址，xc_dl_sym 是计算 so 中相应符号(函数)的虚拟地址。其主要是从 libc++.so 中查
+ * 找符号 _ZNSt3__14cerrE，对的，就是cerr；从 libart.so 中查找符号 _ZN3art7Runtime9instance_E
+ * 以及 _ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
+ * 在进程虚拟空间中的地址。针对L还需要 _ZN3art3Dbg9SuspendVMEv 和 _ZN3art3Dbg8ResumeVMEv.
  *
- * xc_dl_create() 的具体实现在 xc_dl_find_map_start() 获取 so 的基地址、xc_dl_file_open() 通过 mmap 加载
- * so、xc_dl_parse_elf() 解析so。这里的解析so，其实就是解析elf文件，这个比较复杂，需要对elf文件格式熟悉.
+ * xc_dl_create() 的具体实现在 xc_dl_find_map_start() 获取 so 的基地址、xc_dl_file_open()
+ * 通过 mmap 加载 so、xc_dl_parse_elf() 解析so。这里的解析so，其实就是解析elf文件，这个比较复杂，
+ * 需要对elf文件格式熟悉.
  */
 static int xc_trace_load_symbols() { // TODO: ing......
-    xc_dl_t* libcpp = NULL;
-    xc_dl_t* libart = NULL;
+    xc_dl_t* libcpp = NULL; // libc++.so
+    xc_dl_t* libart = NULL; // libart.so
 
     // only once
-    if (xc_trace_symbols_loaded)
+    if (xc_trace_symbols_loaded) {
         return xc_trace_symbols_status;
+    }
     xc_trace_symbols_loaded = 1;
 
-    if (xc_common_api_level >= 29)
+    // 1. libc++.so
+    // 寻找到 so 被 mmap 所加载的虚拟地址
+    if (xc_common_api_level >= 29) {
         libcpp = xc_dl_open(XCC_UTIL_LIBCPP_Q, XC_DL_DYNSYM);
-    if (NULL == libcpp && NULL == (libcpp = xc_dl_open(XCC_UTIL_LIBCPP, XC_DL_DYNSYM)))
+    }
+    if (NULL == libcpp && NULL == (libcpp = xc_dl_open(XCC_UTIL_LIBCPP, XC_DL_DYNSYM))) {
         goto end;
-    if (NULL == (xc_trace_libcpp_cerr = xc_dl_dynsym_object(libcpp, XCC_UTIL_LIBCPP_CERR)))
-        goto end;
+    }
+    // 计算 so 中相应符号(函数)的虚拟地址
+    if (NULL == (xc_trace_libcpp_cerr = xc_dl_dynsym_object(
+            libcpp, XCC_UTIL_LIBCPP_CERR))) {
 
+        goto end;
+    }
+
+    // 2. libart.so
     if (xc_common_api_level >= 30) {
         libart = xc_dl_open(XCC_UTIL_LIBART_R, XC_DL_DYNSYM);
     }
@@ -171,7 +190,6 @@ static int xc_trace_load_symbols() { // TODO: ing......
         goto end;
     if (NULL == (xc_trace_libart_runtime_instance = (void **)
             xc_dl_dynsym_object(libart, XCC_UTIL_LIBART_RUNTIME_INSTANCE))) {
-
         goto end;
     }
 
@@ -192,7 +210,7 @@ static int xc_trace_load_symbols() { // TODO: ing......
         }
     }
 
-    //OK
+    // OK
     xc_trace_symbols_status = 0;
 
  end:
@@ -208,18 +226,25 @@ static int xc_trace_load_symbols() { // TODO: ing......
 static int xc_trace_logs_filter(const struct dirent* entry) {
     size_t len;
     
-    if (DT_REG != entry->d_type)
+    if (DT_REG != entry->d_type) {
         return 0;
+    }
 
     len = strlen(entry->d_name);
-    if (len < XC_COMMON_LOG_NAME_MIN_TRACE)
+    if (len < XC_COMMON_LOG_NAME_MIN_TRACE) {
         return 0;
+    }
     
-    if (0 != memcmp(entry->d_name, XC_COMMON_LOG_PREFIX"_", XC_COMMON_LOG_PREFIX_LEN + 1))
+    if (0 != memcmp(entry->d_name,
+                    XC_COMMON_LOG_PREFIX"_",
+                    XC_COMMON_LOG_PREFIX_LEN + 1)) {
+
         return 0;
+    }
     if (0 != memcmp(entry->d_name + (len - XC_COMMON_LOG_SUFFIX_TRACE_LEN),
-            XC_COMMON_LOG_SUFFIX_TRACE, XC_COMMON_LOG_SUFFIX_TRACE_LEN))
+            XC_COMMON_LOG_SUFFIX_TRACE, XC_COMMON_LOG_SUFFIX_TRACE_LEN)) {
         return 0;
+    }
 
     return 1;
 }
@@ -229,14 +254,21 @@ static int xc_trace_logs_clean(void) {
     char pathname[1024];
     int n, i, r = 0;
 
-    if (0 > (n = scandir(xc_common_log_dir, &entry_list, xc_trace_logs_filter, alphasort))) {
+    if (0 > (n = scandir(xc_common_log_dir, &entry_list,
+                         xc_trace_logs_filter,
+                         alphasort))) {
+
         return XCC_ERRNO_SYS;
     }
     for (i = 0; i < n; i++) {
-        snprintf(pathname, sizeof(pathname), "%s/%s", xc_common_log_dir, entry_list[i]->d_name);
-        // unlink() C语言的库函数<unistd.h>，删除参数pathname指定的文件，如果该文件名为最后连接点, 但有其
-        // 他进程打开了此文件, 则在所有关于此文件的文件描述词皆关闭后才会删除，如果参数pathname为一符号连接,
-        // 则此连接会被删除。返回值：成功则返回0, 失败返回-1, 错误原因存于errno
+        snprintf(pathname, sizeof(pathname), "%s/%s",
+                 xc_common_log_dir,
+                 entry_list[i]->d_name);
+
+        // unlink() C语言的库函数<unistd.h>，删除参数pathname指定的文件，如果该文件名为
+        // 最后连接点, 但有其他进程打开了此文件, 则在所有关于此文件的文件描述词皆关闭后才会
+        // 删除，如果参数pathname为一符号连接, 则此连接会被删除。返回值：成功则返回0, 失败
+        // 返回-1, 错误原因存于errno
         if (0 != unlink(pathname)) {
             r = XCC_ERRNO_SYS;
         }
@@ -264,8 +296,10 @@ static int xc_trace_write_header(int fd, uint64_t trace_time) {
                              xc_common_brand,
                              xc_common_model,
                              xc_common_build_fingerprint);
-    if (0 != (r = xcc_util_write_str(fd, buf)))
+
+    if (0 != (r = xcc_util_write_str(fd, buf))) {
         return r;
+    }
 
     return xcc_util_write_format(fd, "pid: %d  >>> %s <<<\n\n",
             xc_common_process_id, xc_common_process_name);
@@ -288,18 +322,20 @@ static void* xc_trace_dumper(void* arg) {
     pthread_detach(pthread_self()); // 设置当前子线程不让其父线程等待
 
     // 这个函数的作用是：绑定 JNIEnv 到当前线程上，为了让当前子线程获取env对象实例.
-    // 很多时候，你的Native代码建立自己的线程（比如这里建立anr dump线程），并在合适的时候回调Java代码，我们没
-    // 有办法像上面那样直接获得JNIEnv(不能夸线程使用，线程安全的)，获取它的实例需要让你的线程获取该JNIEvn，调
-    // 用: JavaVM::AttachCurrentThread()，使用完之后还需要调用 JavaVM::DetachCurrentThread()函数解绑
-    // 线程，需要注意的是对于一个已经绑定到JavaVM上的线程调用AttachCurrentThread不会有任何影响。如果你的线程
-    // 已经绑定到了JavaVM上，你还可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回
-    // JNI_EDETACHED.
+    // 很多时候，你的Native代码建立自己的线程（比如这里建立anr dump线程），并在合适的时候回调
+    // Java代码，我们没有办法像上面那样直接获得JNIEnv(不能夸线程使用，线程安全的)，获取它的实
+    // 例需要让你的线程获取该JNIEvn，调用: JavaVM::AttachCurrentThread()，使用完之后还需要
+    // 调用 JavaVM::DetachCurrentThread()函数解绑线程，需要注意的是对于一个已经绑定到JavaVM
+    // 上的线程调用AttachCurrentThread不会有任何影响。如果你的线程已经绑定到了JavaVM上，你还
+    // 可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回JNI_EDETACHED.
     JavaVMAttachArgs attach_args = {
         .version = XC_JNI_VERSION,
         .name    = "xcrash_trace_dp",
         .group   = NULL
     };
-    if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
+    if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm,
+                                                       &env,
+                                                       &attach_args)) {
         goto exit;
     }
 
@@ -329,16 +365,19 @@ static void* xc_trace_dumper(void* arg) {
             continue;
 
         // write header info
-        if (0 != xc_trace_write_header(fd, trace_time))
+        if (0 != xc_trace_write_header(fd, trace_time)) {
             goto end;
+        }
 
         // write trace info from ART runtime
-        if (0 != xcc_util_write_format(fd, XCC_UTIL_THREAD_SEP"Cmd line: %s\n", xc_common_process_name))
+        if (0 != xcc_util_write_format(fd, XCC_UTIL_THREAD_SEP"Cmd line: %s\n",
+                                       xc_common_process_name))
             goto end;
-        if (0 != xcc_util_write_str(fd, "Mode: ART DumpForSigQuit\n"))
+        if (0 != xcc_util_write_str(fd, "Mode: ART DumpForSigQuit\n")) {
             goto end;
+        }
         
-        // 上面是打开日志trace文件，并写入头部信息，这里关注的重点是其怎么 dump art 的 trace......
+        // 上面是打开日志trace文件，并写入头部信息，这里关注的重点是其怎么 dump art 的 trace.
         if (0 != xc_trace_load_symbols()) { // TODO: 加载符号表 ing......
             if (0 != xcc_util_write_str(fd, "Failed to load symbols.\n")) {
                 goto end;
@@ -347,55 +386,64 @@ static void* xc_trace_dumper(void* arg) {
         }
 
         // 关闭fd，并指向STDERR_FILENO，即把文件中的trace信息输出到 “标准错误输出”中，再即屏幕
+        // 通过 dup2() 将标准的错误输出重定向到了自己的fd中，并关闭旧的fd，这时候向fd中写入的话，
+        // 是直接写入到标准错误输出中(STDERR_FILENO)
         if (dup2(fd, STDERR_FILENO) < 0) {
             if (0 != xcc_util_write_str(fd, "Failed to duplicate FD.\n")) {
                 goto end;
             }
             goto skip;
         }
-        if (xc_trace_is_lollipop) {
+        if (xc_trace_is_lollipop) { // 这个版本的Android系统，则suspend
             xc_trace_libart_dbg_suspend();
         }
-        // 开始dump，就是_ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
-        // 也就是调用 dump 将对 SIGQUIT 的处理输出到cerr中。这里有一个细节，就是在dump节，其通过dup2()函数将标准的
-        // 错误输出重定向到了自己的fd中
-        xc_trace_libart_runtime_dump(*xc_trace_libart_runtime_instance, xc_trace_libcpp_cerr);
-        if (xc_trace_is_lollipop) {
+        // 开始dump，就是
+      // _ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
+        // 也就是调用 dump 将对 SIGQUIT 的处理输出到cerr中。这里有一个细节，就是在dump节，其通过
+        // dup2()函数将标准的错误输出重定向到了自己的fd中
+        xc_trace_libart_runtime_dump(*xc_trace_libart_runtime_instance,
+                                     xc_trace_libcpp_cerr);
+
+        if (xc_trace_is_lollipop) { // 这个版本的Android系统，则resume
             xc_trace_libart_dbg_resume();
         }
         dup2(xc_common_fd_null, STDERR_FILENO);
                             
     skip:
-        if (0 != xcc_util_write_str(fd, "\n"XCC_UTIL_THREAD_END"\n")) 
+        if (0 != xcc_util_write_str(fd, "\n"XCC_UTIL_THREAD_END"\n")) {
             goto end;
+        }
 
-        //write other info
+        // write other info
         if (0 != xcc_util_record_logcat(fd, xc_common_process_id,
                 xc_common_api_level, xc_trace_logcat_system_lines,
                 xc_trace_logcat_events_lines, xc_trace_logcat_main_lines)) {
+
             goto end;
         }
         if (xc_trace_dump_fds) {
             if (0 != xcc_util_record_fds(fd, xc_common_process_id)) {
+                goto end; // 记录当前进程中正在(已经)打开的文件描述符
+            }
+        }
+        if (xc_trace_dump_network_info) { // dump网络信息
+            if (0 != xcc_util_record_network_info(fd, xc_common_process_id,
+                                                  xc_common_api_level)) {
                 goto end;
             }
         }
-        if (xc_trace_dump_network_info) {
-            if (0 != xcc_util_record_network_info(fd, xc_common_process_id, xc_common_api_level)) {
-                goto end;
-            }
-        }
-        if (0 != xcc_meminfo_record(fd, xc_common_process_id)) {
+        if (0 != xcc_meminfo_record(fd, xc_common_process_id)) { // 内存信息
             goto end;
         }
 
     end:
-        //close log file
+        // close log file
         xc_common_close_trace_log(fd);
 
-        //rethrow SIGQUIT to ART Signal Catcher
-        if (xc_trace_rethrow)
+        // rethrow SIGQUIT to ART Signal Catcher
+        if (xc_trace_rethrow) {
             xc_trace_send_sigquit();
+        }
 
         //JNI callback
         //Do we need to implement an emergency buffer for disk exhausted?
@@ -403,7 +451,11 @@ static void* xc_trace_dumper(void* arg) {
             continue;
         if (NULL == (j_pathname = (*env)->NewStringUTF(env, pathname)))
             continue;
-        (*env)->CallStaticVoidMethod(env, xc_common_cb_class, xc_trace_cb_method, j_pathname, NULL);
+
+        (*env)->CallStaticVoidMethod(env, xc_common_cb_class,
+                                     xc_trace_cb_method,
+                                     j_pathname, NULL);
+
         XC_JNI_IGNORE_PENDING_EXCEPTION();
         (*env)->DeleteLocalRef(env, j_pathname);
     }
@@ -427,7 +479,7 @@ static void xc_trace_handler(int sig, siginfo_t* si, void* uc) {
     (void) si;
     (void) uc;
 
-    // 发生SIGQUIT异常信号，向eventid中写入数据，通知出去......，目前dump线程正在阻塞等待这个eventid
+    // 发生SIGQUIT异常信号，向eventid中写入数据，通知出去，目前dump线程正在阻塞等待这个eventid
     if (xc_trace_notifier >= 0) {
         data = 1;
         XCC_UTIL_TEMP_FAILURE_RETRY(write(xc_trace_notifier, &data, sizeof(data)));
@@ -467,13 +519,15 @@ int xc_trace_init(JNIEnv* env,
     pthread_t thd;
 
     // capture SIGQUIT only for ART
-    // 只是针对Android 5.0以上，因为其主要是用来获取ANR的trace，<=21，使用监控/data/anr目录变更的方案
+    // 只是针对 Android 5.0 以上，因为其主要是用来获取ANR的trace，<=21，
+    // 使用监控 /data/anr 目录变更的方案
     if (xc_common_api_level < 21) {
         return 0;
     }
 
     //is Android Lollipop (5.x)?
-    xc_trace_is_lollipop = ((21 == xc_common_api_level || 22 == xc_common_api_level) ? 1 : 0);
+    xc_trace_is_lollipop = ((21 == xc_common_api_level
+            || 22 == xc_common_api_level) ? 1 : 0);
 
     xc_trace_rethrow = rethrow;
     xc_trace_logcat_system_lines = logcat_system_lines;
@@ -485,10 +539,10 @@ int xc_trace_init(JNIEnv* env,
     // init for JNI callback
     xc_trace_init_callback(env);
 
-    // create event FD，eventfd是Linux的一个系统调用，创建一个文件描述符用于事件通知，eventfd()创建一个
-    // eventfd对象，可以由用户空间应用程序实现事件等待/通知机制，或由内核通知用户空间应用程序事件，该对象包
-    // 含了由内核维护的无符号64位整数计数器count 。使用参数arg1初始化此计数器，flags可以是以下值的 OR 运算
-    // 结果，用以改变 eventfd 的行为:
+    // create event FD，eventfd是Linux的一个系统调用，创建一个文件描述符用于事件通知，
+    // eventfd()创建一个eventfd对象，可以由用户空间应用程序实现事件等待/通知机制，或由
+    // 内核通知用户空间应用程序事件，该对象包含了由内核维护的无符号64位整数计数器count 。
+    // 使用参数arg1初始化此计数器，flags可以是以下值的 OR 运算结果，用以改变 eventfd 的行为:
     // 1. EFD_CLOEXEC (since Linux 2.6.27)
     //    文件被设置成 O_CLOEXEC，创建子进程 (fork) 时不继承父进程的文件描述符。
     // 2. EFD_NONBLOCK (since Linux 2.6.27)
@@ -496,7 +550,8 @@ int xc_trace_init(JNIEnv* env,
     // 3. EFD_SEMAPHORE (since Linux 2.6.30)
     //    提供类似信号量语义的read操作，简单说就是计数值count 递减1
     // - 操作方法:
-    // 一切皆为文件是Linux内核设计的一种高度抽象，eventfd的实现也不例外，我们可以使用操作文件的方法操作eventfd.
+    // 一切皆为文件是Linux内核设计的一种高度抽象，eventfd的实现也不例外，我们可以使用操作
+    // 文件的方法操作eventfd.
     // read(): 读取count值后置0。如果设置EFD_SEMAPHORE，读到的值为1，同时count值递减1。
     // write(): 其实是执行add操作，累加count值。
     // epoll()/poll()/select(): 支持IO多路复用操作。

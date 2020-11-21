@@ -90,8 +90,9 @@ extern "C" {
 #define XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(v, label) \
     do {                                                  \
         XC_JNI_CHECK_PENDING_EXCEPTION(label);            \
-        if (NULL == (v))                                  \
+        if (NULL == (v)) {                                \
             goto label;                                   \
+        }                                                 \
     } while(0)
 
 #define XC_JNI_VERSION    JNI_VERSION_1_6

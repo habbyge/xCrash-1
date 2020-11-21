@@ -67,13 +67,15 @@ static int xcd_maps_parse_line(char* line, xcd_maps_item_t** mi) {
     //scan
     if (sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %4s %"SCNxPTR" %*x:%*x %*d%n",
             &start, &end, flags, &offset, &pos) != 4) {
+
         return 0;
     }
     name = xcc_util_trim(line + pos);
 
-    //create map
-    if (NULL == (*mi = malloc(sizeof(xcd_maps_item_t))))
+    // create map
+    if (NULL == (*mi = malloc(sizeof(xcd_maps_item_t)))) {
         return XCC_ERRNO_NOMEM;
+    }
     return xcd_map_init(&((*mi)->map), start, end, offset, flags, name);
 }
 
@@ -83,13 +85,16 @@ int xcd_maps_create(xcd_maps_t** self, pid_t pid) {
     xcd_maps_item_t* mi;
     int r;
 
-    if (NULL == (*self = malloc(sizeof(xcd_maps_t))))
+    if (NULL == (*self = malloc(sizeof(xcd_maps_t)))) {
         return XCC_ERRNO_NOMEM;
+    }
     TAILQ_INIT(&((*self)->maps));
     (*self)->pid = pid;
 
     snprintf(buf, sizeof(buf), "/proc/%d/maps", pid);
-    if (NULL == (fp = fopen(buf, "r"))) return XCC_ERRNO_SYS;
+    if (NULL == (fp = fopen(buf, "r"))) {
+        return XCC_ERRNO_SYS;
+    }
 
     while (fgets(buf, sizeof(buf), fp)) {
         if (0 != (r = xcd_maps_parse_line(buf, &mi))) {
@@ -97,8 +102,9 @@ int xcd_maps_create(xcd_maps_t** self, pid_t pid) {
             return r;
         }
 
-        if (NULL != mi)
+        if (NULL != mi) {
             TAILQ_INSERT_TAIL(&((*self)->maps), mi, link);
+        }
     }
 
     fclose(fp);

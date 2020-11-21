@@ -37,6 +37,24 @@
 #include "xc_dl_util.h"
 #include "xc_dl_const.h"
 
+// - <dlfcn.h>学习
+// Linux的so库显式调用:
+// (1) 用 dlopen() 打开库文件，并指定打开方式:
+// dllope的第一个参数为共享库的名称，将会在下面位置查找指定的共享库
+// ① 环境变量 LD_LIBRARY_PATH 列出的用分号间隔的所有目录
+// ② 文件 /etc/ld.so.cache 中找到的库的列表，由 ldconfig 命令刷新
+// ③ 目录 usr/lib
+// ④ 目录/lib
+// ⑤ 当前目录
+// 第二个参数为打开共享库的方式。有两个取值:
+// ① RTLD_NOW：将共享库中的所有函数加载到内存
+// ② RTLD_LAZY：会推后共享库中的函数的加载操作，直到调用dlsym()时方加载某函数
+// (2) 用 dlerror() 测试是否打开成功，并进行错误处理
+// (3) 用 dlsym() 获得函数地址，存放在一个函数指针中
+// (4) 用获得的函数指针进行函数调用
+// (5) 程序结束时用 dlclose() 打开的动态库，防止资源泄露。
+// (6) 用 ldconfig 工具把动态库的路径加到系统库列表中
+
 // 定位内存泄漏基本上是从宏观到微观，进而定位到代码位置。
 // 从/proc/meminfo可以看到整个系统内存消耗情况，使用top可以看到每个进程的VIRT(虚拟内存)和RES(实际占用内存)，基本
 // 上就可以将泄漏内存定位到进程范围。之前也大概了解过/proc/self/maps，基于里面信息能大概判断泄露的内存的属性，是哪
@@ -76,8 +94,9 @@ static pthread_mutex_t* xc_dl_iterate_linker_mutex = NULL;
 
 static void xc_dl_iterate_linker_mutex_init() {
     xc_dl_t* linker = xc_dl_open(XC_DL_CONST_PATHNAME_LINKER, XC_DL_SYMTAB);
-    if (NULL == linker)
+    if (NULL == linker) {
         return;
+    }
 
     xc_dl_iterate_linker_mutex = xc_dl_symtab_object(linker, XC_DL_CONST_SYM_LINKER_MUTEX);
 
@@ -89,8 +108,9 @@ static uintptr_t xc_dl_iterate_get_min_vaddr(struct dl_phdr_info* info) {
     for (size_t i = 0; i < info->dlpi_phnum; i++) {
         const ElfW(Phdr)* phdr = &(info->dlpi_phdr[i]);
         if (PT_LOAD == phdr->p_type) {
-            if (min_vaddr > phdr->p_vaddr)
+            if (min_vaddr > phdr->p_vaddr) {
                 min_vaddr = phdr->p_vaddr;
+            }
         }
     }
     return min_vaddr;
@@ -116,7 +136,8 @@ static uintptr_t xc_dl_iterate_get_pathname_from_maps(struct dl_phdr_info* info,
     uintptr_t base = (uintptr_t) (info->dlpi_addr + min_vaddr);
 
     // open or rewind maps-file
-    if (0 != xc_dl_iterate_open_or_rewind_maps(maps)) return 0; // failed
+    if (0 != xc_dl_iterate_open_or_rewind_maps(maps))
+        return 0; // failed
 
     char line[1024];
     while (fgets(line, sizeof(line), *maps)) {
@@ -185,7 +206,8 @@ static uintptr_t xc_dl_iterate_find_linker_base(FILE** maps) {
             continue;
 
         if (0 != memcmp(line + line_len - linker_pathname_len,
-                        " "XC_DL_CONST_PATHNAME_LINKER, linker_pathname_len)) {
+                        " "XC_DL_CONST_PATHNAME_LINKER,
+                        linker_pathname_len)) {
             // todo:
             continue;
         }
@@ -206,9 +228,9 @@ static uintptr_t xc_dl_iterate_find_linker_base(FILE** maps) {
 
 static int xc_dl_iterate_do_callback(xc_dl_iterate_cb_t cb, void* cb_arg,
                                      uintptr_t base, const char* pathname,
-                                     uintptr_t* load_bias) {
+                                     uintptr_t* load_bias) { // TODO: ing......
 
-    ElfW(Ehdr)* ehdr = (ElfW(Ehdr)*) base;
+    ElfW(Ehdr)* ehdr = (ElfW(Ehdr)*) base; // Elf32_Ehdr/Elf64_Ehdr
 
     struct dl_phdr_info info;
     info.dlpi_name = pathname;
@@ -217,23 +239,27 @@ static int xc_dl_iterate_do_callback(xc_dl_iterate_cb_t cb, void* cb_arg,
 
     // get load bias
     uintptr_t min_vaddr = xc_dl_iterate_get_min_vaddr(&info);
-    if (UINTPTR_MAX == min_vaddr)
+    if (UINTPTR_MAX == min_vaddr) {
         return 0; // ignore invalid ELF
+    }
     info.dlpi_addr = (ElfW(Addr)) (base - min_vaddr);
-    if (NULL != load_bias)
+    if (NULL != load_bias) {
         *load_bias = info.dlpi_addr;
+    }
 
     return cb(&info, sizeof(struct dl_phdr_info), cb_arg);
 }
 
 static int xc_dl_iterate_by_linker(xc_dl_iterate_cb_t cb, void* cb_arg, int flags) {
-    if (NULL == dl_iterate_phdr)
+    if (NULL == dl_iterate_phdr) {
         return -1;
+    }
 
     FILE* maps = NULL;
 
     // for linker/linker64 in Android version < 8.1 (API level 27)
-    uintptr_t linker_base = 0, linker_load_bias = 0;
+    uintptr_t linker_base = 0;
+    uintptr_t linker_load_bias = 0;
     if ((flags & XC_DL_WITH_LINKER) && xc_dl_util_get_api_level() < __ANDROID_API_O_MR1__) {
         linker_base = xc_dl_iterate_find_linker_base(&maps);
         if (0 != linker_base) {
@@ -268,38 +294,43 @@ static int xc_dl_iterate_by_linker(xc_dl_iterate_cb_t cb, void* cb_arg, int flag
 }
 
 #if defined(__arm__) || defined(__i386__)
-
 static int xc_dl_iterate_by_maps(xc_dl_iterate_cb_t cb, void* cb_arg) {
-    FILE* maps = fopen("/proc/self/maps", "r");
+    FILE* maps = fopen("/proc/self/maps", "r"); // 当前加载到进程中的so内存隐射
     if (NULL == maps)
         return 0;
 
     char line[1024];
     while (fgets(line, sizeof(line), maps)) {
         // Try to find an ELF which loaded by linker. This is almost always correct in android 4.x.
-        uintptr_t base, offset;
-        if (2 != sscanf(line, "%"SCNxPTR"-%*"SCNxPTR" r-xp %"SCNxPTR" ", &base, &offset))
+        uintptr_t base;
+        uintptr_t offset;
+        // base-结束地址 r-xp offset
+        if (2 != sscanf(line, "%"SCNxPTR"-%*"SCNxPTR" r-xp %"SCNxPTR" ", &base, &offset)) {
             continue;
-        if (0 != offset)
+        }
+        if (0 != offset) { // 要求是偏移量为0的那一行
             continue;
-        if (0 != memcmp((void*) base, ELFMAG, SELFMAG))
+        }
+        if (0 != memcmp((void*) base, ELFMAG, SELFMAG)) {
             continue;
+        }
 
         // get pathname
-        char* pathname = strchr(line, '/');
-        if (NULL == pathname)
+        char* pathname = strchr(line, '/'); // 索引到so路径处
+        if (NULL == pathname) {
             break;
+        }
         xc_dl_util_trim_ending(pathname);
 
         // callback
-        if (0 != xc_dl_iterate_do_callback(cb, cb_arg, base, pathname, NULL))
+        if (0 != xc_dl_iterate_do_callback(cb, cb_arg, base, pathname, NULL)) {
             break;
+        }
     }
 
     fclose(maps);
     return 0;
 }
-
 #endif
 
 int xc_dl_iterate(xc_dl_iterate_cb_t cb, void* cb_arg, int flags) {

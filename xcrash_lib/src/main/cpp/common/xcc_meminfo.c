@@ -135,7 +135,7 @@ enum {
     // App art, boot art.
     HEAP_ART_APP,
     HEAP_ART_BOOT,
-    
+
     _NUM_HEAP,
     _NUM_EXCLUSIVE_HEAP = HEAP_UNKNOWN + 1
 };
@@ -144,7 +144,7 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
     char       line[1024];
     size_t     len;
     size_t     temp;
-    
+
     uintptr_t start = 0, end = 0, prev_end = 0;
     char* name;
     size_t     name_len, name_pos;
@@ -170,7 +170,7 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
 
     if (NULL == fgets(line, sizeof(line), fp))
         return;
-    
+
     while (!done) {
         prev_heap = which_heap;
         prev_end = end;
@@ -182,18 +182,18 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
         len = strlen(line);
         if (len < 1) return;
         line[--len] = '\0';
-        
+
         if (sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d%n", &start, &end, &pos) != 2) {
             skip = 1;
         } else {
             name_pos = (size_t)pos;
-            
+
             //get name and name length
             while(isspace(line[name_pos]))
                 name_pos += 1;
             name = line + name_pos;
             name_len = strlen(name);
-            
+
             //trim the end of the line if it is " (deleted)"
             if (name_len > XCC_MEMINFO_DELETE_STR_LEN && 0 == strcmp(name +
                     name_len - XCC_MEMINFO_DELETE_STR_LEN, XCC_MEMINFO_DELETE_STR)) {
@@ -330,15 +330,13 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
         swapped_out = 0;
         swapped_out_pss = 0;
 
-        while(1)
-        {
-            if(NULL == fgets(line, sizeof(line), fp))
-            {
+        while(1) {
+            if (NULL == fgets(line, sizeof(line), fp)) {
                 done = 1;
                 break;
             }
 
-            if(line[0] == 'P' && sscanf(line, "Pss: %zu kB", &temp) == 1)
+            if (line[0] == 'P' && sscanf(line, "Pss: %zu kB", &temp) == 1)
                 pss = temp;
             else if(line[0] == 'S' && sscanf(line, "Shared_Clean: %zu kB", &temp) == 1)
                 shared_clean = temp;
@@ -350,12 +348,10 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
                 private_dirty = temp;
             else if (line[0] == 'S' && sscanf(line, "Swap: %zu kB", &temp) == 1)
                 swapped_out = temp;
-            else if (line[0] == 'S' && sscanf(line, "SwapPss: %zu kB", &temp) == 1)
-            {
+            else if (line[0] == 'S' && sscanf(line, "SwapPss: %zu kB", &temp) == 1) {
                 *found_swap_pss = 1;
                 swapped_out_pss = temp;
-            }
-            else if(sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d", &start, &end) == 2)
+            } else if(sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d", &start, &end) == 2)
                 break; // looks like a new mapping
         }
 
@@ -401,8 +397,8 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
 
 static int xcc_meminfo_record_sys(int log_fd) {
     return xcc_util_record_sub_section_from(log_fd,
-            "/proc/meminfo",
-            " System Summary (From: /proc/meminfo)\n", 0);
+        "/proc/meminfo",
+        " System Summary (From: /proc/meminfo)\n", 0);
 }
 
 static int xcc_meminfo_record_proc_status(int log_fd, pid_t pid) {
@@ -423,7 +419,7 @@ static int xcc_meminfo_record_proc_limits(int log_fd, pid_t pid) {
 
 int xcc_meminfo_record(int log_fd, pid_t pid) {
     char           path[64];
-    FILE          *fp = NULL;
+    FILE*          fp = NULL;
     xcc_meminfo_t  stats[_NUM_HEAP];
     xcc_meminfo_t  total;
     int            found_swap_pss = 0;
@@ -433,10 +429,12 @@ int xcc_meminfo_record(int log_fd, pid_t pid) {
     xcc_libc_support_memset(stats, 0, sizeof(stats));
     xcc_libc_support_memset(&total, 0, sizeof(total));
 
-    //load memory info from /proc/pid/smaps
+    // load memory info from /proc/pid/smaps
     snprintf(path, sizeof(path), "/proc/%d/smaps", pid);
-    if(NULL == (fp = fopen(path, "r"))) return 0;
-    xcc_meminfo_load(fp, stats, &found_swap_pss);
+    if (NULL == (fp = fopen(path, "r"))) {
+        return 0;
+    }
+    xcc_meminfo_load(fp, stats, &found_swap_pss); // 从代码中拿到
     fclose(fp);
 
     for (i = 0; i < _NUM_EXCLUSIVE_HEAP; i++) {
@@ -450,13 +448,16 @@ int xcc_meminfo_record(int log_fd, pid_t pid) {
         total.swapped_out_pss += stats[i].swapped_out_pss;
     }
 
-    //dump
-    if (0 != (r = xcc_util_write_str(log_fd, "memory info:\n")))
+    // dump
+    if (0 != (r = xcc_util_write_str(log_fd, "memory info:\n"))) {
         return r;
-    if(0 != (r = xcc_meminfo_record_sys(log_fd))) return r;
-    if(0 != (r = xcc_meminfo_record_proc_status(log_fd, pid))) return r;
-    if(0 != (r = xcc_meminfo_record_proc_limits(log_fd, pid))) return r;
-    if(0 != (r = xcc_util_write_str(log_fd, " Process Details (From: /proc/PID/smaps)\n"))) return r;
+    }
+    if (0 != (r = xcc_meminfo_record_sys(log_fd))) {
+        return r;
+    }
+    if (0 != (r = xcc_meminfo_record_proc_status(log_fd, pid))) return r;
+    if (0 != (r = xcc_meminfo_record_proc_limits(log_fd, pid))) return r;
+    if (0 != (r = xcc_util_write_str(log_fd, " Process Details (From: /proc/PID/smaps)\n"))) return r;
 
     if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT,
             "", "Pss", "Pss", "Shared", "Private", "Shared", "Private",
@@ -506,8 +507,9 @@ int xcc_meminfo_record(int log_fd, pid_t pid) {
                                        found_swap_pss ? total.swapped_out_pss : total.swapped_out)))
         return r;
 
-    if (0 != (r = xcc_util_write_str(log_fd, "-\n Process Dalvik Details (From: /proc/PID/smaps)\n")))
+    if (0 != (r = xcc_util_write_str(log_fd, "-\n Process Dalvik Details (From: /proc/PID/smaps)\n"))) {
         return r;
+    }
     for (i = _NUM_EXCLUSIVE_HEAP; i < _NUM_HEAP; i++) {
         if (0 != stats[i].pss ||
                 0 != stats[i].swappable_pss ||
@@ -591,6 +593,6 @@ int xcc_meminfo_record(int log_fd, pid_t pid) {
     }
     if (0 != (r = xcc_util_write_str(log_fd, "-\n\n")))
         return r;
-    
+
     return 0;
 }
