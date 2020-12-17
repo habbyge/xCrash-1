@@ -226,7 +226,8 @@ const char* xcc_util_get_sigcodename(const siginfo_t* si) {
 
 int xcc_util_signal_has_si_addr(const siginfo_t* si) {
     //manually sent signals won't have si_addr
-    if (si->si_code == SI_USER || si->si_code == SI_QUEUE || si->si_code == SI_TKILL) return 0;
+    if (si->si_code == SI_USER || si->si_code == SI_QUEUE || si->si_code == SI_TKILL)
+        return 0;
 
     switch (si->si_signo) {
     case SIGBUS:
@@ -266,7 +267,9 @@ int xcc_util_atoi(const char* str, int* i) {
     val = strtol(str, &endptr, 10);
 
     //check
-    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0))
+    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
+            || (errno != 0 && val == 0))
+
         return XCC_ERRNO_INVAL;
     if (endptr == str)
         return XCC_ERRNO_INVAL;
@@ -515,9 +518,11 @@ static int xcc_util_is_root_saved = -1;
 int xcc_util_is_root(void) {
     size_t i;
 
-    if (xcc_util_is_root_saved >= 0) return xcc_util_is_root_saved;
+    if (xcc_util_is_root_saved >= 0)
+        return xcc_util_is_root_saved;
 
-    for (i = 0; i < sizeof(xcc_util_su_pathnames) / sizeof(xcc_util_su_pathnames[0]); i++) {
+    int count = sizeof(xcc_util_su_pathnames) / sizeof(xcc_util_su_pathnames[0]);
+    for (i = 0; i < count; i++) {
         if (0 == access(xcc_util_su_pathnames[i], F_OK)) {
             xcc_util_is_root_saved = 1;
             return 1;
@@ -702,7 +707,8 @@ int xcc_util_record_fds(int fd, pid_t pid) {
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/fd", pid);
-    if ((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0) {
+    if ((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(
+            path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0) {
         goto end;
     }
 
@@ -739,8 +745,9 @@ int xcc_util_record_fds(int fd, pid_t pid) {
                 fd_path[len] = '\0';
             }
 
-            //dump
-            if (0 != (r = xcc_util_write_format_safe(fd, "    fd %d: %s\n", fd_num, fd_path))) {
+            // dump
+            if (0 != (r = xcc_util_write_format_safe(
+                    fd, "    fd %d: %s\n", fd_num, fd_path))) {
                 goto clean;
             }
 
@@ -755,7 +762,9 @@ int xcc_util_record_fds(int fd, pid_t pid) {
             goto clean;
         }
     }
-    if (0 != (r = xcc_util_write_format_safe(fd, "    (number of FDs: %zu)\n", total))) {
+
+    if (0 != (r = xcc_util_write_format_safe(
+            fd, "    (number of FDs: %zu)\n", total))) {
         goto clean;
     }
     r = xcc_util_write_str(fd, "\n");
@@ -774,8 +783,11 @@ int xcc_util_record_network_info(int fd, pid_t pid, int api_level) {
         return r;
 
     if (api_level >= 29) {
-        if (0 != (r = xcc_util_write_str(fd, "Not supported on Android Q (API level 29) and later.\n")))
+        if (0 != (r = xcc_util_write_str(
+                fd, "Not supported on Android Q (API level 29) and later.\n"))) {
+
             return r;
+        }
     } else {
         xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp", pid);
         if (0 != (r = xcc_util_record_sub_section_from(fd, path,

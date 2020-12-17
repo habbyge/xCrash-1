@@ -221,22 +221,26 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info* info, ElfW(Shdr
         return -1;
 
     ElfW(Shdr)* shdr_shstrtab = (ElfW(Shdr)*) ((uintptr_t) elf +
-                                               ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
+            ehdr->e_shoff + ehdr->e_shstrndx * ehdr->e_shentsize);
 
     char* shstrtab = (char*) ((uintptr_t) elf + shdr_shstrtab->sh_offset);
 
     for (size_t i = 0; i < ehdr->e_shnum; i++) {
-        ElfW(Shdr)* shdr = (ElfW(Shdr)*) ((uintptr_t) elf + ehdr->e_shoff + i * ehdr->e_shentsize);
+        ElfW(Shdr)* shdr = (ElfW(Shdr)*) ((uintptr_t) elf +
+                ehdr->e_shoff + i * ehdr->e_shentsize);
 
-        if (SHT_SYMTAB == shdr->sh_type && 0 == strcmp(".symtab", shstrtab + shdr->sh_name)) {
+        if (SHT_SYMTAB == shdr->sh_type && 0 == strcmp(
+                ".symtab", shstrtab + shdr->sh_name)) {
+
             // get and check .strtab
             if (shdr->sh_link >= ehdr->e_shnum)
                 continue;
 
-            ElfW(Shdr)* shdr_strtab = (ElfW(Shdr)*) ((uintptr_t) elf
-                                                     + ehdr->e_shoff + shdr->sh_link * ehdr->e_shentsize);
+            ElfW(Shdr)* shdr_strtab = (ElfW(Shdr)*) ((uintptr_t)
+                    elf + ehdr->e_shoff + shdr->sh_link * ehdr->e_shentsize);
 
-            if (SHT_STRTAB != shdr_strtab->sh_type) continue;
+            if (SHT_STRTAB != shdr_strtab->sh_type)
+                continue;
 
             // found the .symtab and .strtab
             self->symtab = (ElfW(Sym)*) ((uintptr_t) elf + shdr->sh_offset);

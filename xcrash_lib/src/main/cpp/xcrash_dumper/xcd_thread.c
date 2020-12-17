@@ -234,7 +234,11 @@ static int xcd_thread_record_memory_by_addr(xcd_thread_t *self, int log_fd,
     size_t ascii_idx = 0;
     char line[128];
     size_t line_len = 0;
-    for (j = 0; j < XCD_THREAD_MEMORY_BYTES_TO_DUMP / XCD_THREAD_MEMORY_BYTES_PER_LINE; j++) {
+
+    for (j = 0;
+         j < XCD_THREAD_MEMORY_BYTES_TO_DUMP / XCD_THREAD_MEMORY_BYTES_PER_LINE;
+         j++) {
+
         ascii_idx = 0;
         
         line_len = (size_t)snprintf(line, sizeof(line), "    %0"XCC_UTIL_FMT_ADDR, addr);
@@ -257,11 +261,19 @@ static int xcd_thread_record_memory_by_addr(xcd_thread_t *self, int log_fd,
                 }
                 data_ptr++;
             } else {
-                line_len += (size_t)snprintf(line + line_len, sizeof(line) - line_len, " ");
-                for(k = 0; k < sizeof(uintptr_t) * 2; k++)
-                    line_len += (size_t)snprintf(line + line_len, sizeof(line) - line_len, "-");
-                for(k = 0; k < sizeof(uintptr_t); k++)
+                line_len += (size_t)snprintf(line + line_len,
+                                             sizeof(line) - line_len,
+                                             " ");
+
+                for(k = 0; k < sizeof(uintptr_t) * 2; k++) {
+                    line_len += (size_t)snprintf(line + line_len,
+                                                 sizeof(line) - line_len,
+                                                 "-");
+                }
+
+                for(k = 0; k < sizeof(uintptr_t); k++) {
                     ascii[ascii_idx++] = '.';
+                }
             }
             current += sizeof(uintptr_t);
         }

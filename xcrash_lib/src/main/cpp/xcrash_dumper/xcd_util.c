@@ -53,7 +53,9 @@ extern __attribute((weak)) ssize_t process_vm_readv(pid_t,
                                                     unsigned long,
                                                     unsigned long);
 
-static size_t xcd_util_process_vm_readv(pid_t pid, uintptr_t remote_addr, void* dst, size_t dst_len) {
+static size_t xcd_util_process_vm_readv(pid_t pid, uintptr_t remote_addr,
+                                        void* dst, size_t dst_len) {
+
     size_t page_size = (size_t)sysconf(_SC_PAGE_SIZE);
     struct iovec src_iovs[64];
     uintptr_t cur_remote_addr = remote_addr;
@@ -87,12 +89,14 @@ static size_t xcd_util_process_vm_readv(pid_t pid, uintptr_t remote_addr, void* 
 
         // read from source to destination
         ssize_t rc;
-        if (NULL != process_vm_readv)
+        if (NULL != process_vm_readv) {
             rc = process_vm_readv(pid, &dst_iov, 1, src_iovs, iovecs_used, 0);
-        else
+        } else {
             rc = syscall(__NR_process_vm_readv, pid, &dst_iov, 1, src_iovs, iovecs_used, 0);
-        if (-1 == rc)
+        }
+        if (-1 == rc)  {
             return total_read;
+        }
 
         total_read += (size_t)rc;
     }
@@ -100,7 +104,9 @@ static size_t xcd_util_process_vm_readv(pid_t pid, uintptr_t remote_addr, void* 
     return total_read;
 }
 
-static size_t xcd_util_original_ptrace(pid_t pid, uintptr_t remote_addr, void* dst, size_t dst_len) {
+static size_t xcd_util_original_ptrace(pid_t pid, uintptr_t remote_addr,
+                                       void* dst, size_t dst_len) {
+
     // Make sure that there is no overflow.
     uintptr_t max_size;
     if (__builtin_add_overflow(remote_addr, dst_len, &max_size))

@@ -453,14 +453,14 @@ static int xc_crash_check_backtrace_valid() {
  * @param si 信号信息
  * @param uc Crash发生(捕获信号字)时的上下文参数
  *
- * 这个函数除了做一些打开文件fd等基本的操作之外，其最主要做的事就是通过xc_crash_fork创建一个子进程并等待子进程返回
+ * 这个函数除了做一些打开文件fd等基本的操作之外，其最主要做的事就是通过 xc_crash_fork 创建一个子进程并等待子进程返回
  */
 static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     struct timespec crash_tp;
-    int restore_orig_ptracer = 0;
-    int restore_orig_dumpable = 0;
-    int orig_dumpable = 0;
-    int dump_ok = 0;
+    int             restore_orig_ptracer = 0;
+    int             restore_orig_dumpable = 0;
+    int             orig_dumpable = 0;
+    int             dump_ok = 0;
 
     (void) sig;
 

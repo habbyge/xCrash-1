@@ -124,7 +124,7 @@ void xc_common_set_vm(JavaVM* vm, JNIEnv* env, jclass cls) {
     XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_common_cb_class, err);
     return;
 
-    err:
+err:
     xc_common_cb_class = NULL;
 }
 
@@ -254,10 +254,12 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
     // open dir
     if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0) {
         // try again with the prepared fd
-        if (0 != xc_common_close_prepared_fd(is_crash))
+        if (0 != xc_common_close_prepared_fd(is_crash)) {
             goto create_new_file;
-        if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0)
+        }
+        if ((fd = XCC_UTIL_TEMP_FAILURE_RETRY(open(xc_common_log_dir, XC_COMMON_OPEN_DIR_FLAGS))) < 0) {
             goto create_new_file;
+        }
     }
 
     // try to rename a placeholder file and open it
