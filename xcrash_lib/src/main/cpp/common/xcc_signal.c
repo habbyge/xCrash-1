@@ -80,8 +80,8 @@
 #pragma clang diagnostic ignored "-Wpadded"
 
 typedef struct {
-    int              signum; // 信号字
-    struct sigaction oldact; // 旧的信号处理器(包括了信号处理函数)
+  int signum; // 信号字
+  struct sigaction oldact; // 旧的信号处理器(包括了信号处理函数)
 } xcc_signal_crash_info_t;
 #pragma clang diagnostic pop
 
@@ -174,114 +174,114 @@ static xcc_signal_crash_info_t xcc_signal_crash_info[] = {
 /**
  * 注册Crash信号字处理函数
  */
-int xcc_signal_crash_register(void (*handler)(int, siginfo_t*, void*)) {
-    stack_t ss;
+int xcc_signal_crash_register(void (* handler)(int, siginfo_t*, void*)) {
+  stack_t ss;
 
-    // 为SIGSEGV信号处理程序设置一个替代堆栈。当发生无效内存访问等段错误时，也能够处理SIGSEGV。
-    if (NULL == (ss.ss_sp = calloc(1, XCC_SIGNAL_CRASH_STACK_SIZE))) {
-        return XCC_ERRNO_NOMEM;
+  // 为SIGSEGV信号处理程序设置一个替代堆栈。当发生无效内存访问等段错误时，也能够处理SIGSEGV。
+  if (NULL == (ss.ss_sp = calloc(1, XCC_SIGNAL_CRASH_STACK_SIZE))) {
+    return XCC_ERRNO_NOMEM;
+  }
+
+  ss.ss_size = XCC_SIGNAL_CRASH_STACK_SIZE;
+  ss.ss_flags = 0;
+
+  // 该函数设计内存方面的知识(http://www.groad.net/bbs/forum.php?mod=viewthread&tid=7336):
+  // 一般情况下，信号处理函数被调用时，内核会在进程的栈上为其创建一个栈帧。但是这里就会有一个问题，如果栈的增长到达
+  // 了栈的资源限制值(RLIMIT_STACK，使用ulimit命令可以查看，一般为8M)，或是栈已经长得太大(没有 RLIMIT_STACK
+  // 的限制)，以致到达了映射内存(mapped memory)边界，那么此时信号处理函数就没法得到栈帧的分配。
+  // 在一个进程的栈增长超过到最大的允许值时，内核会向该进程发送一个SIGSEGV信号(段错误)。如果我们在该进程里已经设
+  // 置了一个捕捉 SIGSEGV 信号的处理函数，，那么此时由于进程的栈已经耗尽，因此该信号得不到处理，因此进程就会被结
+  // 束掉(这也就是 SIGSEGV 信号的默认处理方式)。
+  // 假如说，我们一定需要在这种极端的情况下处理SIGSEGV信号(例如：C/C++层的Crash处理)，那么还是有办法的，也就是
+  // 使用 sigaltstack() 函数来实现，可用下面的步骤：
+  // 1. 分配一块内存区，当然是从堆中分配，这块内存区就称为“可替换信号栈”(alternate signal stack)，顾名思义，
+  //    我们就是希望将信号处理函数的栈挪到堆中，而不和进程共用一块栈区。
+  // 2. 使用 sigaltstack() 系统调用，通知内核 “可替换信号栈” 已经建立。
+  // 3. 接着建立信号处理函数，此时需要对 sigaction() 函数的 sa_flags 成员设立 SA_ONSTACK 标志，该标志告诉内
+  //    核信号处理函数的栈帧就在 “可替换信号栈” 上建立的。
+  // 回到sigaltstack()函数，该函数的第1个参数sigstack是一个stack_t结构的指针，该结构存储了一个“可替换信号栈”
+  // 的位置及属性信息。第2个参数old_sigstack也是一个stack_t类型指针，它用来返回上一次建立的“可替换信号栈”的信
+  // 息(如果有的话)。
+  if (0 != sigaltstack(&ss, NULL)) {
+    // 用于替换信号处理函数栈，有的说法是设置紧急函数栈。其原因是一般情况下，信号处理函数被调用时，内核会在进程
+    // 的栈上为其创建一个栈帧。但是这里就会有一个问题，如果栈的增长到达了栈的资源限制值 (RLIMIT_STACK，使用
+    // ulimit 命令可以查看，一般为 8M)，或是栈已经长得太大(没有 RLIMIT_STACK 的限制)，以致到达了映射内存(
+    // mapped memory)边界，那么此时信号处理函数就没法得到栈帧的分配。
+    return XCC_ERRNO_SYS;
+  }
+
+  struct sigaction act;
+  memset(&act, 0, sizeof(act));
+  // 信号集(sigset_t)用来描述信号的集合，每个信号占用1位(64位)。Linux所支持的所有信号可以全部或部分的出现在信
+  // 号集中，主要与信号阻塞相关函数配合使用。调用该函数后，set指向的信号集中将包含Linux支持的64种信号，相当于64
+  // bit都置1，即将所有信号加入至信号集
+  sigfillset(&act.sa_mask);
+  act.sa_sigaction = handler;
+  // 参数 sa_flags 可以指定一些选项，如：SA_SIGINFO、SA_ONSTACK、SA_RESTART、SA_RESTORER。
+  // 如果设置了 SA_SIGINFO，则表示使用 _sa_sigaction信号处理程序 (默认是_sa_handler)，通过参数
+  // info 能够得到一些产生信号的信息。比如struct siginfo中有一个成员 si_code，当信号是 SIGBUS 时，
+  // 如果 si_code 为 BUS_ADRALN，则表示“无效的地址对齐”。
+  // SA_RESTORER 与 sa_restorer 配对使用，貌似也是为了返回旧的信号处理程序，但现在应该是已经弃用了。
+  // SA_ONSTACK 表示使用一个替代栈
+  // SA_RESTART 表示重启系统调用
+  act.sa_flags = SA_RESTART | SA_SIGINFO | SA_ONSTACK; // 信号处理函数在堆上运行，而不是在栈上
+
+  size_t i;
+  for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
+    // 信号处理-sigaction()函数：
+    // 该函数与signal()函数一样，用于设置与信号sig关联的动作，而oact如果不是空指针的话，就用它来保存原先对该信
+    // 号的动作的位置，act则用于设置指定信号的动作。sigaction结构体定义在signal.h中，但是它至少包括以下成员：
+    // void(*)(int)sa_handler：处理函数指针，相当于signal函数的func参数。
+    // sigset_t sa_mask: 指定一个信号集，在调用sa_handler所指向的信号处理函数之前，该信号集将被加入到进程的
+    //                   信号屏蔽字中。信号屏蔽字是指当前被阻塞的一组信号，它们不能被当前进程接收到
+    // int sa_flags：信号处理修改器;
+    if (0 != sigaction(xcc_signal_crash_info[i].signum, &act, &(xcc_signal_crash_info[i].oldact))) {
+      return XCC_ERRNO_SYS;
     }
+  }
 
-    ss.ss_size  = XCC_SIGNAL_CRASH_STACK_SIZE;
-    ss.ss_flags = 0;
-
-    // 该函数设计内存方面的知识(http://www.groad.net/bbs/forum.php?mod=viewthread&tid=7336):
-    // 一般情况下，信号处理函数被调用时，内核会在进程的栈上为其创建一个栈帧。但是这里就会有一个问题，如果栈的增长到达
-    // 了栈的资源限制值(RLIMIT_STACK，使用ulimit命令可以查看，一般为8M)，或是栈已经长得太大(没有 RLIMIT_STACK
-    // 的限制)，以致到达了映射内存(mapped memory)边界，那么此时信号处理函数就没法得到栈帧的分配。
-    // 在一个进程的栈增长超过到最大的允许值时，内核会向该进程发送一个SIGSEGV信号(段错误)。如果我们在该进程里已经设
-    // 置了一个捕捉 SIGSEGV 信号的处理函数，，那么此时由于进程的栈已经耗尽，因此该信号得不到处理，因此进程就会被结
-    // 束掉(这也就是 SIGSEGV 信号的默认处理方式)。
-    // 假如说，我们一定需要在这种极端的情况下处理SIGSEGV信号(例如：C/C++层的Crash处理)，那么还是有办法的，也就是
-    // 使用 sigaltstack() 函数来实现，可用下面的步骤：
-    // 1. 分配一块内存区，当然是从堆中分配，这块内存区就称为“可替换信号栈”(alternate signal stack)，顾名思义，
-    //    我们就是希望将信号处理函数的栈挪到堆中，而不和进程共用一块栈区。
-    // 2. 使用 sigaltstack() 系统调用，通知内核 “可替换信号栈” 已经建立。
-    // 3. 接着建立信号处理函数，此时需要对 sigaction() 函数的 sa_flags 成员设立 SA_ONSTACK 标志，该标志告诉内
-    //    核信号处理函数的栈帧就在 “可替换信号栈” 上建立的。
-    // 回到sigaltstack()函数，该函数的第1个参数sigstack是一个stack_t结构的指针，该结构存储了一个“可替换信号栈”
-    // 的位置及属性信息。第2个参数old_sigstack也是一个stack_t类型指针，它用来返回上一次建立的“可替换信号栈”的信
-    // 息(如果有的话)。
-    if (0 != sigaltstack(&ss, NULL)) {
-        // 用于替换信号处理函数栈，有的说法是设置紧急函数栈。其原因是一般情况下，信号处理函数被调用时，内核会在进程
-        // 的栈上为其创建一个栈帧。但是这里就会有一个问题，如果栈的增长到达了栈的资源限制值 (RLIMIT_STACK，使用
-        // ulimit 命令可以查看，一般为 8M)，或是栈已经长得太大(没有 RLIMIT_STACK 的限制)，以致到达了映射内存(
-        // mapped memory)边界，那么此时信号处理函数就没法得到栈帧的分配。
-        return XCC_ERRNO_SYS;
-    }
-
-    struct sigaction act;
-    memset(&act, 0, sizeof(act));
-    // 信号集(sigset_t)用来描述信号的集合，每个信号占用1位(64位)。Linux所支持的所有信号可以全部或部分的出现在信
-    // 号集中，主要与信号阻塞相关函数配合使用。调用该函数后，set指向的信号集中将包含Linux支持的64种信号，相当于64
-    // bit都置1，即将所有信号加入至信号集
-    sigfillset(&act.sa_mask);
-    act.sa_sigaction = handler;
-    // 参数 sa_flags 可以指定一些选项，如：SA_SIGINFO、SA_ONSTACK、SA_RESTART、SA_RESTORER。
-    // 如果设置了 SA_SIGINFO，则表示使用 _sa_sigaction信号处理程序 (默认是_sa_handler)，通过参数
-    // info 能够得到一些产生信号的信息。比如struct siginfo中有一个成员 si_code，当信号是 SIGBUS 时，
-    // 如果 si_code 为 BUS_ADRALN，则表示“无效的地址对齐”。
-    // SA_RESTORER 与 sa_restorer 配对使用，貌似也是为了返回旧的信号处理程序，但现在应该是已经弃用了。
-    // SA_ONSTACK 表示使用一个替代栈
-    // SA_RESTART 表示重启系统调用
-    act.sa_flags = SA_RESTART | SA_SIGINFO | SA_ONSTACK; // 信号处理函数在堆上运行，而不是在栈上
-    
-    size_t i;
-    for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
-        // 信号处理-sigaction()函数：
-        // 该函数与signal()函数一样，用于设置与信号sig关联的动作，而oact如果不是空指针的话，就用它来保存原先对该信
-        // 号的动作的位置，act则用于设置指定信号的动作。sigaction结构体定义在signal.h中，但是它至少包括以下成员：
-        // void(*)(int)sa_handler：处理函数指针，相当于signal函数的func参数。
-        // sigset_t sa_mask: 指定一个信号集，在调用sa_handler所指向的信号处理函数之前，该信号集将被加入到进程的
-        //                   信号屏蔽字中。信号屏蔽字是指当前被阻塞的一组信号，它们不能被当前进程接收到
-        // int sa_flags：信号处理修改器;
-        if (0 != sigaction(xcc_signal_crash_info[i].signum, &act, &(xcc_signal_crash_info[i].oldact))) {
-            return XCC_ERRNO_SYS;
-        }
-    }
-
-    return 0;
+  return 0;
 }
 
 /**
  * 注销Crash信号字处理函数，即：还原旧的信号处理函数
  */
 int xcc_signal_crash_unregister() {
-    int r = 0;
-    size_t i;
-    for(i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
-        if (0 != sigaction(xcc_signal_crash_info[i].signum, &(xcc_signal_crash_info[i].oldact), NULL)) {
-            r = XCC_ERRNO_SYS;
-        }
+  int r = 0;
+  size_t i;
+  for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
+    if (0 != sigaction(xcc_signal_crash_info[i].signum, &(xcc_signal_crash_info[i].oldact), NULL)) {
+      r = XCC_ERRNO_SYS;
     }
-    return r;
+  }
+  return r;
 }
 
 int xcc_signal_crash_ignore() {
-    struct sigaction act;
-    xcc_libc_support_memset(&act, 0, sizeof(act));
-    sigemptyset(&act.sa_mask);
-    act.sa_handler = SIG_DFL;
-    act.sa_flags = SA_RESTART;
-    
-    int r = 0;
-    size_t i;
-    for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
-        if (0 != sigaction(xcc_signal_crash_info[i].signum, &act, NULL)) {
-            r = XCC_ERRNO_SYS;
-        }
+  struct sigaction act;
+  xcc_libc_support_memset(&act, 0, sizeof(act));
+  sigemptyset(&act.sa_mask);
+  act.sa_handler = SIG_DFL;
+  act.sa_flags = SA_RESTART;
+
+  int r = 0;
+  size_t i;
+  for (i = 0; i < sizeof(xcc_signal_crash_info) / sizeof(xcc_signal_crash_info[0]); i++) {
+    if (0 != sigaction(xcc_signal_crash_info[i].signum, &act, NULL)) {
+      r = XCC_ERRNO_SYS;
     }
-    return r;
+  }
+  return r;
 }
 
 int xcc_signal_crash_queue(siginfo_t* si) {
-    if (SIGABRT == si->si_signo || SI_FROMUSER(si)) {
-        // 该系统调用函数位于: glibc-syscalls.h 中
-        if (0 != syscall(SYS_rt_tgsigqueueinfo, getpid(), gettid(), si->si_signo, si)) {
-            return XCC_ERRNO_SYS;
-        }
+  if (SIGABRT == si->si_signo || SI_FROMUSER(si)) {
+    // 该系统调用函数位于: glibc-syscalls.h 中
+    if (0 != syscall(SYS_rt_tgsigqueueinfo, getpid(), gettid(), si->si_signo, si)) {
+      return XCC_ERRNO_SYS;
     }
-    return 0;
+  }
+  return 0;
 }
 
 static sigset_t xcc_signal_trace_oldset;
@@ -292,61 +292,61 @@ static struct sigaction xcc_signal_trace_oldact;
  * 高版本(api level >= 21)方案: app已经访问不到 /data/anr 了, xCrash是不是有提供了其他的实现方案呢？实际上
  * 它上捕获了 SIGQUIT 信号，这个是 Android App 发生 ANR 时由 ActivityMangerService 向 App 发送的信号.
  */
-int xcc_signal_trace_register(void (*handler)(int, siginfo_t*, void*)) {
-    int r;
-    sigset_t set;
-    struct sigaction act;
+int xcc_signal_trace_register(void (* handler)(int, siginfo_t*, void*)) {
+  int r;
+  sigset_t set;
+  struct sigaction act;
 
-    // un-block the SIGQUIT mask for current thread, hope this is the main thread
-    // 用于将参数set信号集初始化并清空
-    sigemptyset(&set);
-    // 用来将参数SIGQUIT信号加入至参数set信号集里
-    sigaddset(&set, SIGQUIT); // 增加一个信号到信号集
-    // 在Linux的多线程中使用信号机制，与在进程中使用信号机制有着根本的区别，可以说是完全不同。在进程
-    // 环境中，对信号的处理是，先注册信号处理函数，当信号异步发生时，调用处理函数来处理信号。它完全是
-    // 异步的（我们完全不知到信号会在进程的那个执行点到来！）。然而信号处理函数的实现，有着许多的限制,
-    // 比如有一些函数不能在信号处理函数中调用；再比如一些函数read、recv等调用时会被异步的信号给中断
-    // (interrupt)，因此我们必须对在这些函数在调用时因为信号而中断的情况进行处理（判断函数返回时 
-    // enno 是否等于 EINTR）。但是在多线程中处理信号的原则却完全不同，它的基本原则是：将对信号的异
-    // 步处理，转换成同步处理，也就是说用一个线程专门的来“同步等待”信号的到来，而其它的线程可以完全
-    // 不被该信号中断/打断(interrupt)。这样就在相当程度上简化了在多线程环境中对信号的处理。而且可以
-    // 保证其它的线程不受信号的影响。这样我们对信号就可以完全预测，因为它不再是异步的，而是同步的（我
-    // 们完全知道信号会在哪个线程中的哪个执行点到来而被处理！）。而同步的编程模式总是比异步的编程模式
-    // 简单。其实多线程相比于多进程的其中一个优点就是：多线程可以将进程中异步的东西转换成同步的来处理。
-    // 
-    // 1.sigwait() 监听信号集set中所包含的信号，并将其存在signo中.
-    // sigwait()函数暂停调用线程的执行，直到信号集中指定的信号之一被传递为止。在多线程代码中，总是使
-    // 用sigwait或者sigwaitinfo或者sigtimedwait等函数来处理信号。而不是signal或者sigaction等
-    // 函数。因为在一个线程中调用signal或者sigaction等函数会改变所有线程中的信号处理函数。而不是仅
-    // 仅改变调用signal/sigaction的那个线程的信号处理函数。
-    // 注意：调用sigwait同步等待的信号必须在调用线程中被屏蔽，并且通常应该在所有的线程中被屏蔽（这样
-    // 可以保证信号绝不会被送到除了调用sigwait的任何其它线程），这是通过利用信号掩码的继承关系来达到
-    // 的。
-    // 2、pthread_sigmask函数：
-    // 每个线程均有自己的信号屏蔽集（信号掩码），可以使用pthread_sigmask函数来屏蔽某个线程对某些信
-    // 号的响应处理，仅留下需要处理该信号的线程来处理指定的信号。实现方式是：利用线程信号屏蔽集的继承
-    // 关系（在主进程中对sigmask进行设置后，主进程创建出来的线程将继承主进程的掩码）
-    // SIG_BLOCK:   结果集是当前集合参数集的并集
-    // SIG_UNBLOCK: 结果集是当前集合参数集的差集
-    // SIG_SETMASK: 结果集是由参数集指向的集
-    if (0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset))) {
-        return r;
-    }
+  // un-block the SIGQUIT mask for current thread, hope this is the main thread
+  // 用于将参数set信号集初始化并清空
+  sigemptyset(&set);
+  // 用来将参数SIGQUIT信号加入至参数set信号集里
+  sigaddset(&set, SIGQUIT); // 增加一个信号到信号集
+  // 在Linux的多线程中使用信号机制，与在进程中使用信号机制有着根本的区别，可以说是完全不同。在进程
+  // 环境中，对信号的处理是，先注册信号处理函数，当信号异步发生时，调用处理函数来处理信号。它完全是
+  // 异步的（我们完全不知到信号会在进程的那个执行点到来！）。然而信号处理函数的实现，有着许多的限制,
+  // 比如有一些函数不能在信号处理函数中调用；再比如一些函数read、recv等调用时会被异步的信号给中断
+  // (interrupt)，因此我们必须对在这些函数在调用时因为信号而中断的情况进行处理（判断函数返回时
+  // enno 是否等于 EINTR）。但是在多线程中处理信号的原则却完全不同，它的基本原则是：将对信号的异
+  // 步处理，转换成同步处理，也就是说用一个线程专门的来“同步等待”信号的到来，而其它的线程可以完全
+  // 不被该信号中断/打断(interrupt)。这样就在相当程度上简化了在多线程环境中对信号的处理。而且可以
+  // 保证其它的线程不受信号的影响。这样我们对信号就可以完全预测，因为它不再是异步的，而是同步的（我
+  // 们完全知道信号会在哪个线程中的哪个执行点到来而被处理！）。而同步的编程模式总是比异步的编程模式
+  // 简单。其实多线程相比于多进程的其中一个优点就是：多线程可以将进程中异步的东西转换成同步的来处理。
+  //
+  // 1.sigwait() 监听信号集set中所包含的信号，并将其存在signo中.
+  // sigwait()函数暂停调用线程的执行，直到信号集中指定的信号之一被传递为止。在多线程代码中，总是使
+  // 用sigwait或者sigwaitinfo或者sigtimedwait等函数来处理信号。而不是signal或者sigaction等
+  // 函数。因为在一个线程中调用signal或者sigaction等函数会改变所有线程中的信号处理函数。而不是仅
+  // 仅改变调用signal/sigaction的那个线程的信号处理函数。
+  // 注意：调用sigwait同步等待的信号必须在调用线程中被屏蔽，并且通常应该在所有的线程中被屏蔽（这样
+  // 可以保证信号绝不会被送到除了调用sigwait的任何其它线程），这是通过利用信号掩码的继承关系来达到
+  // 的。
+  // 2、pthread_sigmask函数：
+  // 每个线程均有自己的信号屏蔽集（信号掩码），可以使用pthread_sigmask函数来屏蔽某个线程对某些信
+  // 号的响应处理，仅留下需要处理该信号的线程来处理指定的信号。实现方式是：利用线程信号屏蔽集的继承
+  // 关系（在主进程中对sigmask进行设置后，主进程创建出来的线程将继承主进程的掩码）
+  // SIG_BLOCK:   结果集是当前集合参数集的并集
+  // SIG_UNBLOCK: 结果集是当前集合参数集的差集
+  // SIG_SETMASK: 结果集是由参数集指向的集
+  if (0 != (r = pthread_sigmask(SIG_UNBLOCK, &set, &xcc_signal_trace_oldset))) {
+    return r;
+  }
 
-    //register new signal handler for SIGQUIT
-    memset(&act, 0, sizeof(act));
-    sigfillset(&act.sa_mask);
-    act.sa_sigaction = handler;
-    act.sa_flags = SA_RESTART | SA_SIGINFO;
-    if (0 != sigaction(SIGQUIT, &act, &xcc_signal_trace_oldact)) { // 注册之
-        pthread_sigmask(SIG_SETMASK, &xcc_signal_trace_oldset, NULL);
-        return XCC_ERRNO_SYS;
-    }
+  //register new signal handler for SIGQUIT
+  memset(&act, 0, sizeof(act));
+  sigfillset(&act.sa_mask);
+  act.sa_sigaction = handler;
+  act.sa_flags = SA_RESTART | SA_SIGINFO;
+  if (0 != sigaction(SIGQUIT, &act, &xcc_signal_trace_oldact)) { // 注册之
+    pthread_sigmask(SIG_SETMASK, &xcc_signal_trace_oldset, NULL);
+    return XCC_ERRNO_SYS;
+  }
 
-    return 0;
+  return 0;
 }
 
 void xcc_signal_trace_unregister(void) {
-    pthread_sigmask(SIG_SETMASK, &xcc_signal_trace_oldset, NULL);
-    sigaction(SIGQUIT, &xcc_signal_trace_oldact, NULL);
+  pthread_sigmask(SIG_SETMASK, &xcc_signal_trace_oldset, NULL);
+  sigaction(SIGQUIT, &xcc_signal_trace_oldact, NULL);
 }

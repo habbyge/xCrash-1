@@ -32,9 +32,9 @@
 extern "C" {
 #endif
 
-char *xc_util_strdupcat(const char *s1, const char *s2);
-int xc_util_mkdirs(const char *dir);
-void xc_util_get_kernel_version(char *buf, size_t len);
+char* xc_util_strdupcat(const char* s1, const char* s2);
+int xc_util_mkdirs(const char* dir);
+void xc_util_get_kernel_version(char* buf, size_t len);
 
 #ifdef __cplusplus
 }

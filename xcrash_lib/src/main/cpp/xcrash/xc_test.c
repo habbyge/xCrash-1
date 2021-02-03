@@ -42,85 +42,85 @@
 #define XC_TEST_ABORT_MSG     "abort message for xCrash internal testing"
 
 static void xc_test_set_abort_msg() {
-    xc_dl_t                           *libc          = NULL;
-    xcc_util_libc_set_abort_message_t  set_abort_msg = NULL;
+  xc_dl_t* libc = NULL;
+  xcc_util_libc_set_abort_message_t set_abort_msg = NULL;
 
-    if (xc_common_api_level >= 29) libc = xc_dl_open(XCC_UTIL_LIBC_Q, XC_DL_DYNSYM);
-    if (NULL == libc && NULL == (libc = xc_dl_open(XCC_UTIL_LIBC, XC_DL_DYNSYM)))
-        goto end;
-    if (NULL == (set_abort_msg = (xcc_util_libc_set_abort_message_t)
-            xc_dl_dynsym_func(libc, XCC_UTIL_LIBC_SET_ABORT_MSG)))
-        goto end;
+  if (xc_common_api_level >= 29) libc = xc_dl_open(XCC_UTIL_LIBC_Q, XC_DL_DYNSYM);
+  if (NULL == libc && NULL == (libc = xc_dl_open(XCC_UTIL_LIBC, XC_DL_DYNSYM)))
+    goto end;
+  if (NULL == (set_abort_msg = (xcc_util_libc_set_abort_message_t)
+      xc_dl_dynsym_func(libc, XCC_UTIL_LIBC_SET_ABORT_MSG)))
+    goto end;
 
-    set_abort_msg(XC_TEST_ABORT_MSG);
+  set_abort_msg(XC_TEST_ABORT_MSG);
 
- end:
-    if(NULL != libc) xc_dl_close(&libc);
+  end:
+  if (NULL != libc) xc_dl_close(&libc);
 }
 
 #pragma clang optimize off
 
 int xc_test_call_4(int v) {
-    int *a = NULL;
+  int* a = NULL;
 
-    xc_test_set_abort_msg();
-    
-    *a = v; // crash!
-    (*a)++;
-    v = *a;
+  xc_test_set_abort_msg();
 
-    return v;
+  *a = v; // crash!
+  (*a)++;
+  v = *a;
+
+  return v;
 }
 
 int xc_test_call_3(int v) {
-    int r = xc_test_call_4(v + 1);
-    return r;
+  int r = xc_test_call_4(v + 1);
+  return r;
 }
 
 int xc_test_call_2(int v) {
-    int r = xc_test_call_3(v + 1);
-    return r;
+  int r = xc_test_call_3(v + 1);
+  return r;
 }
 
 void xc_test_call_1(void) {
-    int r = xc_test_call_2(1);
-    r = 0;
+  int r = xc_test_call_2(1);
+  r = 0;
 }
 
-static void *xc_test_new_thread(void* arg) {
-    (void)arg;
-    pthread_detach(pthread_self());
-    pthread_setname_np(pthread_self(), "xcrash_test_cal");
+static void* xc_test_new_thread(void* arg) {
+  (void) arg;
+  pthread_detach(pthread_self());
+  pthread_setname_np(pthread_self(), "xcrash_test_cal");
 
-    xc_test_call_1();
-    
-    return NULL;
+  xc_test_call_1();
+
+  return NULL;
 }
 
-static void *xc_test_keep_logging(void* arg) {
-    (void)arg;
-    pthread_detach(pthread_self());
-    pthread_setname_np(pthread_self(), "xcrash_test_log");
+static void* xc_test_keep_logging(void* arg) {
+  (void) arg;
+  pthread_detach(pthread_self());
+  pthread_setname_np(pthread_self(), "xcrash_test_log");
 
-    int i = 0;
-    while(++i < 600) {
-        XC_TEST_LOG("crashed APP's thread is running ...... %d", i);
-        usleep(1000 * 100);
-    }
+  int i = 0;
+  while (++i < 600) {
+    XC_TEST_LOG("crashed APP's thread is running ...... %d", i);
+    usleep(1000 * 100);
+  }
 
-    return NULL;
+  return NULL;
 }
 
 void xc_test_crash(int run_in_new_thread) {
-    pthread_t tid;
-    
-    pthread_create(&tid, NULL, &xc_test_keep_logging, NULL);
-    usleep(1000 * 10);
+  pthread_t tid;
 
-    if (run_in_new_thread)
-        pthread_create(&tid, NULL, &xc_test_new_thread, NULL);
-    else
-        xc_test_call_1();
+  pthread_create(&tid, NULL, &xc_test_keep_logging, NULL);
+  usleep(1000 * 10);
+
+  if (run_in_new_thread)
+    pthread_create(&tid, NULL, &xc_test_new_thread, NULL);
+  else
+    xc_test_call_1();
 }
 
 #pragma clang optimize on

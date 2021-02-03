@@ -77,7 +77,7 @@ extern sig_atomic_t xc_common_java_crashed; // 标识是否发生Java Crash
 
 void xc_common_set_vm(JavaVM* vm, JNIEnv* env, jclass cls);
 
-int xc_common_init(int         api_level,
+int xc_common_init(int api_level,
                    const char* os_version,
                    const char* abi_list,
                    const char* manufacturer,
@@ -90,9 +90,13 @@ int xc_common_init(int         api_level,
                    const char* log_dir);
 
 int xc_common_open_crash_log(char* pathname, size_t pathname_len, int* from_placeholder);
+
 int xc_common_open_trace_log(char* pathname, size_t pathname_len, uint64_t trace_time);
+
 void xc_common_close_crash_log(int fd);
+
 void xc_common_close_trace_log(int fd);
+
 int xc_common_seek_to_content_end(int fd);
 
 #ifdef __cplusplus
