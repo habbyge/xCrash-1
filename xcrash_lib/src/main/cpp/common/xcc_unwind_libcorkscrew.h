@@ -37,7 +37,8 @@ extern "C" {
 #endif
 
 void xcc_unwind_libcorkscrew_init(void);
-size_t xcc_unwind_libcorkscrew_record(siginfo_t *si, ucontext_t *uc, char *buf, size_t buf_len);
+
+size_t xcc_unwind_libcorkscrew_record(siginfo_t* si, ucontext_t* uc, char* buf, size_t buf_len);
 
 #ifdef __cplusplus
 }

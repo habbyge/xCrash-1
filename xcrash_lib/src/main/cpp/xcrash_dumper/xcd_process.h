@@ -34,13 +34,15 @@ extern "C" {
 
 typedef struct xcd_process xcd_process_t;
 
-int xcd_process_create(xcd_process_t **self, pid_t pid, pid_t crash_tid, siginfo_t *si, ucontext_t *uc);
-size_t xcd_process_get_number_of_threads(xcd_process_t *self);
+int xcd_process_create(xcd_process_t** self, pid_t pid, pid_t crash_tid, siginfo_t* si, ucontext_t* uc);
 
-void xcd_process_suspend_threads(xcd_process_t *self);
-void xcd_process_resume_threads(xcd_process_t *self);
+size_t xcd_process_get_number_of_threads(xcd_process_t* self);
 
-int xcd_process_load_info(xcd_process_t *self);
+void xcd_process_suspend_threads(xcd_process_t* self);
+
+void xcd_process_resume_threads(xcd_process_t* self);
+
+int xcd_process_load_info(xcd_process_t* self);
 
 int xcd_process_record(xcd_process_t* self,
                        int log_fd,
@@ -53,7 +55,7 @@ int xcd_process_record(xcd_process_t* self,
                        int dump_network_info,
                        int dump_all_threads,
                        unsigned int dump_all_threads_count_max,
-                       char *dump_all_threads_allowlist,
+                       char* dump_all_threads_allowlist,
                        int api_level);
 
 #ifdef __cplusplus

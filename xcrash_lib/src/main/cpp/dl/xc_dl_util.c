@@ -76,7 +76,7 @@ static int bh_dl_util_get_api_level_from_build_prop() {
   }
   fclose(fp);
 
-end:
+  end:
   return (api_level > 0) ? api_level : -1;
 }
 
@@ -102,8 +102,9 @@ typedef struct ISzAlloc ISzAlloc;
 typedef const ISzAlloc* ISzAllocPtr;
 
 struct ISzAlloc {
-  void* (*Alloc)(ISzAllocPtr p, size_t size);
-  void (*Free)(ISzAllocPtr p, void* address); /* address can be 0 */
+  void* (* Alloc)(ISzAllocPtr p, size_t size);
+
+  void (* Free)(ISzAllocPtr p, void* address); /* address can be 0 */
 };
 
 typedef enum {
@@ -119,21 +120,21 @@ typedef enum {
 } ECoderFinishMode;
 
 // LZMA function type definition
-typedef void (*xc_dl_util_lzma_crcgen_t)(void);
+typedef void (* xc_dl_util_lzma_crcgen_t)(void);
 
-typedef void (*xc_dl_util_lzma_crc64gen_t)(void);
+typedef void (* xc_dl_util_lzma_crc64gen_t)(void);
 
-typedef void (*xc_dl_util_lzma_construct_t)(void*, ISzAllocPtr);
+typedef void (* xc_dl_util_lzma_construct_t)(void*, ISzAllocPtr);
 
-typedef int  (*xc_dl_util_lzma_isfinished_t)(const void*);
+typedef int  (* xc_dl_util_lzma_isfinished_t)(const void*);
 
-typedef void (*xc_dl_util_lzma_free_t)(void*);
+typedef void (* xc_dl_util_lzma_free_t)(void*);
 
-typedef int  (*xc_dl_util_lzma_code_t)(void*, uint8_t*, size_t*, const uint8_t*,
-                                       size_t*, ECoderFinishMode, ECoderStatus*);
+typedef int  (* xc_dl_util_lzma_code_t)(void*, uint8_t*, size_t*, const uint8_t*,
+                                        size_t*, ECoderFinishMode, ECoderStatus*);
 
-typedef int (*xc_dl_util_lzma_code_q_t)(void*, uint8_t*, size_t*, const uint8_t*,
-                                        size_t*, int, ECoderFinishMode, ECoderStatus*);
+typedef int (* xc_dl_util_lzma_code_q_t)(void*, uint8_t*, size_t*, const uint8_t*,
+                                         size_t*, int, ECoderFinishMode, ECoderStatus*);
 
 // LZMA function pointor
 static xc_dl_util_lzma_construct_t xc_dl_util_lzma_construct = NULL;
@@ -189,8 +190,8 @@ int xc_dl_util_lzma_decompress(uint8_t* src, size_t src_size, uint8_t** dst, siz
   size_t src_remaining;
   size_t dst_remaining;
   ISzAlloc alloc = {
-    .Alloc = xc_dl_util_lzma_internal_alloc,
-    .Free = xc_dl_util_lzma_internal_free
+      .Alloc = xc_dl_util_lzma_internal_alloc,
+      .Free = xc_dl_util_lzma_internal_free
   };
   long long state[4096 / sizeof(long long)]; // must be enough, 8-bit aligned
   ECoderStatus status;

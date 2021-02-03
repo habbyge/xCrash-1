@@ -35,19 +35,26 @@ extern "C" {
 typedef struct xcd_memory xcd_memory_t;
 
 typedef struct {
-    void (*destroy)(void** self);
-    size_t (*read)(void* self, uintptr_t addr, void* dst, size_t size);
+  void (* destroy)(void** self);
+
+  size_t (* read)(void* self, uintptr_t addr, void* dst, size_t size);
 } xcd_memory_handlers_t;
 
-int xcd_memory_create(xcd_memory_t **self, void *map_obj, pid_t pid, void *maps_obj);
-int xcd_memory_create_from_buf(xcd_memory_t **self, uint8_t *buf, size_t len);
-void xcd_memory_destroy(xcd_memory_t **self);
+int xcd_memory_create(xcd_memory_t** self, void* map_obj, pid_t pid, void* maps_obj);
 
-size_t xcd_memory_read(xcd_memory_t *self, uintptr_t addr, void *dst, size_t size);
-int xcd_memory_read_fully(xcd_memory_t *self, uintptr_t addr, void* dst, size_t size);
-int xcd_memory_read_string(xcd_memory_t *self, uintptr_t addr, char *dst, size_t size, size_t max_read);
-int xcd_memory_read_uleb128(xcd_memory_t *self, uintptr_t addr, uint64_t *dst, size_t *size);
-int xcd_memory_read_sleb128(xcd_memory_t *self, uintptr_t addr, int64_t *dst, size_t *size);
+int xcd_memory_create_from_buf(xcd_memory_t** self, uint8_t* buf, size_t len);
+
+void xcd_memory_destroy(xcd_memory_t** self);
+
+size_t xcd_memory_read(xcd_memory_t* self, uintptr_t addr, void* dst, size_t size);
+
+int xcd_memory_read_fully(xcd_memory_t* self, uintptr_t addr, void* dst, size_t size);
+
+int xcd_memory_read_string(xcd_memory_t* self, uintptr_t addr, char* dst, size_t size, size_t max_read);
+
+int xcd_memory_read_uleb128(xcd_memory_t* self, uintptr_t addr, uint64_t* dst, size_t* size);
+
+int xcd_memory_read_sleb128(xcd_memory_t* self, uintptr_t addr, int64_t* dst, size_t* size);
 
 #ifdef __cplusplus
 }

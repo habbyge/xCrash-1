@@ -9,17 +9,15 @@
 
 #define CRC64_UPDATE_BYTE_2(crc, b) (table[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
 
-UInt64 MY_FAST_CALL XzCrc64UpdateT4(UInt64 v, const void *data, size_t size, const UInt64 *table)
-{
-  const Byte *p = (const Byte *)data;
-  for (; size > 0 && ((unsigned)(ptrdiff_t)p & 3) != 0; size--, p++)
+UInt64 MY_FAST_CALL XzCrc64UpdateT4(UInt64 v, const void* data, size_t size, const UInt64* table) {
+  const Byte* p = (const Byte*) data;
+  for (; size > 0 && ((unsigned) (ptrdiff_t) p & 3) != 0; size--, p++)
     v = CRC64_UPDATE_BYTE_2(v, *p);
-  for (; size >= 4; size -= 4, p += 4)
-  {
-    UInt32 d = (UInt32)v ^ *(const UInt32 *)p;
+  for (; size >= 4; size -= 4, p += 4) {
+    UInt32 d = (UInt32) v ^*(const UInt32*) p;
     v = (v >> 32)
-        ^ (table + 0x300)[((d      ) & 0xFF)]
-        ^ (table + 0x200)[((d >>  8) & 0xFF)]
+        ^ (table + 0x300)[((d) & 0xFF)]
+        ^ (table + 0x200)[((d >> 8) & 0xFF)]
         ^ (table + 0x100)[((d >> 16) & 0xFF)]
         ^ (table + 0x000)[((d >> 24))];
   }

@@ -10,7 +10,7 @@ This code is based on PPMd var.H (2001): Dmitry Shkarin : Public domain */
 EXTERN_C_BEGIN
 
 #ifdef MY_CPU_32BIT
-  #define PPMD_32BIT
+#define PPMD_32BIT
 #endif
 
 #define PPMD_INT_BITS 7
@@ -32,8 +32,7 @@ EXTERN_C_BEGIN
 /* Most compilers works OK here even without #pragma pack(push, 1), but some GCC compilers need it. */
 
 /* SEE-contexts for PPM-contexts with masked symbols */
-typedef struct
-{
+typedef struct {
   UInt16 Summ; /* Freq */
   Byte Shift;  /* Speed of Freq change; low Shift is for fast change */
   Byte Count;  /* Count to next change of Shift */
@@ -42,8 +41,7 @@ typedef struct
 #define Ppmd_See_Update(p)  if ((p)->Shift < PPMD_PERIOD_BITS && --(p)->Count == 0) \
     { (p)->Summ <<= 1; (p)->Count = (Byte)(3 << (p)->Shift++); }
 
-typedef struct
-{
+typedef struct {
   Byte Symbol;
   Byte Freq;
   UInt16 SuccessorLow;
@@ -53,33 +51,33 @@ typedef struct
 #pragma pack(pop)
 
 typedef
-  #ifdef PPMD_32BIT
-    CPpmd_State *
-  #else
-    UInt32
-  #endif
-  CPpmd_State_Ref;
+#ifdef PPMD_32BIT
+CPpmd_State *
+#else
+UInt32
+#endif
+    CPpmd_State_Ref;
 
 typedef
-  #ifdef PPMD_32BIT
-    void *
-  #else
-    UInt32
-  #endif
-  CPpmd_Void_Ref;
+#ifdef PPMD_32BIT
+void *
+#else
+UInt32
+#endif
+    CPpmd_Void_Ref;
 
 typedef
-  #ifdef PPMD_32BIT
-    Byte *
-  #else
-    UInt32
-  #endif
-  CPpmd_Byte_Ref;
+#ifdef PPMD_32BIT
+Byte *
+#else
+UInt32
+#endif
+    CPpmd_Byte_Ref;
 
 #define PPMD_SetAllBitsIn256Bytes(p) \
   { size_t z; for (z = 0; z < 256 / sizeof(p[0]); z += 8) { \
   p[z+7] = p[z+6] = p[z+5] = p[z+4] = p[z+3] = p[z+2] = p[z+1] = p[z+0] = ~(size_t)0; }}
 
 EXTERN_C_END
- 
+
 #endif

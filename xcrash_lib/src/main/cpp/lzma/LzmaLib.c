@@ -6,8 +6,8 @@
 #include "LzmaEnc.h"
 #include "LzmaLib.h"
 
-MY_STDAPI LzmaCompress(unsigned char *dest, size_t* destLen, const unsigned char* src,
-                       size_t srcLen, unsigned char *outProps, size_t* outPropsSize,
+MY_STDAPI LzmaCompress(unsigned char* dest, size_t* destLen, const unsigned char* src,
+                       size_t srcLen, unsigned char* outProps, size_t* outPropsSize,
                        int level, /* 0 <= level <= 9, default = 5 */
                        unsigned dictSize, /* use (1 << N) or (3 << N). 4 KB < dictSize <= 128 MB */
                        int lc, /* 0 <= lc <= 8, default = 3  */
@@ -27,14 +27,14 @@ MY_STDAPI LzmaCompress(unsigned char *dest, size_t* destLen, const unsigned char
   props.numThreads = numThreads;
 
   return LzmaEncode(dest, destLen, src, srcLen, &props, outProps,
-          outPropsSize, 0, NULL, &g_Alloc, &g_Alloc);
+                    outPropsSize, 0, NULL, &g_Alloc, &g_Alloc);
 }
 
 
-MY_STDAPI LzmaUncompress(unsigned char *dest, size_t *destLen, const unsigned char *src,
-                         size_t* srcLen, const unsigned char *props, size_t propsSize) {
+MY_STDAPI LzmaUncompress(unsigned char* dest, size_t* destLen, const unsigned char* src,
+                         size_t* srcLen, const unsigned char* props, size_t propsSize) {
 
   ELzmaStatus status;
   return LzmaDecode(dest, destLen, src, srcLen, props,
-          (unsigned)propsSize, LZMA_FINISH_ANY, &status, &g_Alloc);
+                    (unsigned) propsSize, LZMA_FINISH_ANY, &status, &g_Alloc);
 }

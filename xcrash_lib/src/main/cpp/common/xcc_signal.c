@@ -93,7 +93,7 @@ typedef struct {
  * 要想拦截 Native Crash，根本上是拦截C/C++层的Crash Signal(与Crash有关的信号字)
  * Naive崩溃捕获需要注册这些信号的处理函数(signal handler)，然后在信号处理函数中收集数据
  * 因为信号是以“中断”的方式出现的，可能中断任何CPU指令序列的执行，所以在信号处理函数中，只能调用“异步信号安全(
- * async-signal-safe)”的函数。例如malloc()、calloc()、free()、snprintf()、gettimeofday() 等等都是不能
+ * async-signal-safe)”的函数。例如 malloc()、calloc()、free()、snprintf()、gettimeofday() 等等都是不能
  * 使用的，C++ STL / boost 也是不能使用的。所以，在信号处理函数中我们只能不分配堆内存，需要使用堆内存只能在初
  * 始化时预分配。如果要使用不在异步信号安全白名单中的libc/bionic函数，只能直接调用 system call 或者自己实现。
  *

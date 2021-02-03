@@ -38,41 +38,41 @@ extern "C" {
 #pragma clang diagnostic ignored "-Wpadded"
 
 typedef struct {
-    // set when crashed
-    pid_t        crash_tid;  // 发生crash的线程id
-    siginfo_t    siginfo;    // 信号
-    ucontext_t   ucontext;   // crash发生的上下文
-    uint64_t     crash_time; // 时间戳
+  // set when crashed
+  pid_t crash_tid;  // 发生crash的线程id
+  siginfo_t siginfo;    // 信号
+  ucontext_t ucontext;   // crash发生的上下文
+  uint64_t crash_time; // 时间戳
 
-    // set when inited
-    int          api_level;
-    pid_t        crash_pid; // 发生crash的进程id
-    uint64_t     start_time;
-    long         time_zone;
-    unsigned int logcat_system_lines;
-    unsigned int logcat_events_lines;
-    unsigned int logcat_main_lines;
-    int          dump_elf_hash;
-    int          dump_map;
-    int          dump_fds;
-    int          dump_network_info;
-    int          dump_all_threads;
-    unsigned int dump_all_threads_count_max;
+  // set when inited
+  int api_level;
+  pid_t crash_pid; // 发生crash的进程id
+  uint64_t start_time;
+  long time_zone;
+  unsigned int logcat_system_lines;
+  unsigned int logcat_events_lines;
+  unsigned int logcat_main_lines;
+  int dump_elf_hash;
+  int dump_map;
+  int dump_fds;
+  int dump_network_info;
+  int dump_all_threads;
+  unsigned int dump_all_threads_count_max;
 
-    // set when crashed (content lenghts after this struct)
-    size_t       log_pathname_len;
-    
-    // set when inited (content lenghts after this struct)
-    size_t       os_version_len;
-    size_t       kernel_version_len;
-    size_t       abi_list_len;
-    size_t       manufacturer_len;
-    size_t       brand_len;
-    size_t       model_len;
-    size_t       build_fingerprint_len;
-    size_t       app_id_len;
-    size_t       app_version_len;
-    size_t       dump_all_threads_allowlist_len;
+  // set when crashed (content lenghts after this struct)
+  size_t log_pathname_len;
+
+  // set when inited (content lenghts after this struct)
+  size_t os_version_len;
+  size_t kernel_version_len;
+  size_t abi_list_len;
+  size_t manufacturer_len;
+  size_t brand_len;
+  size_t model_len;
+  size_t build_fingerprint_len;
+  size_t app_id_len;
+  size_t app_version_len;
+  size_t dump_all_threads_allowlist_len;
 } xcc_spot_t;
 
 #pragma clang diagnostic pop

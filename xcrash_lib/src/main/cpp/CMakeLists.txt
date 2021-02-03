@@ -33,33 +33,33 @@ target_link_libraries(xcrash
         log
         dl)
 
-if(USEASAN)
+if (USEASAN)
 
-target_compile_options(xcrash PUBLIC
-        -fsanitize=address
-        -fno-omit-frame-pointer)
+    target_compile_options(xcrash PUBLIC
+            -fsanitize=address
+            -fno-omit-frame-pointer)
 
-set_target_properties(xcrash PROPERTIES
-        LINK_FLAGS " \
+    set_target_properties(xcrash PROPERTIES
+            LINK_FLAGS " \
         -fsanitize=address")
 
-else()
+else ()
 
-target_compile_options(xcrash PUBLIC
-        -Oz
-        -flto
-        -ffunction-sections
-        -fdata-sections)
+    target_compile_options(xcrash PUBLIC
+            -Oz
+            -flto
+            -ffunction-sections
+            -fdata-sections)
 
-set_target_properties(xcrash PROPERTIES
-        LINK_FLAGS " \
+    set_target_properties(xcrash PROPERTIES
+            LINK_FLAGS " \
         -O3 \
         -flto \
         -Wl,--exclude-libs,ALL \
         -Wl,--gc-sections \
         -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/xcrash.exports")
 
-endif()
+endif ()
 
 #######################################
 # libxcrash_dumper.so
@@ -115,32 +115,32 @@ target_link_libraries(xcrash_dumper
         log
         dl)
 
-if(USEASAN)
+if (USEASAN)
 
-target_compile_options(xcrash_dumper PUBLIC
-        -fsanitize=address
-        -fno-omit-frame-pointer)
+    target_compile_options(xcrash_dumper PUBLIC
+            -fsanitize=address
+            -fno-omit-frame-pointer)
 
-set_target_properties(xcrash_dumper PROPERTIES
-        LINK_FLAGS " \
+    set_target_properties(xcrash_dumper PROPERTIES
+            LINK_FLAGS " \
         -fsanitize=address")
 
-else()
+else ()
 
-target_compile_options(xcrash_dumper PUBLIC
-        -Oz
-        -flto
-        -ffunction-sections
-        -fdata-sections)
+    target_compile_options(xcrash_dumper PUBLIC
+            -Oz
+            -flto
+            -ffunction-sections
+            -fdata-sections)
 
-set_target_properties(xcrash_dumper PROPERTIES
-        LINK_FLAGS " \
+    set_target_properties(xcrash_dumper PROPERTIES
+            LINK_FLAGS " \
         -O3 \
         -flto \
         -Wl,--exclude-libs,ALL \
         -Wl,--gc-sections")
 
-endif()
+endif ()
 
 set_target_properties(xcrash_dumper PROPERTIES
         PREFIX "lib"

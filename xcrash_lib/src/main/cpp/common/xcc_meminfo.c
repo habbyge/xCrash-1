@@ -329,8 +329,9 @@ static void xcc_meminfo_load(FILE* fp, xcc_meminfo_t* stats, int* found_swap_pss
       else if (line[0] == 'S' && sscanf(line, "SwapPss: %zu kB", &temp) == 1) {
         *found_swap_pss = 1;
         swapped_out_pss = temp;
-      } else if (sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d", &start, &end) == 2)
+      } else if (sscanf(line, "%"SCNxPTR"-%"SCNxPTR" %*s %*x %*x:%*x %*d", &start, &end) == 2) {
         break; // looks like a new mapping
+      }
     }
 
     if (!skip) {
@@ -426,13 +427,15 @@ int xcc_meminfo_record(int log_fd, pid_t pid) {
   if (0 != (r = xcc_meminfo_record_sys(log_fd))) {
     return r;
   }
-  if (0 != (r = xcc_meminfo_record_proc_status(log_fd, pid)))
+  if (0 != (r = xcc_meminfo_record_proc_status(log_fd, pid))) {
     return r;
-  if (0 != (r = xcc_meminfo_record_proc_limits(log_fd, pid)))
+  }
+  if (0 != (r = xcc_meminfo_record_proc_limits(log_fd, pid))) {
     return r;
-  if (0 != (r = xcc_util_write_str(log_fd, " Process Details (From: /proc/PID/smaps)\n")))
+  }
+  if (0 != (r = xcc_util_write_str(log_fd, " Process Details (From: /proc/PID/smaps)\n"))) {
     return r;
-
+  }
   if (0 != (r = xcc_util_write_format(log_fd, XCC_MEMINFO_HEAD_FMT,
                                       "", "Pss", "Pss", "Shared", "Private", "Shared", "Private",
                                       found_swap_pss ? "SwapPss" : "Swap"))) {
@@ -507,8 +510,9 @@ int xcc_meminfo_record(int log_fd, pid_t pid) {
 
                                           found_swap_pss ?
                                           stats[i].swapped_out_pss :
-                                          stats[i].swapped_out)))
+                                          stats[i].swapped_out))) {
         return r;
+      }
     }
   }
   if (0 != (r = xcc_util_write_str(log_fd, "-\n Process Summary (From: /proc/PID/smaps)\n")))

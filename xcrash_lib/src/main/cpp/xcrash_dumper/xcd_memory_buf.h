@@ -34,9 +34,11 @@ extern "C" {
 
 typedef struct xcd_memory_buf xcd_memory_buf_t;
 
-int xcd_memory_buf_create(void **obj, uint8_t *buf, size_t len);
-void xcd_memory_buf_destroy(void **obj);
-size_t xcd_memory_buf_read(void *obj, uintptr_t addr, void *dst, size_t size);
+int xcd_memory_buf_create(void** obj, uint8_t* buf, size_t len);
+
+void xcd_memory_buf_destroy(void** obj);
+
+size_t xcd_memory_buf_read(void* obj, uintptr_t addr, void* dst, size_t size);
 
 #ifdef __cplusplus
 }

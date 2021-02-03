@@ -10,27 +10,24 @@ EXTERN_C_BEGIN
 
 #define BCJ2_NUM_STREAMS 4
 
-enum
-{
+enum {
   BCJ2_STREAM_MAIN,
   BCJ2_STREAM_CALL,
   BCJ2_STREAM_JUMP,
   BCJ2_STREAM_RC
 };
 
-enum
-{
+enum {
   BCJ2_DEC_STATE_ORIG_0 = BCJ2_NUM_STREAMS,
   BCJ2_DEC_STATE_ORIG_1,
   BCJ2_DEC_STATE_ORIG_2,
   BCJ2_DEC_STATE_ORIG_3,
-  
+
   BCJ2_DEC_STATE_ORIG,
   BCJ2_DEC_STATE_OK
 };
 
-enum
-{
+enum {
   BCJ2_ENC_STATE_ORIG = BCJ2_NUM_STREAMS,
   BCJ2_ENC_STATE_OK
 };
@@ -59,12 +56,11 @@ dest is allowed to overlap with bufs[BCJ2_STREAM_MAIN], with the following condi
   overlap with offset = 1 is not allowed
 */
 
-typedef struct
-{
-  const Byte *bufs[BCJ2_NUM_STREAMS];
-  const Byte *lims[BCJ2_NUM_STREAMS];
-  Byte *dest;
-  const Byte *destLim;
+typedef struct {
+  const Byte* bufs[BCJ2_NUM_STREAMS];
+  const Byte* lims[BCJ2_NUM_STREAMS];
+  Byte* dest;
+  const Byte* destLim;
 
   unsigned state; /* BCJ2_STREAM_MAIN has more priority than BCJ2_STATE_ORIG */
 
@@ -75,28 +71,25 @@ typedef struct
   UInt16 probs[2 + 256];
 } CBcj2Dec;
 
-void Bcj2Dec_Init(CBcj2Dec *p);
+void Bcj2Dec_Init(CBcj2Dec* p);
 
 /* Returns: SZ_OK or SZ_ERROR_DATA */
-SRes Bcj2Dec_Decode(CBcj2Dec *p);
+SRes Bcj2Dec_Decode(CBcj2Dec* p);
 
 #define Bcj2Dec_IsFinished(_p_) ((_p_)->code == 0)
 
 
-
-typedef enum
-{
+typedef enum {
   BCJ2_ENC_FINISH_MODE_CONTINUE,
   BCJ2_ENC_FINISH_MODE_END_BLOCK,
   BCJ2_ENC_FINISH_MODE_END_STREAM
 } EBcj2Enc_FinishMode;
 
-typedef struct
-{
-  Byte *bufs[BCJ2_NUM_STREAMS];
-  const Byte *lims[BCJ2_NUM_STREAMS];
-  const Byte *src;
-  const Byte *srcLim;
+typedef struct {
+  Byte* bufs[BCJ2_NUM_STREAMS];
+  const Byte* lims[BCJ2_NUM_STREAMS];
+  const Byte* src;
+  const Byte* srcLim;
 
   unsigned state;
   EBcj2Enc_FinishMode finishMode;
@@ -124,12 +117,13 @@ typedef struct
   Byte temp[4 * 2];
 
   unsigned flushPos;
-  
+
   UInt16 probs[2 + 256];
 } CBcj2Enc;
 
-void Bcj2Enc_Init(CBcj2Enc *p);
-void Bcj2Enc_Encode(CBcj2Enc *p);
+void Bcj2Enc_Init(CBcj2Enc* p);
+
+void Bcj2Enc_Encode(CBcj2Enc* p);
 
 #define Bcj2Enc_Get_InputData_Size(p) ((SizeT)((p)->srcLim - (p)->src) + (p)->tempPos)
 #define Bcj2Enc_IsFinished(p) ((p)->flushPos == 5)

@@ -34,19 +34,18 @@
 extern "C" {
 #endif
 
-typedef enum
-{
-    XCD_DWARF_TYPE_DEBUG_FRAME,
-    XCD_DWARF_TYPE_EH_FRAME,
-    XCD_DWARF_TYPE_EH_FRAME_HDR
+typedef enum {
+  XCD_DWARF_TYPE_DEBUG_FRAME,
+  XCD_DWARF_TYPE_EH_FRAME,
+  XCD_DWARF_TYPE_EH_FRAME_HDR
 } xcd_dwarf_type_t;
 
 typedef struct xcd_dwarf xcd_dwarf_t;
 
-int xcd_dwarf_create(xcd_dwarf_t **self, xcd_memory_t *memory, pid_t pid, uintptr_t load_bias, uintptr_t hdr_load_bias,
+int xcd_dwarf_create(xcd_dwarf_t** self, xcd_memory_t* memory, pid_t pid, uintptr_t load_bias, uintptr_t hdr_load_bias,
                      size_t offset, size_t size, xcd_dwarf_type_t type);
 
-int xcd_dwarf_step(xcd_dwarf_t *self, xcd_regs_t *regs, uintptr_t pc, int *finished);
+int xcd_dwarf_step(xcd_dwarf_t* self, xcd_regs_t* regs, uintptr_t pc, int* finished);
 
 
 #ifdef __cplusplus

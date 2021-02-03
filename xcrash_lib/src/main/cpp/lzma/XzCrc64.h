@@ -18,8 +18,9 @@ void MY_FAST_CALL Crc64GenerateTable(void);
 #define CRC64_GET_DIGEST(crc) ((crc) ^ CRC64_INIT_VAL)
 #define CRC64_UPDATE_BYTE(crc, b) (g_Crc64Table[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
 
-UInt64 MY_FAST_CALL Crc64Update(UInt64 crc, const void *data, size_t size);
-UInt64 MY_FAST_CALL Crc64Calc(const void *data, size_t size);
+UInt64 MY_FAST_CALL Crc64Update(UInt64 crc, const void* data, size_t size);
+
+UInt64 MY_FAST_CALL Crc64Calc(const void* data, size_t size);
 
 EXTERN_C_END
 

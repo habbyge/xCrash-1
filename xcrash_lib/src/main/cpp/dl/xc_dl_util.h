@@ -28,7 +28,11 @@
 #include <stddef.h>
 
 bool xc_dl_util_starts_with(const char* str, const char* start);
+
 bool xc_dl_util_ends_with(const char* str, const char* ending);
+
 size_t xc_dl_util_trim_ending(char* start);
+
 int xc_dl_util_get_api_level(void);
+
 int xc_dl_util_lzma_decompress(uint8_t* src, size_t src_size, uint8_t** dst, size_t* dst_size);

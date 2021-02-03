@@ -7,7 +7,9 @@
 #include "7zTypes.h"
 
 #ifndef _7ZIP_ST
+
 #include "Threads.h"
+
 #endif
 
 EXTERN_C_BEGIN
@@ -15,34 +17,36 @@ EXTERN_C_BEGIN
 #ifndef _7ZIP_ST
 
 #ifndef _7ZIP_ST
-  #define MTDEC__THREADS_MAX 32
+#define MTDEC__THREADS_MAX 32
 #else
-  #define MTDEC__THREADS_MAX 1
+#define MTDEC__THREADS_MAX 1
 #endif
 
 
-typedef struct
-{
-  ICompressProgress *progress;
+typedef struct {
+  ICompressProgress* progress;
   SRes res;
   UInt64 totalInSize;
   UInt64 totalOutSize;
   CCriticalSection cs;
 } CMtProgress;
 
-void MtProgress_Init(CMtProgress *p, ICompressProgress *progress);
-SRes MtProgress_Progress_ST(CMtProgress *p);
-SRes MtProgress_ProgressAdd(CMtProgress *p, UInt64 inSize, UInt64 outSize);
-SRes MtProgress_GetError(CMtProgress *p);
-void MtProgress_SetError(CMtProgress *p, SRes res);
+void MtProgress_Init(CMtProgress* p, ICompressProgress* progress);
+
+SRes MtProgress_Progress_ST(CMtProgress* p);
+
+SRes MtProgress_ProgressAdd(CMtProgress* p, UInt64 inSize, UInt64 outSize);
+
+SRes MtProgress_GetError(CMtProgress* p);
+
+void MtProgress_SetError(CMtProgress* p, SRes res);
 
 struct _CMtDec;
 
-typedef struct
-{
-  struct _CMtDec *mtDec;
+typedef struct {
+  struct _CMtDec* mtDec;
   unsigned index;
-  void *inBuf;
+  void* inBuf;
 
   size_t inDataSize_Start; // size of input data in start block
   UInt64 inDataSize;       // total size of input data in all blocks
@@ -50,28 +54,26 @@ typedef struct
   CThread thread;
   CAutoResetEvent canRead;
   CAutoResetEvent canWrite;
-  void  *allocaPtr;
+  void* allocaPtr;
 } CMtDecThread;
 
-void MtDecThread_FreeInBufs(CMtDecThread *t);
+void MtDecThread_FreeInBufs(CMtDecThread* t);
 
 
-typedef enum
-{
+typedef enum {
   MTDEC_PARSE_CONTINUE, // continue this block with more input data
   MTDEC_PARSE_OVERFLOW, // MT buffers overflow, need switch to single-thread
   MTDEC_PARSE_NEW,      // new block
   MTDEC_PARSE_END       // end of block threading. But we still can return to threading after Write(&needContinue)
 } EMtDecParseState;
 
-typedef struct
-{
+typedef struct {
   // in
   int startCall;
-  const Byte *src;
+  const Byte* src;
   size_t srcSize;
-      // in  : (srcSize == 0) is allowed
-      // out : it's allowed to return less that actually was used ?
+  // in  : (srcSize == 0) is allowed
+  // out : it's allowed to return less that actually was used ?
   int srcFinished;
 
   // out
@@ -81,16 +83,16 @@ typedef struct
 } CMtDecCallbackInfo;
 
 
-typedef struct
-{
-  void (*Parse)(void *p, unsigned coderIndex, CMtDecCallbackInfo *ci);
-  
+typedef struct {
+  void (* Parse)(void* p, unsigned coderIndex, CMtDecCallbackInfo* ci);
+
   // PreCode() and Code():
   // (SRes_return_result != SZ_OK) means stop decoding, no need another blocks
-  SRes (*PreCode)(void *p, unsigned coderIndex);
-  SRes (*Code)(void *p, unsigned coderIndex,
-      const Byte *src, size_t srcSize, int srcFinished,
-      UInt64 *inCodePos, UInt64 *outCodePos, int *stop);
+  SRes (* PreCode)(void* p, unsigned coderIndex);
+
+  SRes (* Code)(void* p, unsigned coderIndex,
+                const Byte* src, size_t srcSize, int srcFinished,
+                UInt64* inCodePos, UInt64* outCodePos, int* stop);
   // stop - means stop another Code calls
 
 
@@ -106,38 +108,36 @@ typedef struct
          even after MTDEC_PARSE_END
       if (*canRecode), we didn't flush current block data, so we still can decode current block later.
   */
-  SRes (*Write)(void *p, unsigned coderIndex,
-      Bool needWriteToStream,
-      const Byte *src, size_t srcSize,
+  SRes (* Write)(void* p, unsigned coderIndex,
+                 Bool needWriteToStream,
+                 const Byte* src, size_t srcSize,
       // int srcFinished,
-      Bool *needContinue,
-      Bool *canRecode);
+                 Bool* needContinue,
+                 Bool* canRecode);
 } IMtDecCallback;
 
 
-
-typedef struct _CMtDec
-{
+typedef struct _CMtDec {
   /* input variables */
-  
+
   size_t inBufSize;        /* size of input block */
   unsigned numThreadsMax;
   // size_t inBlockMax;
   unsigned numThreadsMax_2;
 
-  ISeqInStream *inStream;
+  ISeqInStream* inStream;
   // const Byte *inData;
   // size_t inDataSize;
 
-  ICompressProgress *progress;
+  ICompressProgress* progress;
   ISzAllocPtr alloc;
 
-  IMtDecCallback *mtCallback;
-  void *mtCallbackObject;
+  IMtDecCallback* mtCallback;
+  void* mtCallbackObject;
 
-  
+
   /* internal variables */
-  
+
   size_t allocatedBufsSize;
 
   Bool exitThread;
@@ -160,7 +160,7 @@ typedef struct _CMtDec
   unsigned numStartedThreads_Limit;
   unsigned numStartedThreads;
 
-  Byte *crossBlock;
+  Byte* crossBlock;
   size_t crossStart;
   size_t crossEnd;
   UInt64 readProcessed;
@@ -170,29 +170,32 @@ typedef struct _CMtDec
   unsigned filledThreadStart;
   unsigned numFilledThreads;
 
-  #ifndef _7ZIP_ST
+#ifndef _7ZIP_ST
   Bool needInterrupt;
   UInt64 interruptIndex;
   CMtProgress mtProgress;
   CMtDecThread threads[MTDEC__THREADS_MAX];
-  #endif
+#endif
 } CMtDec;
 
 
-void MtDec_Construct(CMtDec *p);
-void MtDec_Destruct(CMtDec *p);
+void MtDec_Construct(CMtDec* p);
+
+void MtDec_Destruct(CMtDec* p);
 
 /*
 MtDec_Code() returns:
   SZ_OK - in most cases
   MY_SRes_HRESULT_FROM_WRes(WRes_error) - in case of unexpected error in threading function
 */
-  
-SRes MtDec_Code(CMtDec *p);
-Byte *MtDec_GetCrossBuff(CMtDec *p);
 
-int MtDec_PrepareRead(CMtDec *p);
-const Byte *MtDec_Read(CMtDec *p, size_t *inLim);
+SRes MtDec_Code(CMtDec* p);
+
+Byte* MtDec_GetCrossBuff(CMtDec* p);
+
+int MtDec_PrepareRead(CMtDec* p);
+
+const Byte* MtDec_Read(CMtDec* p, size_t* inLim);
 
 #endif
 

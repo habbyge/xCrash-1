@@ -329,9 +329,9 @@ static void* xc_trace_dumper(void* arg) {
   // 上的线程调用AttachCurrentThread不会有任何影响。如果你的线程已经绑定到了JavaVM上，你还
   // 可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回JNI_EDETACHED.
   JavaVMAttachArgs attach_args = {
-    .version = XC_JNI_VERSION,
-    .name    = "xcrash_trace_dp",
-    .group   = NULL
+      .version = XC_JNI_VERSION,
+      .name    = "xcrash_trace_dp",
+      .group   = NULL
   };
   if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
     goto exit;

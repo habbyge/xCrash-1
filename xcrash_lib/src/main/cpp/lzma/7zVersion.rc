@@ -8,7 +8,9 @@
 // #include <WinVer.h>
 
 #ifndef MY_VERSION
+
 #include "7zVersion.h"
+
 #endif
 
 #define MY_VER MY_VER_MAJOR,MY_VER_MINOR,MY_VER_BUILD,0

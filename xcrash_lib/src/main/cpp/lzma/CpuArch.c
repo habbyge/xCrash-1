@@ -16,8 +16,9 @@
 #endif
 
 #if defined(USE_ASM) && !defined(MY_CPU_AMD64)
+
 static UInt32 CheckFlag(UInt32 flag) {
-  #ifdef _MSC_VER
+#ifdef _MSC_VER
   __asm pushfd;
   __asm pop EAX;
   __asm mov EDX, EAX;
@@ -30,25 +31,26 @@ static UInt32 CheckFlag(UInt32 flag) {
   __asm push EDX;
   __asm popfd;
   __asm and flag, EAX;
-  #else
+#else
   __asm__ __volatile__ (
-    "pushf\n\t"
-    "pop  %%EAX\n\t"
-    "movl %%EAX,%%EDX\n\t"
-    "xorl %0,%%EAX\n\t"
-    "push %%EAX\n\t"
-    "popf\n\t"
-    "pushf\n\t"
-    "pop  %%EAX\n\t"
-    "xorl %%EDX,%%EAX\n\t"
-    "push %%EDX\n\t"
-    "popf\n\t"
-    "andl %%EAX, %0\n\t":
-    "=c" (flag) : "c" (flag) :
-    "%eax", "%edx");
-  #endif
+  "pushf\n\t"
+  "pop  %%EAX\n\t"
+  "movl %%EAX,%%EDX\n\t"
+  "xorl %0,%%EAX\n\t"
+  "push %%EAX\n\t"
+  "popf\n\t"
+  "pushf\n\t"
+  "pop  %%EAX\n\t"
+  "xorl %%EDX,%%EAX\n\t"
+  "push %%EDX\n\t"
+  "popf\n\t"
+  "andl %%EAX, %0\n\t":
+  "=c" (flag) : "c" (flag) :
+  "%eax", "%edx");
+#endif
   return flag;
 }
+
 #define CHECK_CPUID_IS_SUPPORTED if (CheckFlag(1 << 18) == 0 || CheckFlag(1 << 21) == 0) return False;
 #else
 #define CHECK_CPUID_IS_SUPPORTED
@@ -110,7 +112,7 @@ void MyCPUID(UInt32 function, UInt32* a, UInt32* b, UInt32* c, UInt32* d) {
   *c = CPUInfo[2];
   *d = CPUInfo[3];
 
-  #endif
+#endif
 }
 
 Bool x86cpuid_CheckAndRead(Cx86cpuid* p) {
@@ -121,11 +123,11 @@ Bool x86cpuid_CheckAndRead(Cx86cpuid* p) {
 }
 
 static const UInt32 kVendors[][3] =
-        {
-                {0x756E6547, 0x49656E69, 0x6C65746E},
-                {0x68747541, 0x69746E65, 0x444D4163},
-                {0x746E6543, 0x48727561, 0x736C7561}
-        };
+    {
+        {0x756E6547, 0x49656E69, 0x6C65746E},
+        {0x68747541, 0x69746E65, 0x444D4163},
+        {0x746E6543, 0x48727561, 0x736C7561}
+    };
 
 int x86cpuid_GetFirm(const Cx86cpuid* p) {
   unsigned i;
@@ -154,13 +156,13 @@ Bool CPU_Is_InOrder() {
   switch (firm) {
     case CPU_FIRM_INTEL:
       return (family < 6 || (family == 6 && (
-              /* In-Order Atom CPU */
-              model == 0x1C  /* 45 nm, N4xx, D4xx, N5xx, D5xx, 230, 330 */
-              || model == 0x26  /* 45 nm, Z6xx */
-              || model == 0x27  /* 32 nm, Z2460 */
-              || model == 0x35  /* 32 nm, Z2760 */
-                 || model == 0x36  /* 32 nm, N2xxx, D2xxx */
-                                            )));
+          /* In-Order Atom CPU */
+          model == 0x1C  /* 45 nm, N4xx, D4xx, N5xx, D5xx, 230, 330 */
+          || model == 0x26  /* 45 nm, Z6xx */
+          || model == 0x27  /* 32 nm, Z2460 */
+          || model == 0x35  /* 32 nm, Z2760 */
+          || model == 0x36  /* 32 nm, N2xxx, D2xxx */
+      )));
     case CPU_FIRM_AMD:
       return (family < 5 || (family == 5 && (model < 6 || model == 0xA)));
     case CPU_FIRM_VIA:

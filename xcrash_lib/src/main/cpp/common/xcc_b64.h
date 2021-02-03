@@ -33,10 +33,12 @@ extern "C" {
 #endif
 
 size_t xcc_b64_encode_max_len(size_t in_len);
-char *xcc_b64_encode(const uint8_t *in, size_t in_len, size_t *out_len);
+
+char* xcc_b64_encode(const uint8_t* in, size_t in_len, size_t* out_len);
 
 size_t xcc_b64_decode_max_len(size_t in_len);
-uint8_t *xcc_b64_decode(const char *in, size_t in_len, size_t *out_len);
+
+uint8_t* xcc_b64_decode(const char* in, size_t in_len, size_t* out_len);
 
 #ifdef __cplusplus
 }

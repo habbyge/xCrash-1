@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-size_t xcc_unwind_clang_record(ucontext_t *uc, char *buf, size_t buf_len);
+size_t xcc_unwind_clang_record(ucontext_t* uc, char* buf, size_t buf_len);
 
 #ifdef __cplusplus
 }

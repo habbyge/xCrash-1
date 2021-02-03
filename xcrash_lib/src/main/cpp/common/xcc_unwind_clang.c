@@ -74,24 +74,24 @@ static int xcc_unwind_clang_record_frame(xcc_unwind_clang_t* self, uintptr_t pc)
   } else {
     if (NULL == info.dli_fname || '\0' == info.dli_fname[0]) {
       len = xcc_fmt_snprintf(self->buf + self->buf_used, self->buf_len - self->buf_used,
-          "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <anonymous:%"XCC_UTIL_FMT_ADDR">\n",
-          self->frame_num, pc - (uintptr_t) info.dli_fbase, (uintptr_t) info.dli_fbase);
+                             "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <anonymous:%"XCC_UTIL_FMT_ADDR">\n",
+                             self->frame_num, pc - (uintptr_t) info.dli_fbase, (uintptr_t) info.dli_fbase);
     } else {
       if (NULL == info.dli_sname || '\0' == info.dli_sname[0]) {
         len = xcc_fmt_snprintf(self->buf + self->buf_used, self->buf_len - self->buf_used,
-            "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s\n",
-            self->frame_num, pc - (uintptr_t) info.dli_fbase, info.dli_fname);
+                               "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s\n",
+                               self->frame_num, pc - (uintptr_t) info.dli_fbase, info.dli_fname);
       } else {
         if (0 == (uintptr_t) info.dli_saddr || (uintptr_t) info.dli_saddr > pc) {
           len = xcc_fmt_snprintf(self->buf + self->buf_used, self->buf_len - self->buf_used,
-              "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s)\n",
-              self->frame_num, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
-              info.dli_sname);
+                                 "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s)\n",
+                                 self->frame_num, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                 info.dli_sname);
         } else {
           len = xcc_fmt_snprintf(self->buf + self->buf_used, self->buf_len - self->buf_used,
-              "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s+%"PRIuPTR")\n",
-              self->frame_num, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
-              info.dli_sname, pc - (uintptr_t) info.dli_saddr);
+                                 "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s+%"PRIuPTR")\n",
+                                 self->frame_num, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                 info.dli_sname, pc - (uintptr_t) info.dli_saddr);
         }
       }
     }

@@ -150,47 +150,52 @@ typedef int Bool;
 /* The following interfaces use first parameter as pointer to structure */
 
 typedef struct IByteIn IByteIn;
-struct IByteIn
-{
-  Byte (*Read)(const IByteIn *p); /* reads one byte, returns 0 in case of EOF or error */
+
+struct IByteIn {
+  Byte (* Read)(const IByteIn* p); /* reads one byte, returns 0 in case of EOF or error */
 };
+
 #define IByteIn_Read(p) (p)->Read(p)
 
 
 typedef struct IByteOut IByteOut;
-struct IByteOut
-{
-  void (*Write)(const IByteOut *p, Byte b);
+
+struct IByteOut {
+  void (* Write)(const IByteOut* p, Byte b);
 };
+
 #define IByteOut_Write(p, b) (p)->Write(p, b)
 
 
 typedef struct ISeqInStream ISeqInStream;
-struct ISeqInStream
-{
-  SRes (*Read)(const ISeqInStream *p, void *buf, size_t *size);
-    /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
-       (output(*size) < input(*size)) is allowed */
+
+struct ISeqInStream {
+  SRes (* Read)(const ISeqInStream* p, void* buf, size_t* size);
+  /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
+     (output(*size) < input(*size)) is allowed */
 };
+
 #define ISeqInStream_Read(p, buf, size) (p)->Read(p, buf, size)
 
 /* it can return SZ_ERROR_INPUT_EOF */
-SRes SeqInStream_Read(const ISeqInStream *stream, void *buf, size_t size);
-SRes SeqInStream_Read2(const ISeqInStream *stream, void *buf, size_t size, SRes errorType);
-SRes SeqInStream_ReadByte(const ISeqInStream *stream, Byte *buf);
+SRes SeqInStream_Read(const ISeqInStream* stream, void* buf, size_t size);
+
+SRes SeqInStream_Read2(const ISeqInStream* stream, void* buf, size_t size, SRes errorType);
+
+SRes SeqInStream_ReadByte(const ISeqInStream* stream, Byte* buf);
 
 
 typedef struct ISeqOutStream ISeqOutStream;
-struct ISeqOutStream
-{
-  size_t (*Write)(const ISeqOutStream *p, const void *buf, size_t size);
-    /* Returns: result - the number of actually written bytes.
-       (result < size) means error */
+
+struct ISeqOutStream {
+  size_t (* Write)(const ISeqOutStream* p, const void* buf, size_t size);
+  /* Returns: result - the number of actually written bytes.
+     (result < size) means error */
 };
+
 #define ISeqOutStream_Write(p, buf, size) (p)->Write(p, buf, size)
 
-typedef enum
-{
+typedef enum {
   SZ_SEEK_SET = 0,
   SZ_SEEK_CUR = 1,
   SZ_SEEK_END = 2
@@ -198,28 +203,32 @@ typedef enum
 
 
 typedef struct ISeekInStream ISeekInStream;
-struct ISeekInStream
-{
-  SRes (*Read)(const ISeekInStream *p, void *buf, size_t *size);  /* same as ISeqInStream::Read */
-  SRes (*Seek)(const ISeekInStream *p, Int64 *pos, ESzSeek origin);
+
+struct ISeekInStream {
+  SRes (* Read)(const ISeekInStream* p, void* buf, size_t* size);  /* same as ISeqInStream::Read */
+  SRes (* Seek)(const ISeekInStream* p, Int64* pos, ESzSeek origin);
 };
+
 #define ISeekInStream_Read(p, buf, size)   (p)->Read(p, buf, size)
 #define ISeekInStream_Seek(p, pos, origin) (p)->Seek(p, pos, origin)
 
 
 typedef struct ILookInStream ILookInStream;
-struct ILookInStream
-{
-  SRes (*Look)(const ILookInStream *p, const void **buf, size_t *size);
-    /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
-       (output(*size) > input(*size)) is not allowed
-       (output(*size) < input(*size)) is allowed */
-  SRes (*Skip)(const ILookInStream *p, size_t offset);
-    /* offset must be <= output(*size) of Look */
 
-  SRes (*Read)(const ILookInStream *p, void *buf, size_t *size);
-    /* reads directly (without buffer). It's same as ISeqInStream::Read */
-  SRes (*Seek)(const ILookInStream *p, Int64 *pos, ESzSeek origin);
+struct ILookInStream {
+  SRes (* Look)(const ILookInStream* p, const void** buf, size_t* size);
+
+  /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
+     (output(*size) > input(*size)) is not allowed
+     (output(*size) < input(*size)) is allowed */
+  SRes (* Skip)(const ILookInStream* p, size_t offset);
+
+  /* offset must be <= output(*size) of Look */
+
+  SRes (* Read)(const ILookInStream* p, void* buf, size_t* size);
+
+  /* reads directly (without buffer). It's same as ISeqInStream::Read */
+  SRes (* Seek)(const ILookInStream* p, Int64* pos, ESzSeek origin);
 };
 
 #define ILookInStream_Look(p, buf, size)   (p)->Look(p, buf, size)
@@ -228,71 +237,67 @@ struct ILookInStream
 #define ILookInStream_Seek(p, pos, origin) (p)->Seek(p, pos, origin)
 
 
-SRes LookInStream_LookRead(const ILookInStream *stream, void *buf, size_t *size);
-SRes LookInStream_SeekTo(const ILookInStream *stream, UInt64 offset);
+SRes LookInStream_LookRead(const ILookInStream* stream, void* buf, size_t* size);
+
+SRes LookInStream_SeekTo(const ILookInStream* stream, UInt64 offset);
 
 /* reads via ILookInStream::Read */
-SRes LookInStream_Read2(const ILookInStream *stream, void *buf, size_t size, SRes errorType);
-SRes LookInStream_Read(const ILookInStream *stream, void *buf, size_t size);
+SRes LookInStream_Read2(const ILookInStream* stream, void* buf, size_t size, SRes errorType);
+
+SRes LookInStream_Read(const ILookInStream* stream, void* buf, size_t size);
 
 
-
-typedef struct
-{
+typedef struct {
   ILookInStream vt;
-  const ISeekInStream *realStream;
- 
+  const ISeekInStream* realStream;
+
   size_t pos;
   size_t size; /* it's data size */
-  
+
   /* the following variables must be set outside */
-  Byte *buf;
+  Byte* buf;
   size_t bufSize;
 } CLookToRead2;
 
-void LookToRead2_CreateVTable(CLookToRead2 *p, int lookahead);
+void LookToRead2_CreateVTable(CLookToRead2* p, int lookahead);
 
 #define LookToRead2_Init(p) { (p)->pos = (p)->size = 0; }
 
 
-typedef struct
-{
+typedef struct {
   ISeqInStream vt;
-  const ILookInStream *realStream;
+  const ILookInStream* realStream;
 } CSecToLook;
 
-void SecToLook_CreateVTable(CSecToLook *p);
+void SecToLook_CreateVTable(CSecToLook* p);
 
 
-
-typedef struct
-{
+typedef struct {
   ISeqInStream vt;
-  const ILookInStream *realStream;
+  const ILookInStream* realStream;
 } CSecToRead;
 
-void SecToRead_CreateVTable(CSecToRead *p);
+void SecToRead_CreateVTable(CSecToRead* p);
 
 
 typedef struct ICompressProgress ICompressProgress;
 
-struct ICompressProgress
-{
-  SRes (*Progress)(const ICompressProgress *p, UInt64 inSize, UInt64 outSize);
-    /* Returns: result. (result != SZ_OK) means break.
-       Value (UInt64)(Int64)-1 for size means unknown value. */
+struct ICompressProgress {
+  SRes (* Progress)(const ICompressProgress* p, UInt64 inSize, UInt64 outSize);
+  /* Returns: result. (result != SZ_OK) means break.
+     Value (UInt64)(Int64)-1 for size means unknown value. */
 };
+
 #define ICompressProgress_Progress(p, inSize, outSize) (p)->Progress(p, inSize, outSize)
 
 
-
 typedef struct ISzAlloc ISzAlloc;
-typedef const ISzAlloc * ISzAllocPtr;
+typedef const ISzAlloc* ISzAllocPtr;
 
-struct ISzAlloc
-{
-  void *(*Alloc)(ISzAllocPtr p, size_t size);
-  void (*Free)(ISzAllocPtr p, void *address); /* address can be 0 */
+struct ISzAlloc {
+  void* (* Alloc)(ISzAllocPtr p, size_t size);
+
+  void (* Free)(ISzAllocPtr p, void* address); /* address can be 0 */
 };
 
 #define ISzAlloc_Alloc(p, size) (p)->Alloc(p, size)
@@ -303,20 +308,16 @@ struct ISzAlloc
 #define IAlloc_Free(p, a) ISzAlloc_Free(p, a)
 
 
-
-
-
 #ifndef MY_offsetof
-  #ifdef offsetof
-    #define MY_offsetof(type, m) offsetof(type, m)
-    /*
-    #define MY_offsetof(type, m) FIELD_OFFSET(type, m)
-    */
-  #else
-    #define MY_offsetof(type, m) ((size_t)&(((type *)0)->m))
-  #endif
+#ifdef offsetof
+#define MY_offsetof(type, m) offsetof(type, m)
+/*
+#define MY_offsetof(type, m) FIELD_OFFSET(type, m)
+*/
+#else
+#define MY_offsetof(type, m) ((size_t)&(((type *)0)->m))
 #endif
-
+#endif
 
 
 #ifndef MY_container_of

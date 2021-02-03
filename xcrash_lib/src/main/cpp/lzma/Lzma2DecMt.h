@@ -8,21 +8,20 @@
 
 EXTERN_C_BEGIN
 
-typedef struct
-{
+typedef struct {
   size_t inBufSize_ST;
   size_t outStep_ST;
-  
-  #ifndef _7ZIP_ST
+
+#ifndef _7ZIP_ST
   unsigned numThreads;
   size_t inBufSize_MT;
   size_t outBlockMax;
   size_t inBlockMax;
-  #endif
+#endif
 } CLzma2DecMtProps;
 
 /* init to single-thread mode */
-void Lzma2DecMtProps_Init(CLzma2DecMtProps *p);
+void Lzma2DecMtProps_Init(CLzma2DecMtProps* p);
 
 
 /* ---------- CLzma2DecMtHandle Interface ---------- */
@@ -38,40 +37,41 @@ SRes:
   SZ_ERROR_THREAD - error in multithreading functions (only for Mt version)
 */
 
-typedef void * CLzma2DecMtHandle;
+typedef void* CLzma2DecMtHandle;
 
 CLzma2DecMtHandle Lzma2DecMt_Create(ISzAllocPtr alloc, ISzAllocPtr allocMid);
+
 void Lzma2DecMt_Destroy(CLzma2DecMtHandle p);
 
 SRes Lzma2DecMt_Decode(CLzma2DecMtHandle p,
-    Byte prop,
-    const CLzma2DecMtProps *props,
-    ISeqOutStream *outStream,
-    const UInt64 *outDataSize, // NULL means undefined
-    int finishMode,            // 0 - partial unpacking is allowed, 1 - if lzma2 stream must be finished
+                       Byte prop,
+                       const CLzma2DecMtProps* props,
+                       ISeqOutStream* outStream,
+                       const UInt64* outDataSize, // NULL means undefined
+                       int finishMode,            // 0 - partial unpacking is allowed, 1 - if lzma2 stream must be finished
     // Byte *outBuf, size_t *outBufSize,
-    ISeqInStream *inStream,
+                       ISeqInStream* inStream,
     // const Byte *inData, size_t inDataSize,
-    
+
     // out variables:
-    UInt64 *inProcessed,
-    int *isMT,  /* out: (*isMT == 0), if single thread decoding was used */
+                       UInt64* inProcessed,
+                       int* isMT,  /* out: (*isMT == 0), if single thread decoding was used */
 
     // UInt64 *outProcessed,
-    ICompressProgress *progress);
+                       ICompressProgress* progress);
 
 
 /* ---------- Read from CLzma2DecMtHandle Interface ---------- */
 
 SRes Lzma2DecMt_Init(CLzma2DecMtHandle pp,
-    Byte prop,
-    const CLzma2DecMtProps *props,
-    const UInt64 *outDataSize, int finishMode,
-    ISeqInStream *inStream);
+                     Byte prop,
+                     const CLzma2DecMtProps* props,
+                     const UInt64* outDataSize, int finishMode,
+                     ISeqInStream* inStream);
 
 SRes Lzma2DecMt_Read(CLzma2DecMtHandle pp,
-    Byte *data, size_t *outSize,
-    UInt64 *inStreamProcessed);
+                     Byte* data, size_t* outSize,
+                     UInt64* inStreamProcessed);
 
 
 EXTERN_C_END

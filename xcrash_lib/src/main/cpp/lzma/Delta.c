@@ -5,33 +5,28 @@
 
 #include "Delta.h"
 
-void Delta_Init(Byte *state)
-{
+void Delta_Init(Byte* state) {
   unsigned i;
   for (i = 0; i < DELTA_STATE_SIZE; i++)
     state[i] = 0;
 }
 
-static void MyMemCpy(Byte *dest, const Byte *src, unsigned size)
-{
+static void MyMemCpy(Byte* dest, const Byte* src, unsigned size) {
   unsigned i;
   for (i = 0; i < size; i++)
     dest[i] = src[i];
 }
 
-void Delta_Encode(Byte *state, unsigned delta, Byte *data, SizeT size)
-{
+void Delta_Encode(Byte* state, unsigned delta, Byte* data, SizeT size) {
   Byte buf[DELTA_STATE_SIZE];
   unsigned j = 0;
   MyMemCpy(buf, state, delta);
   {
     SizeT i;
-    for (i = 0; i < size;)
-    {
-      for (j = 0; j < delta && i < size; i++, j++)
-      {
+    for (i = 0; i < size;) {
+      for (j = 0; j < delta && i < size; i++, j++) {
         Byte b = data[i];
-        data[i] = (Byte)(b - buf[j]);
+        data[i] = (Byte) (b - buf[j]);
         buf[j] = b;
       }
     }
@@ -42,18 +37,15 @@ void Delta_Encode(Byte *state, unsigned delta, Byte *data, SizeT size)
   MyMemCpy(state + delta - j, buf, j);
 }
 
-void Delta_Decode(Byte *state, unsigned delta, Byte *data, SizeT size)
-{
+void Delta_Decode(Byte* state, unsigned delta, Byte* data, SizeT size) {
   Byte buf[DELTA_STATE_SIZE];
   unsigned j = 0;
   MyMemCpy(buf, state, delta);
   {
     SizeT i;
-    for (i = 0; i < size;)
-    {
-      for (j = 0; j < delta && i < size; i++, j++)
-      {
-        buf[j] = data[i] = (Byte)(buf[j] + data[i]);
+    for (i = 0; i < size;) {
+      for (j = 0; j < delta && i < size; i++, j++) {
+        buf[j] = data[i] = (Byte) (buf[j] + data[i]);
       }
     }
   }

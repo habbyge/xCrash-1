@@ -35,9 +35,11 @@ extern "C" {
 
 typedef struct xcd_memory_remote xcd_memory_remote_t;
 
-int xcd_memory_remote_create(void **obj, xcd_map_t *map, pid_t pid);
-void xcd_memory_remote_destroy(void **obj);
-size_t xcd_memory_remote_read(void *obj, uintptr_t addr, void *dst, size_t size);
+int xcd_memory_remote_create(void** obj, xcd_map_t* map, pid_t pid);
+
+void xcd_memory_remote_destroy(void** obj);
+
+size_t xcd_memory_remote_read(void* obj, uintptr_t addr, void* dst, size_t size);
 
 #ifdef __cplusplus
 }

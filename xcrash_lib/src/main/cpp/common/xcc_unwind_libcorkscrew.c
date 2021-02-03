@@ -54,22 +54,22 @@ typedef struct {
   char* demangled_name;
 } backtrace_symbol_t;
 
-typedef ssize_t (*t_unwind_backtrace_signal_arch)(siginfo_t* si,
-                                                  void* sc,
-                                                  const map_info_t* lst,
-                                                  backtrace_frame_t* bt,
-                                                  size_t ignore_depth,
-                                                  size_t max_depth);
+typedef ssize_t (* t_unwind_backtrace_signal_arch)(siginfo_t* si,
+                                                   void* sc,
+                                                   const map_info_t* lst,
+                                                   backtrace_frame_t* bt,
+                                                   size_t ignore_depth,
+                                                   size_t max_depth);
 
-typedef map_info_t* (*t_acquire_my_map_info_list)(void);
+typedef map_info_t* (* t_acquire_my_map_info_list)(void);
 
-typedef void (*t_release_my_map_info_list)(map_info_t* milist);
+typedef void (* t_release_my_map_info_list)(map_info_t* milist);
 
-typedef void (*t_get_backtrace_symbols)(const backtrace_frame_t* backtrace,
+typedef void (* t_get_backtrace_symbols)(const backtrace_frame_t* backtrace,
                                          size_t frames,
                                          backtrace_symbol_t* symbols);
 
-typedef void (*t_free_backtrace_symbols)(backtrace_symbol_t* symbols, size_t frames);
+typedef void (* t_free_backtrace_symbols)(backtrace_symbol_t* symbols, size_t frames);
 
 static void* libcorkscrew = NULL;
 static t_unwind_backtrace_signal_arch unwind_backtrace_signal_arch = NULL;

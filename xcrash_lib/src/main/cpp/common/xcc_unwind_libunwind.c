@@ -97,7 +97,7 @@ void xcc_unwind_libunwind_init() {
     goto err;
   return;
 
-err:
+  err:
   dlclose(libunwind);
   libunwind = NULL;
 }
@@ -156,24 +156,24 @@ size_t xcc_unwind_libunwind_record(ucontext_t* uc, char* buf, size_t buf_len) {
     } else {
       if (NULL == info.dli_fname || '\0' == info.dli_fname[0]) {
         len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-            "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <anonymous:%"XCC_UTIL_FMT_ADDR">\n",
-            i, pc - (uintptr_t) info.dli_fbase, (uintptr_t) info.dli_fbase);
+                               "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  <anonymous:%"XCC_UTIL_FMT_ADDR">\n",
+                               i, pc - (uintptr_t) info.dli_fbase, (uintptr_t) info.dli_fbase);
       } else {
         if (NULL == info.dli_sname || '\0' == info.dli_sname[0]) {
           len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-              "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s\n",
-              i, pc - (uintptr_t) info.dli_fbase, info.dli_fname);
+                                 "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s\n",
+                                 i, pc - (uintptr_t) info.dli_fbase, info.dli_fname);
         } else {
           if (0 == (uintptr_t) info.dli_saddr || (uintptr_t) info.dli_saddr > pc) {
             len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-                "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s)\n",
-                i, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
-                info.dli_sname);
+                                   "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s)\n",
+                                   i, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                   info.dli_sname);
           } else {
             len = xcc_fmt_snprintf(buf + buf_used, buf_len - buf_used,
-                "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s+%"PRIuPTR")\n",
-                i, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
-                info.dli_sname, pc - (uintptr_t) info.dli_saddr);
+                                   "    #%02zu pc %0"XCC_UTIL_FMT_ADDR"  %s (%s+%"PRIuPTR")\n",
+                                   i, pc - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                   info.dli_sname, pc - (uintptr_t) info.dli_saddr);
           }
         }
       }
@@ -195,7 +195,7 @@ size_t xcc_unwind_libunwind_record(ucontext_t* uc, char* buf, size_t buf_len) {
 
   } while (unw_step(cursor) > 0 && i < MAX_FRAMES);
 
-end:
+  end:
   if (NULL != cursor) free(cursor);
   if (NULL != context) free(context);
   return buf_used;

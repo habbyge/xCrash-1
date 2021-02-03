@@ -34,45 +34,41 @@
 #include "xcd_memory_buf.h"
 #include "xcd_util.h"
 
-struct xcd_memory_buf
-{
-    uint8_t *buf;
-    size_t   len;
+struct xcd_memory_buf {
+  uint8_t* buf;
+  size_t len;
 };
 
-int xcd_memory_buf_create(void **obj, uint8_t *buf, size_t len)
-{
-    xcd_memory_buf_t **self = (xcd_memory_buf_t **)obj;
-    
-    if(NULL == (*self = malloc(sizeof(xcd_memory_buf_t)))) return XCC_ERRNO_NOMEM;
-    (*self)->buf = buf;
-    (*self)->len = len;
+int xcd_memory_buf_create(void** obj, uint8_t* buf, size_t len) {
+  xcd_memory_buf_t** self = (xcd_memory_buf_t**) obj;
 
-    return 0;
+  if (NULL == (*self = malloc(sizeof(xcd_memory_buf_t)))) return XCC_ERRNO_NOMEM;
+  (*self)->buf = buf;
+  (*self)->len = len;
+
+  return 0;
 }
 
-void xcd_memory_buf_destroy(void **obj)
-{
-    xcd_memory_buf_t **self = (xcd_memory_buf_t **)obj;
+void xcd_memory_buf_destroy(void** obj) {
+  xcd_memory_buf_t** self = (xcd_memory_buf_t**) obj;
 
-    free((*self)->buf);
-    free(*self);
-    *self = NULL;
+  free((*self)->buf);
+  free(*self);
+  *self = NULL;
 }
 
-size_t xcd_memory_buf_read(void *obj, uintptr_t addr, void *dst, size_t size)
-{
-    xcd_memory_buf_t *self = (xcd_memory_buf_t *)obj;
+size_t xcd_memory_buf_read(void* obj, uintptr_t addr, void* dst, size_t size) {
+  xcd_memory_buf_t* self = (xcd_memory_buf_t*) obj;
 
-    if((size_t)addr >= self->len) return 0;
+  if ((size_t) addr >= self->len) return 0;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
-    size_t read_length = XCC_UTIL_MIN(size, self->len - addr);
+  size_t read_length = XCC_UTIL_MIN(size, self->len - addr);
 #pragma clang diagnostic pop
-    
-    memcpy(dst, self->buf + addr, read_length);
-    return read_length;
+
+  memcpy(dst, self->buf + addr, read_length);
+  return read_length;
 }
 
 #pragma clang diagnostic push

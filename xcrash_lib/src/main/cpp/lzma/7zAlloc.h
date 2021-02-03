@@ -8,11 +8,13 @@
 
 EXTERN_C_BEGIN
 
-void *SzAlloc(ISzAllocPtr p, size_t size);
-void SzFree(ISzAllocPtr p, void *address);
+void* SzAlloc(ISzAllocPtr p, size_t size);
 
-void *SzAllocTemp(ISzAllocPtr p, size_t size);
-void SzFreeTemp(ISzAllocPtr p, void *address);
+void SzFree(ISzAllocPtr p, void* address);
+
+void* SzAllocTemp(ISzAllocPtr p, size_t size);
+
+void SzFreeTemp(ISzAllocPtr p, void* address);
 
 EXTERN_C_END
 

@@ -10,8 +10,7 @@ EXTERN_C_BEGIN
 
 /* ---------- State Interface ---------- */
 
-typedef struct
-{
+typedef struct {
   unsigned state;
   Byte control;
   Byte needInitLevel;
@@ -26,9 +25,11 @@ typedef struct
 #define Lzma2Dec_FreeProbs(p, alloc) LzmaDec_FreeProbs(&(p)->decoder, alloc)
 #define Lzma2Dec_Free(p, alloc) LzmaDec_Free(&(p)->decoder, alloc)
 
-SRes Lzma2Dec_AllocateProbs(CLzma2Dec *p, Byte prop, ISzAllocPtr alloc);
-SRes Lzma2Dec_Allocate(CLzma2Dec *p, Byte prop, ISzAllocPtr alloc);
-void Lzma2Dec_Init(CLzma2Dec *p);
+SRes Lzma2Dec_AllocateProbs(CLzma2Dec* p, Byte prop, ISzAllocPtr alloc);
+
+SRes Lzma2Dec_Allocate(CLzma2Dec* p, Byte prop, ISzAllocPtr alloc);
+
+void Lzma2Dec_Init(CLzma2Dec* p);
 
 /*
 finishMode:
@@ -45,11 +46,11 @@ Returns:
   SZ_ERROR_DATA - Data error
 */
 
-SRes Lzma2Dec_DecodeToDic(CLzma2Dec *p, SizeT dicLimit,
-    const Byte *src, SizeT *srcLen, ELzmaFinishMode finishMode, ELzmaStatus *status);
+SRes Lzma2Dec_DecodeToDic(CLzma2Dec* p, SizeT dicLimit,
+                          const Byte* src, SizeT* srcLen, ELzmaFinishMode finishMode, ELzmaStatus* status);
 
-SRes Lzma2Dec_DecodeToBuf(CLzma2Dec *p, Byte *dest, SizeT *destLen,
-    const Byte *src, SizeT *srcLen, ELzmaFinishMode finishMode, ELzmaStatus *status);
+SRes Lzma2Dec_DecodeToBuf(CLzma2Dec* p, Byte* dest, SizeT* destLen,
+                          const Byte* src, SizeT* srcLen, ELzmaFinishMode finishMode, ELzmaStatus* status);
 
 
 /* ---------- LZMA2 block and chunk parsing ---------- */
@@ -62,8 +63,7 @@ It can return LZMA_STATUS_* code or LZMA2_PARSE_STATUS_* code:
                                    CLzma2Dec::unpackSize contains unpack size of that chunk
 */
 
-typedef enum
-{
+typedef enum {
 /*
   LZMA_STATUS_NOT_SPECIFIED                 // data error
   LZMA_STATUS_FINISHED_WITH_MARK
@@ -75,11 +75,11 @@ typedef enum
   LZMA2_PARSE_STATUS_NEW_CHUNK
 } ELzma2ParseStatus;
 
-ELzma2ParseStatus Lzma2Dec_Parse(CLzma2Dec *p,
-    SizeT outSize,   // output size
-    const Byte *src, SizeT *srcLen,
-    int checkFinishBlock   // set (checkFinishBlock = 1), if it must read full input data, if decoder.dicPos reaches blockMax position.
-    );
+ELzma2ParseStatus Lzma2Dec_Parse(CLzma2Dec* p,
+                                 SizeT outSize,   // output size
+                                 const Byte* src, SizeT* srcLen,
+                                 int checkFinishBlock   // set (checkFinishBlock = 1), if it must read full input data, if decoder.dicPos reaches blockMax position.
+);
 
 /*
 LZMA2 parser doesn't decode LZMA chunks, so we must read
@@ -112,8 +112,8 @@ Returns:
   SZ_ERROR_INPUT_EOF - It needs more bytes in input buffer (src).
 */
 
-SRes Lzma2Decode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
-    Byte prop, ELzmaFinishMode finishMode, ELzmaStatus *status, ISzAllocPtr alloc);
+SRes Lzma2Decode(Byte* dest, SizeT* destLen, const Byte* src, SizeT* srcLen,
+                 Byte prop, ELzmaFinishMode finishMode, ELzmaStatus* status, ISzAllocPtr alloc);
 
 EXTERN_C_END
 

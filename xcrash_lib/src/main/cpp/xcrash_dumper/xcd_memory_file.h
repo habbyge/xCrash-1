@@ -36,9 +36,11 @@ extern "C" {
 
 typedef struct xcd_memory_file xcd_memory_file_t;
 
-int xcd_memory_file_create(void **obj, xcd_memory_t *base, xcd_map_t *map, xcd_maps_t *maps);
-void xcd_memory_file_destroy(void **obj);
-size_t xcd_memory_file_read(void *obj, uintptr_t addr, void *dst, size_t size);
+int xcd_memory_file_create(void** obj, xcd_memory_t* base, xcd_map_t* map, xcd_maps_t* maps);
+
+void xcd_memory_file_destroy(void** obj);
+
+size_t xcd_memory_file_read(void* obj, uintptr_t addr, void* dst, size_t size);
 
 #ifdef __cplusplus
 }

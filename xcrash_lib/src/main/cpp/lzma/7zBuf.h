@@ -8,27 +8,30 @@
 
 EXTERN_C_BEGIN
 
-typedef struct
-{
-  Byte *data;
+typedef struct {
+  Byte* data;
   size_t size;
 } CBuf;
 
-void Buf_Init(CBuf *p);
-int Buf_Create(CBuf *p, size_t size, ISzAllocPtr alloc);
-void Buf_Free(CBuf *p, ISzAllocPtr alloc);
+void Buf_Init(CBuf* p);
 
-typedef struct
-{
-  Byte *data;
+int Buf_Create(CBuf* p, size_t size, ISzAllocPtr alloc);
+
+void Buf_Free(CBuf* p, ISzAllocPtr alloc);
+
+typedef struct {
+  Byte* data;
   size_t size;
   size_t pos;
 } CDynBuf;
 
-void DynBuf_Construct(CDynBuf *p);
-void DynBuf_SeekToBeg(CDynBuf *p);
-int DynBuf_Write(CDynBuf *p, const Byte *buf, size_t size, ISzAllocPtr alloc);
-void DynBuf_Free(CDynBuf *p, ISzAllocPtr alloc);
+void DynBuf_Construct(CDynBuf* p);
+
+void DynBuf_SeekToBeg(CDynBuf* p);
+
+int DynBuf_Write(CDynBuf* p, const Byte* buf, size_t size, ISzAllocPtr alloc);
+
+void DynBuf_Free(CDynBuf* p, ISzAllocPtr alloc);
 
 EXTERN_C_END
 

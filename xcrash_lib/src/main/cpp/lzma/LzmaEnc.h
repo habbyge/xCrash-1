@@ -10,8 +10,7 @@ EXTERN_C_BEGIN
 
 #define LZMA_PROPS_SIZE 5
 
-typedef struct _CLzmaEncProps
-{
+typedef struct _CLzmaEncProps {
   int level;       /* 0 <= level <= 9 */
   UInt32 dictSize; /* (1 << 12) <= dictSize <= (1 << 27) for 32-bit version
                       (1 << 12) <= dictSize <= (3 << 29) for 64-bit version
@@ -31,9 +30,11 @@ typedef struct _CLzmaEncProps
                         Encoder uses this value to reduce dictionary size */
 } CLzmaEncProps;
 
-void LzmaEncProps_Init(CLzmaEncProps *p);
-void LzmaEncProps_Normalize(CLzmaEncProps *p);
-UInt32 LzmaEncProps_GetDictSize(const CLzmaEncProps *props2);
+void LzmaEncProps_Init(CLzmaEncProps* p);
+
+void LzmaEncProps_Normalize(CLzmaEncProps* p);
+
+UInt32 LzmaEncProps_GetDictSize(const CLzmaEncProps* props2);
 
 
 /* ---------- CLzmaEncHandle Interface ---------- */
@@ -49,27 +50,32 @@ SRes:
   SZ_ERROR_THREAD - error in multithreading functions (only for Mt version)
 */
 
-typedef void * CLzmaEncHandle;
+typedef void* CLzmaEncHandle;
 
 CLzmaEncHandle LzmaEnc_Create(ISzAllocPtr alloc);
+
 void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 
-SRes LzmaEnc_SetProps(CLzmaEncHandle p, const CLzmaEncProps *props);
+SRes LzmaEnc_SetProps(CLzmaEncHandle p, const CLzmaEncProps* props);
+
 void LzmaEnc_SetDataSize(CLzmaEncHandle p, UInt64 expectedDataSiize);
-SRes LzmaEnc_WriteProperties(CLzmaEncHandle p, Byte *properties, SizeT *size);
+
+SRes LzmaEnc_WriteProperties(CLzmaEncHandle p, Byte* properties, SizeT* size);
+
 unsigned LzmaEnc_IsWriteEndMark(CLzmaEncHandle p);
 
-SRes LzmaEnc_Encode(CLzmaEncHandle p, ISeqOutStream *outStream, ISeqInStream *inStream,
-    ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
-SRes LzmaEnc_MemEncode(CLzmaEncHandle p, Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
-    int writeEndMark, ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
+SRes LzmaEnc_Encode(CLzmaEncHandle p, ISeqOutStream* outStream, ISeqInStream* inStream,
+                    ICompressProgress* progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
+
+SRes LzmaEnc_MemEncode(CLzmaEncHandle p, Byte* dest, SizeT* destLen, const Byte* src, SizeT srcLen,
+                       int writeEndMark, ICompressProgress* progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 
 
 /* ---------- One Call Interface ---------- */
 
-SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
-    const CLzmaEncProps *props, Byte *propsEncoded, SizeT *propsSize, int writeEndMark,
-    ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
+SRes LzmaEncode(Byte* dest, SizeT* destLen, const Byte* src, SizeT srcLen,
+                const CLzmaEncProps* props, Byte* propsEncoded, SizeT* propsSize, int writeEndMark,
+                ICompressProgress* progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 
 EXTERN_C_END
 

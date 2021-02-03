@@ -13,18 +13,17 @@
 
 #define SZE_OUT_OVERFLOW SZE_DATA_ERROR
 
-int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
-    int level, UInt32 dictSize, int filterMode)
-{
+int Lzma86_Encode(Byte* dest, size_t* destLen, const Byte* src, size_t srcLen,
+                  int level, UInt32 dictSize, int filterMode) {
   size_t outSize2 = *destLen;
-  Byte *filteredStream;
+  Byte* filteredStream;
   Bool useFilter;
   int mainResult = SZ_ERROR_OUTPUT_EOF;
   CLzmaEncProps props;
   LzmaEncProps_Init(&props);
   props.level = level;
   props.dictSize = dictSize;
-  
+
   *destLen = 0;
   if (outSize2 < LZMA86_HEADER_SIZE)
     return SZ_ERROR_OUTPUT_EOF;
@@ -33,16 +32,14 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
     int i;
     UInt64 t = srcLen;
     for (i = 0; i < 8; i++, t >>= 8)
-      dest[LZMA86_SIZE_OFFSET + i] = (Byte)t;
+      dest[LZMA86_SIZE_OFFSET + i] = (Byte) t;
   }
 
   filteredStream = 0;
   useFilter = (filterMode != SZ_FILTER_NO);
-  if (useFilter)
-  {
-    if (srcLen != 0)
-    {
-      filteredStream = (Byte *)MyAlloc(srcLen);
+  if (useFilter) {
+    if (srcLen != 0) {
+      filteredStream = (Byte*) MyAlloc(srcLen);
       if (filteredStream == 0)
         return SZ_ERROR_MEM;
       memcpy(filteredStream, src, srcLen);
@@ -66,8 +63,7 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
     int numPasses = (filterMode == SZ_FILTER_AUTO) ? 3 : 1;
 
     int i;
-    for (i = 0; i < numPasses; i++)
-    {
+    for (i = 0; i < numPasses; i++) {
       size_t outSizeProcessed = outSize2 - LZMA86_HEADER_SIZE;
       size_t outPropsSize = 5;
       SRes curRes;
@@ -76,28 +72,25 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
         break;
       if (useFilter && i == 0)
         curModeIsFiltered = True;
-      
+
       curRes = LzmaEncode(dest + LZMA86_HEADER_SIZE, &outSizeProcessed,
-          curModeIsFiltered ? filteredStream : src, srcLen,
-          &props, dest + 1, &outPropsSize, 0,
-          NULL, &g_Alloc, &g_Alloc);
-      
-      if (curRes != SZ_ERROR_OUTPUT_EOF)
-      {
-        if (curRes != SZ_OK)
-        {
+                          curModeIsFiltered ? filteredStream : src, srcLen,
+                          &props, dest + 1, &outPropsSize, 0,
+                          NULL, &g_Alloc, &g_Alloc);
+
+      if (curRes != SZ_ERROR_OUTPUT_EOF) {
+        if (curRes != SZ_OK) {
           mainResult = curRes;
           break;
         }
-        if (outSizeProcessed <= minSize || mainResult != SZ_OK)
-        {
+        if (outSizeProcessed <= minSize || mainResult != SZ_OK) {
           minSize = outSizeProcessed;
           bestIsFiltered = curModeIsFiltered;
           mainResult = SZ_OK;
         }
       }
     }
-    dest[0] = (Byte)(bestIsFiltered ? 1 : 0);
+    dest[0] = (Byte) (bestIsFiltered ? 1 : 0);
     *destLen = LZMA86_HEADER_SIZE + minSize;
   }
   if (useFilter)

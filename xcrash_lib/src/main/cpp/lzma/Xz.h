@@ -18,8 +18,9 @@ EXTERN_C_BEGIN
 #define XZ_ID_SPARC 9
 #define XZ_ID_LZMA2 0x21
 
-unsigned Xz_ReadVarInt(const Byte *p, size_t maxSize, UInt64 *value);
-unsigned Xz_WriteVarInt(Byte *buf, UInt64 v);
+unsigned Xz_ReadVarInt(const Byte* p, size_t maxSize, UInt64* value);
+
+unsigned Xz_WriteVarInt(Byte* buf, UInt64 v);
 
 /* ---------- xz block ---------- */
 
@@ -32,15 +33,13 @@ unsigned Xz_WriteVarInt(Byte *buf, UInt64 v);
 
 #define XZ_FILTER_PROPS_SIZE_MAX 20
 
-typedef struct
-{
+typedef struct {
   UInt64 id;
   UInt32 propsSize;
   Byte props[XZ_FILTER_PROPS_SIZE_MAX];
 } CXzFilter;
 
-typedef struct
-{
+typedef struct {
   UInt64 packSize;
   UInt64 unpackSize;
   Byte flags;
@@ -52,8 +51,9 @@ typedef struct
 #define XzBlock_HasUnpackSize(p) (((p)->flags & XZ_BF_UNPACK_SIZE) != 0)
 #define XzBlock_HasUnsupportedFlags(p) (((p)->flags & ~(XZ_BF_NUM_FILTERS_MASK | XZ_BF_PACK_SIZE | XZ_BF_UNPACK_SIZE)) != 0)
 
-SRes XzBlock_Parse(CXzBlock *p, const Byte *header);
-SRes XzBlock_ReadHeader(CXzBlock *p, ISeqInStream *inStream, Bool *isIndex, UInt32 *headerSizeRes);
+SRes XzBlock_Parse(CXzBlock* p, const Byte* header);
+
+SRes XzBlock_ReadHeader(CXzBlock* p, ISeqInStream* inStream, Bool* isIndex, UInt32* headerSizeRes);
 
 /* ---------- xz stream ---------- */
 
@@ -81,69 +81,74 @@ extern const Byte XZ_FOOTER_SIG[XZ_FOOTER_SIG_SIZE];
 #define XZ_CHECK_CRC64 4
 #define XZ_CHECK_SHA256 10
 
-typedef struct
-{
+typedef struct {
   unsigned mode;
   UInt32 crc;
   UInt64 crc64;
   CSha256 sha;
 } CXzCheck;
 
-void XzCheck_Init(CXzCheck *p, unsigned mode);
-void XzCheck_Update(CXzCheck *p, const void *data, size_t size);
-int XzCheck_Final(CXzCheck *p, Byte *digest);
+void XzCheck_Init(CXzCheck* p, unsigned mode);
+
+void XzCheck_Update(CXzCheck* p, const void* data, size_t size);
+
+int XzCheck_Final(CXzCheck* p, Byte* digest);
 
 typedef UInt16 CXzStreamFlags;
 
 #define XzFlags_IsSupported(f) ((f) <= XZ_CHECK_MASK)
 #define XzFlags_GetCheckType(f) ((f) & XZ_CHECK_MASK)
 #define XzFlags_HasDataCrc32(f) (Xz_GetCheckType(f) == XZ_CHECK_CRC32)
+
 unsigned XzFlags_GetCheckSize(CXzStreamFlags f);
 
-SRes Xz_ParseHeader(CXzStreamFlags *p, const Byte *buf);
-SRes Xz_ReadHeader(CXzStreamFlags *p, ISeqInStream *inStream);
+SRes Xz_ParseHeader(CXzStreamFlags* p, const Byte* buf);
 
-typedef struct
-{
+SRes Xz_ReadHeader(CXzStreamFlags* p, ISeqInStream* inStream);
+
+typedef struct {
   UInt64 unpackSize;
   UInt64 totalSize;
 } CXzBlockSizes;
 
-typedef struct
-{
+typedef struct {
   CXzStreamFlags flags;
   size_t numBlocks;
-  CXzBlockSizes *blocks;
+  CXzBlockSizes* blocks;
   UInt64 startOffset;
 } CXzStream;
 
-void Xz_Construct(CXzStream *p);
-void Xz_Free(CXzStream *p, ISzAllocPtr alloc);
+void Xz_Construct(CXzStream* p);
+
+void Xz_Free(CXzStream* p, ISzAllocPtr alloc);
 
 #define XZ_SIZE_OVERFLOW ((UInt64)(Int64)-1)
 
-UInt64 Xz_GetUnpackSize(const CXzStream *p);
-UInt64 Xz_GetPackSize(const CXzStream *p);
+UInt64 Xz_GetUnpackSize(const CXzStream* p);
 
-typedef struct
-{
+UInt64 Xz_GetPackSize(const CXzStream* p);
+
+typedef struct {
   size_t num;
   size_t numAllocated;
-  CXzStream *streams;
+  CXzStream* streams;
 } CXzs;
 
-void Xzs_Construct(CXzs *p);
-void Xzs_Free(CXzs *p, ISzAllocPtr alloc);
-SRes Xzs_ReadBackward(CXzs *p, ILookInStream *inStream, Int64 *startOffset, ICompressProgress *progress, ISzAllocPtr alloc);
+void Xzs_Construct(CXzs* p);
 
-UInt64 Xzs_GetNumBlocks(const CXzs *p);
-UInt64 Xzs_GetUnpackSize(const CXzs *p);
+void Xzs_Free(CXzs* p, ISzAllocPtr alloc);
+
+SRes
+Xzs_ReadBackward(CXzs* p, ILookInStream* inStream, Int64* startOffset, ICompressProgress* progress, ISzAllocPtr alloc);
+
+UInt64 Xzs_GetNumBlocks(const CXzs* p);
+
+UInt64 Xzs_GetUnpackSize(const CXzs* p);
 
 
 // ECoderStatus values are identical to ELzmaStatus values of LZMA2 decoder
 
-typedef enum
-{
+typedef enum {
   CODER_STATUS_NOT_SPECIFIED,               /* use main error code instead */
   CODER_STATUS_FINISHED_WITH_MARK,          /* stream was finished with end mark. */
   CODER_STATUS_NOT_FINISHED,                /* stream was not finished */
@@ -153,44 +158,45 @@ typedef enum
 
 // ECoderFinishMode values are identical to ELzmaFinishMode
 
-typedef enum
-{
+typedef enum {
   CODER_FINISH_ANY,   /* finish at any point */
   CODER_FINISH_END    /* block must be finished at the end */
 } ECoderFinishMode;
 
 
-typedef struct _IStateCoder
-{
-  void *p;
-  void (*Free)(void *p, ISzAllocPtr alloc);
-  SRes (*SetProps)(void *p, const Byte *props, size_t propSize, ISzAllocPtr alloc);
-  void (*Init)(void *p);
-  SRes (*Code2)(void *p, Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
-      int srcWasFinished, ECoderFinishMode finishMode,
-      // int *wasFinished,
-      ECoderStatus *status);
-  SizeT (*Filter)(void *p, Byte *data, SizeT size);
-} IStateCoder;
+typedef struct _IStateCoder {
+  void* p;
 
+  void (* Free)(void* p, ISzAllocPtr alloc);
+
+  SRes (* SetProps)(void* p, const Byte* props, size_t propSize, ISzAllocPtr alloc);
+
+  void (* Init)(void* p);
+
+  SRes (* Code2)(void* p, Byte* dest, SizeT* destLen, const Byte* src, SizeT* srcLen,
+                 int srcWasFinished, ECoderFinishMode finishMode,
+      // int *wasFinished,
+                 ECoderStatus* status);
+
+  SizeT (* Filter)(void* p, Byte* data, SizeT size);
+} IStateCoder;
 
 
 #define MIXCODER_NUM_FILTERS_MAX 4
 
-typedef struct
-{
+typedef struct {
   ISzAllocPtr alloc;
-  Byte *buf;
+  Byte* buf;
   unsigned numCoders;
 
-  Byte *outBuf;
+  Byte* outBuf;
   size_t outBufSize;
   size_t outWritten; // is equal to lzmaDecoder.dicPos (in outBuf mode)
   Bool wasFinished;
   SRes res;
   ECoderStatus status;
   // Bool SingleBufMode;
-  
+
   int finished[MIXCODER_NUM_FILTERS_MAX - 1];
   size_t pos[MIXCODER_NUM_FILTERS_MAX - 1];
   size_t size[MIXCODER_NUM_FILTERS_MAX - 1];
@@ -200,8 +206,7 @@ typedef struct
 } CMixCoder;
 
 
-typedef enum
-{
+typedef enum {
   XZ_STATE_STREAM_HEADER,
   XZ_STATE_STREAM_INDEX,
   XZ_STATE_STREAM_INDEX_CRC,
@@ -213,15 +218,14 @@ typedef enum
 } EXzState;
 
 
-typedef struct
-{
+typedef struct {
   EXzState state;
   UInt32 pos;
   unsigned alignPos;
   unsigned indexPreSize;
 
   CXzStreamFlags streamFlags;
-  
+
   UInt32 blockHeaderSize;
   UInt64 packSize;
   UInt64 unpackSize;
@@ -246,7 +250,7 @@ typedef struct
   Bool decodeToStreamSignature;
   unsigned decodeOnlyOneBlock;
 
-  Byte *outBuf;
+  Byte* outBuf;
   size_t outBufSize;
   size_t outDataWritten; // the size of data in (outBuf) that were fully unpacked
 
@@ -255,10 +259,13 @@ typedef struct
 } CXzUnpacker;
 
 /* alloc : aligned for cache line allocation is better */
-void XzUnpacker_Construct(CXzUnpacker *p, ISzAllocPtr alloc);
-void XzUnpacker_Init(CXzUnpacker *p);
-void XzUnpacker_SetOutBuf(CXzUnpacker *p, Byte *outBuf, size_t outBufSize);
-void XzUnpacker_Free(CXzUnpacker *p);
+void XzUnpacker_Construct(CXzUnpacker* p, ISzAllocPtr alloc);
+
+void XzUnpacker_Init(CXzUnpacker* p);
+
+void XzUnpacker_SetOutBuf(CXzUnpacker* p, Byte* outBuf, size_t outBufSize);
+
+void XzUnpacker_Free(CXzUnpacker* p);
 
 /*
   XzUnpacker
@@ -327,15 +334,15 @@ Returns:
 */
 
 
-SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
-    const Byte *src, SizeT *srcLen, int srcFinished,
-    ECoderFinishMode finishMode, ECoderStatus *status);
+SRes XzUnpacker_Code(CXzUnpacker* p, Byte* dest, SizeT* destLen,
+                     const Byte* src, SizeT* srcLen, int srcFinished,
+                     ECoderFinishMode finishMode, ECoderStatus* status);
 
-SRes XzUnpacker_CodeFull(CXzUnpacker *p, Byte *dest, SizeT *destLen,
-    const Byte *src, SizeT *srcLen,
-    ECoderFinishMode finishMode, ECoderStatus *status);
+SRes XzUnpacker_CodeFull(CXzUnpacker* p, Byte* dest, SizeT* destLen,
+                         const Byte* src, SizeT* srcLen,
+                         ECoderFinishMode finishMode, ECoderStatus* status);
 
-Bool XzUnpacker_IsStreamWasFinished(const CXzUnpacker *p);
+Bool XzUnpacker_IsStreamWasFinished(const CXzUnpacker* p);
 
 /*
 XzUnpacker_GetExtraSize() returns then number of uncofirmed bytes,
@@ -349,7 +356,7 @@ xz stream in two cases, if XzUnpacker_Code() returns:
   res == SZ_ERROR_NO_ARCHIVE
 */
 
-UInt64 XzUnpacker_GetExtraSize(const CXzUnpacker *p);
+UInt64 XzUnpacker_GetExtraSize(const CXzUnpacker* p);
 
 
 /*
@@ -364,33 +371,32 @@ UInt64 XzUnpacker_GetExtraSize(const CXzUnpacker *p);
     }
 */
 
-void XzUnpacker_PrepareToRandomBlockDecoding(CXzUnpacker *p);
-Bool XzUnpacker_IsBlockFinished(const CXzUnpacker *p);
+void XzUnpacker_PrepareToRandomBlockDecoding(CXzUnpacker* p);
+
+Bool XzUnpacker_IsBlockFinished(const CXzUnpacker* p);
 
 #define XzUnpacker_GetPackSizeForIndex(p) ((p)->packSize + (p)->blockHeaderSize + XzFlags_GetCheckSize((p)->streamFlags))
-
 
 
 /* ---------- Multi Threading Decoding ---------- */
 
 
-typedef struct
-{
+typedef struct {
   size_t inBufSize_ST;
   size_t outStep_ST;
   Bool ignoreErrors;
-  
-  #ifndef _7ZIP_ST
+
+#ifndef _7ZIP_ST
   unsigned numThreads;
   size_t inBufSize_MT;
   size_t memUseMax;
-  #endif
+#endif
 } CXzDecMtProps;
 
-void XzDecMtProps_Init(CXzDecMtProps *p);
+void XzDecMtProps_Init(CXzDecMtProps* p);
 
 
-typedef void * CXzDecMtHandle;
+typedef void* CXzDecMtHandle;
 
 /*
   alloc    : XzDecMt uses CAlignOffsetAlloc for addresses allocated by (alloc).
@@ -398,11 +404,11 @@ typedef void * CXzDecMtHandle;
 */
 
 CXzDecMtHandle XzDecMt_Create(ISzAllocPtr alloc, ISzAllocPtr allocMid);
+
 void XzDecMt_Destroy(CXzDecMtHandle p);
 
 
-typedef struct
-{
+typedef struct {
   Byte UnpackSize_Defined;
   Byte NumStreams_Defined;
   Byte NumBlocks_Defined;
@@ -424,7 +430,7 @@ typedef struct
 
 } CXzStatInfo;
 
-void XzStatInfo_Clear(CXzStatInfo *p);
+void XzStatInfo_Clear(CXzStatInfo* p);
 
 /*
 XzDecMt_Decode()
@@ -444,16 +450,16 @@ SRes:
 */
 
 SRes XzDecMt_Decode(CXzDecMtHandle p,
-    const CXzDecMtProps *props,
-    const UInt64 *outDataSize, // NULL means undefined
-    int finishMode,            // 0 - partial unpacking is allowed, 1 - xz stream(s) must be finished
-    ISeqOutStream *outStream,
+                    const CXzDecMtProps* props,
+                    const UInt64* outDataSize, // NULL means undefined
+                    int finishMode,            // 0 - partial unpacking is allowed, 1 - xz stream(s) must be finished
+                    ISeqOutStream* outStream,
     // Byte *outBuf, size_t *outBufSize,
-    ISeqInStream *inStream,
+                    ISeqInStream* inStream,
     // const Byte *inData, size_t inDataSize,
-    CXzStatInfo *stat,
-    int *isMT,                 // 0 means that ST (Single-Thread) version was used
-    ICompressProgress *progress);
+                    CXzStatInfo* stat,
+                    int* isMT,                 // 0 means that ST (Single-Thread) version was used
+                    ICompressProgress* progress);
 
 EXTERN_C_END
 

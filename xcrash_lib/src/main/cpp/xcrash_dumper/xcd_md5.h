@@ -35,14 +35,16 @@
 typedef unsigned int xcd_MD5_u32plus;
 
 typedef struct {
-	xcd_MD5_u32plus lo, hi;
-	xcd_MD5_u32plus a, b, c, d;
-	unsigned char buffer[64];
-	xcd_MD5_u32plus block[16];
+  xcd_MD5_u32plus lo, hi;
+  xcd_MD5_u32plus a, b, c, d;
+  unsigned char buffer[64];
+  xcd_MD5_u32plus block[16];
 } xcd_MD5_CTX;
 
-void xcd_MD5_Init(xcd_MD5_CTX *ctx);
-void xcd_MD5_Update(xcd_MD5_CTX *ctx, const void *data, unsigned long size);
-void xcd_MD5_Final(unsigned char *result, xcd_MD5_CTX *ctx);
+void xcd_MD5_Init(xcd_MD5_CTX* ctx);
+
+void xcd_MD5_Update(xcd_MD5_CTX* ctx, const void* data, unsigned long size);
+
+void xcd_MD5_Final(unsigned char* result, xcd_MD5_CTX* ctx);
 
 #endif

@@ -35,41 +35,50 @@ extern "C" {
 #endif
 
 typedef enum {
-    XCD_THREAD_STATUS_OK = 0,
-    XCD_THREAD_STATUS_UNKNOWN,
-    XCD_THREAD_STATUS_REGS,
-    XCD_THREAD_STATUS_ATTACH,
-    XCD_THREAD_STATUS_ATTACH_WAIT
+  XCD_THREAD_STATUS_OK = 0,
+  XCD_THREAD_STATUS_UNKNOWN,
+  XCD_THREAD_STATUS_REGS,
+  XCD_THREAD_STATUS_ATTACH,
+  XCD_THREAD_STATUS_ATTACH_WAIT
 } xcd_thread_status_t;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
 typedef struct xcd_thread {
-    xcd_thread_status_t status;
-    pid_t pid;
-    pid_t tid;
-    char* tname;
-    xcd_regs_t regs;
-    xcd_frames_t* frames;
+  xcd_thread_status_t status;
+  pid_t pid;
+  pid_t tid;
+  char* tname;
+  xcd_regs_t regs;
+  xcd_frames_t* frames;
 } xcd_thread_t;
 #pragma clang diagnostic pop
 
 void xcd_thread_init(xcd_thread_t* self, pid_t pid, pid_t tid);
 
 void xcd_thread_suspend(xcd_thread_t* self);
+
 void xcd_thread_resume(xcd_thread_t* self);
 
 void xcd_thread_load_info(xcd_thread_t* self);
-void xcd_thread_load_regs(xcd_thread_t* self);
-void xcd_thread_load_regs_from_ucontext(xcd_thread_t* self, ucontext_t* uc);
-int xcd_thread_load_frames(xcd_thread_t* self, xcd_maps_t *maps);
 
-int xcd_thread_record_info(xcd_thread_t *self, int log_fd, const char *pname);
-int xcd_thread_record_regs(xcd_thread_t *self, int log_fd);
-int xcd_thread_record_backtrace(xcd_thread_t *self, int log_fd);
-int xcd_thread_record_buildid(xcd_thread_t *self, int log_fd, int dump_elf_hash, uintptr_t fault_addr);
-int xcd_thread_record_stack(xcd_thread_t *self, int log_fd);
-int xcd_thread_record_memory(xcd_thread_t *self, int log_fd);
+void xcd_thread_load_regs(xcd_thread_t* self);
+
+void xcd_thread_load_regs_from_ucontext(xcd_thread_t* self, ucontext_t* uc);
+
+int xcd_thread_load_frames(xcd_thread_t* self, xcd_maps_t* maps);
+
+int xcd_thread_record_info(xcd_thread_t* self, int log_fd, const char* pname);
+
+int xcd_thread_record_regs(xcd_thread_t* self, int log_fd);
+
+int xcd_thread_record_backtrace(xcd_thread_t* self, int log_fd);
+
+int xcd_thread_record_buildid(xcd_thread_t* self, int log_fd, int dump_elf_hash, uintptr_t fault_addr);
+
+int xcd_thread_record_stack(xcd_thread_t* self, int log_fd);
+
+int xcd_thread_record_memory(xcd_thread_t* self, int log_fd);
 
 #ifdef __cplusplus
 }

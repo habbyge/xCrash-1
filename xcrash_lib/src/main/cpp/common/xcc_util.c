@@ -791,34 +791,34 @@ int xcc_util_record_network_info(int fd, pid_t pid, int api_level) {
   } else {
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " TCP over IPv4 (From: /proc/PID/net/tcp)\n", 1024))) {
+                                                   " TCP over IPv4 (From: /proc/PID/net/tcp)\n", 1024))) {
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp6", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " TCP over IPv6 (From: /proc/PID/net/tcp6)\n", 1024))) {
+                                                   " TCP over IPv6 (From: /proc/PID/net/tcp6)\n", 1024))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/udp", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " UDP over IPv4 (From: /proc/PID/net/udp)\n", 1024))) {
+                                                   " UDP over IPv4 (From: /proc/PID/net/udp)\n", 1024))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/udp6", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " UDP over IPv6 (From: /proc/PID/net/udp6)\n", 1024))) {
+                                                   " UDP over IPv6 (From: /proc/PID/net/udp6)\n", 1024))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/icmp", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " ICMP in IPv4 (From: /proc/PID/net/icmp)\n", 256))) {
+                                                   " ICMP in IPv4 (From: /proc/PID/net/icmp)\n", 256))) {
 
       return r;
     }
@@ -826,14 +826,14 @@ int xcc_util_record_network_info(int fd, pid_t pid, int api_level) {
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/icmp6", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n", 256))) {
+                                                   " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n", 256))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/unix", pid);
     if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-        " UNIX domain (From: /proc/PID/net/unix)\n", 256))) {
+                                                   " UNIX domain (From: /proc/PID/net/unix)\n", 256))) {
 
       return r;
     }

@@ -35,7 +35,7 @@ extern "C" {
 
 void xcc_unwind_init(int api_level);
 
-size_t xcc_unwind_get(int api_level, siginfo_t *si, ucontext_t *uc, char *buf, size_t buf_len);
+size_t xcc_unwind_get(int api_level, siginfo_t* si, ucontext_t* uc, char* buf, size_t buf_len);
 
 #ifdef __cplusplus
 }

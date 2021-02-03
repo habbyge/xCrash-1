@@ -33,8 +33,9 @@
 extern "C" {
 #endif
 
-size_t xcc_fmt_snprintf(char *buffer, size_t buffer_size, const char *format, ...);
-size_t xcc_fmt_vsnprintf(char *buffer, size_t buffer_size, const char *format, va_list args);
+size_t xcc_fmt_snprintf(char* buffer, size_t buffer_size, const char* format, ...);
+
+size_t xcc_fmt_vsnprintf(char* buffer, size_t buffer_size, const char* format, va_list args);
 
 #ifdef __cplusplus
 }
