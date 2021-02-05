@@ -87,7 +87,7 @@
  */
 // Linux中libunwind.so(Android中已经删除了个so)中的一个函数，用于获取so库(elf文件)中的一个函数地址，
 // dl_iterate_phdr可以查到当前进程所装载的所有符号，每查到一个就会调用你指定的回调函数.
-extern __attribute((weak)) int dl_iterate_phdr(int (*)(struct dl_phdr_info*, size_t, void*), void*);
+extern __attribute((weak)) int dl_iterate_phdr(int (*) (struct dl_phdr_info*, size_t, void*), void*);
 
 // Android 5.0/5.1 linker's global mutex in .symtab
 static pthread_mutex_t* xc_dl_iterate_linker_mutex = NULL;
@@ -120,8 +120,9 @@ static int xc_dl_iterate_open_or_rewind_maps(FILE** maps) {
   if (NULL == *maps) {
     *maps = fopen("/proc/self/maps", "r");
     if (NULL == *maps) return -1;
-  } else
+  } else {
     rewind(*maps);
+  }
 
   return 0;
 }

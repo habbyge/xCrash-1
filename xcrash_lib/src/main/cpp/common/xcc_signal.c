@@ -160,21 +160,21 @@ typedef struct {
  * 值，而且可以向另一个函数注入代码，修改eip，进入自己的逻辑。这个函数广泛用于调试和信号跟踪工具。
  */
 static xcc_signal_crash_info_t xcc_signal_crash_info[] = {
-    // 调用abort()/kill()/tkill()/tgkill()自杀，或被其他进程通过kill()/tkill()/tgkill()他杀
-    {.signum = SIGABRT},  // abort发出的信号(用户态进程发出的)
-    {.signum = SIGBUS},   // 非法内存访问，错误的物理设备地址访问(kernel发出的信号)
-    {.signum = SIGFPE},   // 浮点异常，除数为零(kernel发出的信号)
-    {.signum = SIGILL},   // 非法指令，无法识别的CPU指令(kernel发出的信号)
-    {.signum = SIGSEGV},  // 无效内存访问(段错误)，错误的虚拟内存地址访问(kernel发出的信号)
-    {.signum = SIGTRAP},  // 断点或陷阱指令
-    {.signum = SIGSYS},   // 系统调用异常，无法识别的系统调用(system call)(kernel发出的信号)
-    {.signum = SIGSTKFLT} // 栈溢出
+  // 调用abort()/kill()/tkill()/tgkill()自杀，或被其他进程通过kill()/tkill()/tgkill()他杀
+  {.signum = SIGABRT},  // abort发出的信号(用户态进程发出的)
+  {.signum = SIGBUS},   // 非法内存访问，错误的物理设备地址访问(kernel发出的信号)
+  {.signum = SIGFPE},   // 浮点异常，除数为零(kernel发出的信号)
+  {.signum = SIGILL},   // 非法指令，无法识别的CPU指令(kernel发出的信号)
+  {.signum = SIGSEGV},  // 无效内存访问(段错误)，错误的虚拟内存地址访问(kernel发出的信号)
+  {.signum = SIGTRAP},  // 断点或陷阱指令
+  {.signum = SIGSYS},   // 系统调用异常，无法识别的系统调用(system call)(kernel发出的信号)
+  {.signum = SIGSTKFLT} // 栈溢出
 };
 
 /**
  * 注册Crash信号字处理函数
  */
-int xcc_signal_crash_register(void (* handler)(int, siginfo_t*, void*)) {
+int xcc_signal_crash_register(void (*handler) (int, siginfo_t*, void*)) {
   stack_t ss;
 
   // 为SIGSEGV信号处理程序设置一个替代堆栈。当发生无效内存访问等段错误时，也能够处理SIGSEGV。
@@ -292,7 +292,7 @@ static struct sigaction xcc_signal_trace_oldact;
  * 高版本(api level >= 21)方案: app已经访问不到 /data/anr 了, xCrash是不是有提供了其他的实现方案呢？实际上
  * 它上捕获了 SIGQUIT 信号，这个是 Android App 发生 ANR 时由 ActivityMangerService 向 App 发送的信号.
  */
-int xcc_signal_trace_register(void (* handler)(int, siginfo_t*, void*)) {
+int xcc_signal_trace_register(void (*handler) (int, siginfo_t*, void*)) {
   int r;
   sigset_t set;
   struct sigaction act;

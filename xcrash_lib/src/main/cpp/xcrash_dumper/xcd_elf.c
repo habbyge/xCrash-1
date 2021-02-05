@@ -88,9 +88,7 @@ int xcd_elf_create(xcd_elf_t** self, pid_t pid, xcd_memory_t* memory) {
   (*self)->memory = memory;
 
   //create ELF interface, save load bias
-  if (0 != (r = xcd_elf_interface_create(&((*self)->interface),
-                                         pid, memory, &((*self)->load_bias)))) {
-
+  if (0 != (r = xcd_elf_interface_create(&((*self)->interface), pid, memory, &((*self)->load_bias)))) {
     free(*self);
     return r;
   }
@@ -134,12 +132,16 @@ int xcd_elf_step(xcd_elf_t* self, uintptr_t rel_pc, uintptr_t step_pc,
   }
 
   //try DWARF (.debug_frame and .eh_frame) in GNU interface
-  if (NULL != self->gnu_interface)
-    if (0 == xcd_elf_interface_dwarf_step(self->gnu_interface, step_pc, regs, finished)) return 0;
+  if (NULL != self->gnu_interface) {
+    if (0 == xcd_elf_interface_dwarf_step(self->gnu_interface, step_pc, regs, finished)) {
+      return 0;
+    }
+  }
 
   //try .ARM.exidx
 #ifdef __arm__
-  if(0 == xcd_elf_interface_arm_exidx_step(self->interface, step_pc, regs, finished)) return 0;
+  if (0 == xcd_elf_interface_arm_exidx_step(self->interface, step_pc, regs, finished))
+    return 0;
 #endif
 
 #if XCD_ELF_DEBUG
@@ -177,9 +179,7 @@ int xcd_elf_get_symbol_addr(xcd_elf_t* self, const char* name, uintptr_t* addr) 
   return xcd_elf_interface_get_symbol_addr(self->interface, name, addr);
 }
 
-int xcd_elf_get_build_id(xcd_elf_t* self, uint8_t* build_id,
-                         size_t build_id_len, size_t* build_id_len_ret) {
-
+int xcd_elf_get_build_id(xcd_elf_t* self, uint8_t* build_id, size_t build_id_len, size_t* build_id_len_ret) {
   return xcd_elf_interface_get_build_id(self->interface, build_id, build_id_len, build_id_len_ret);
 }
 
