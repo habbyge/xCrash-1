@@ -124,7 +124,7 @@ void xc_common_set_vm(JavaVM* vm, JNIEnv* env, jclass cls) {
   XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_common_cb_class, err);
   return;
 
-  err:
+err:
   xc_common_cb_class = NULL;
 }
 
@@ -152,7 +152,7 @@ int xc_common_init(int api_level,
   char* process_name;
 
 #define XC_COMMON_DUP_STR(v) do {                                       \
-        if (NULL == v || 0 == strlen(v))                                \
+        if (NULL == (v) || 0 == strlen(v))                              \
             xc_common_##v = "unknown";                                  \
         else {                                                          \
             if (NULL == (xc_common_##v = strdup(v))) {                  \
@@ -175,8 +175,9 @@ int xc_common_init(int api_level,
   xc_common_start_time = (uint64_t) (tv.tv_sec) * 1000 * 1000 + (uint64_t) tv.tv_usec;
 
   //save time zone
-  if (NULL == localtime_r((time_t*) (&(tv.tv_sec)), &tm))
+  if (NULL == localtime_r((time_t*) (&(tv.tv_sec)), &tm)) {
     return XCC_ERRNO_SYS;
+  }
   xc_common_time_zone = tm.tm_gmtoff;
 
   //save common info
@@ -220,7 +221,7 @@ int xc_common_init(int api_level,
 
   return 0;
 
-  err:
+err:
   XC_COMMON_FREE_STR(os_version);
   XC_COMMON_FREE_STR(abi_list);
   XC_COMMON_FREE_STR(manufacturer);
@@ -289,7 +290,7 @@ static int xc_common_open_log(int is_crash, uint64_t timestamp,
   close(fd);
   xc_common_open_prepared_fd(is_crash);
 
-  create_new_file:
+create_new_file:
   if (NULL != from_placeholder)
     *from_placeholder = 0;
 
@@ -360,7 +361,7 @@ int xc_common_seek_to_content_end(int fd) {
     }
   }
 
-  err:
+err:
   close(fd);
   return -1;
 }

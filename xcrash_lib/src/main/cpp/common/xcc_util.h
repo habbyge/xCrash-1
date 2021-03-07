@@ -45,21 +45,21 @@ extern "C" {
 #define XCC_UTIL_CRASH_TYPE_ANR    "anr"
 
 #if defined(__arm__)
-#define XCC_UTIL_ABI_STRING "arm"
+  #define XCC_UTIL_ABI_STRING "arm"
 #elif defined(__aarch64__)
-#define XCC_UTIL_ABI_STRING "arm64"
+  #define XCC_UTIL_ABI_STRING "arm64"
 #elif defined(__i386__)
-#define XCC_UTIL_ABI_STRING "x86"
+  #define XCC_UTIL_ABI_STRING "x86"
 #elif defined(__x86_64__)
-#define XCC_UTIL_ABI_STRING "x86_64"
+  #define XCC_UTIL_ABI_STRING "x86_64"
 #else
-#define XCC_UTIL_ABI_STRING "unknown"
+  #define XCC_UTIL_ABI_STRING "unknown"
 #endif
 
 #if defined(__LP64__)
-#define XCC_UTIL_FMT_ADDR "16"PRIxPTR
+  #define XCC_UTIL_FMT_ADDR "16"PRIxPTR
 #else
-#define XCC_UTIL_FMT_ADDR "8"PRIxPTR
+  #define XCC_UTIL_FMT_ADDR "8"PRIxPTR
 #endif
 
 #define XCC_UTIL_SYSCALL_GETDENTS SYS_getdents64
@@ -114,21 +114,21 @@ typedef struct {
         })
 
 #ifndef __LP64__
-#define XCC_UTIL_LIBC     "/system/lib/libc.so"
-#define XCC_UTIL_LIBC_Q   "/apex/com.android.runtime/lib/bionic/libc.so"
-#define XCC_UTIL_LIBCPP   "/system/lib/libc++.so"
-#define XCC_UTIL_LIBCPP_Q "/apex/com.android.runtime/lib/libc++.so"
-#define XCC_UTIL_LIBART   "/system/lib/libart.so"
-#define XCC_UTIL_LIBART_Q "/apex/com.android.runtime/lib/libart.so"
-#define XCC_UTIL_LIBART_R "/apex/com.android.art/lib/libart.so"
+  #define XCC_UTIL_LIBC     "/system/lib/libc.so"
+  #define XCC_UTIL_LIBC_Q   "/apex/com.android.runtime/lib/bionic/libc.so"
+  #define XCC_UTIL_LIBCPP   "/system/lib/libc++.so"
+  #define XCC_UTIL_LIBCPP_Q "/apex/com.android.runtime/lib/libc++.so"
+  #define XCC_UTIL_LIBART   "/system/lib/libart.so"
+  #define XCC_UTIL_LIBART_Q "/apex/com.android.runtime/lib/libart.so"
+  #define XCC_UTIL_LIBART_R "/apex/com.android.art/lib/libart.so"
 #else // 64bit
-#define XCC_UTIL_LIBC     "/system/lib64/libc.so"
-#define XCC_UTIL_LIBC_Q   "/apex/com.android.runtime/lib64/bionic/libc.so" // 新系统
-#define XCC_UTIL_LIBCPP   "/system/lib64/libc++.so" // 新系统
-#define XCC_UTIL_LIBCPP_Q "/apex/com.android.runtime/lib64/libc++.so"
-#define XCC_UTIL_LIBART   "/system/lib64/libart.so"
-#define XCC_UTIL_LIBART_Q "/apex/com.android.runtime/lib64/libart.so"
-#define XCC_UTIL_LIBART_R "/apex/com.android.art/lib64/libart.so"
+  #define XCC_UTIL_LIBC     "/system/lib64/libc.so"
+  #define XCC_UTIL_LIBC_Q   "/apex/com.android.runtime/lib64/bionic/libc.so" // 新系统
+  #define XCC_UTIL_LIBCPP   "/system/lib64/libc++.so" // 新系统
+  #define XCC_UTIL_LIBCPP_Q "/apex/com.android.runtime/lib64/libc++.so"
+  #define XCC_UTIL_LIBART   "/system/lib64/libart.so"
+  #define XCC_UTIL_LIBART_Q "/apex/com.android.runtime/lib64/libart.so"
+  #define XCC_UTIL_LIBART_R "/apex/com.android.art/lib64/libart.so"
 #endif
 
 #define XCC_UTIL_LIBC_ABORT_MSG_PTR      "__abort_message_ptr"

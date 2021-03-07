@@ -158,7 +158,7 @@ static size_t xcd_util_original_ptrace(pid_t pid, uintptr_t remote_addr,
 }
 
 size_t xcd_util_ptrace_read(pid_t pid, uintptr_t remote_addr, void* dst, size_t dst_len) {
-  static size_t (* ptrace_read)(pid_t, uintptr_t, void*, size_t) = NULL;
+  static size_t (*ptrace_read) (pid_t, uintptr_t, void*, size_t) = NULL;
 
   if (NULL != ptrace_read) {
     return ptrace_read(pid, remote_addr, dst, dst_len);
@@ -181,7 +181,6 @@ int xcd_util_ptrace_read_fully(pid_t pid, uintptr_t addr, void* dst, size_t byte
   size_t rc = xcd_util_ptrace_read(pid, addr, dst, bytes);
   return rc == bytes ? 0 : XCC_ERRNO_MISSING;
 }
-
 
 int xcd_util_ptrace_read_long(pid_t pid, uintptr_t addr, long* value) {
   // ptrace() returns -1 and sets errno when the operation fails.
