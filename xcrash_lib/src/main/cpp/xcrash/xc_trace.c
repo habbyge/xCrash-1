@@ -254,16 +254,11 @@ static int xc_trace_logs_clean(void) {
   char pathname[1024];
   int n, i, r = 0;
 
-  if (0 > (n = scandir(xc_common_log_dir, &entry_list,
-                       xc_trace_logs_filter,
-                       alphasort))) {
-
+  if (0 > (n = scandir(xc_common_log_dir, &entry_list, xc_trace_logs_filter, alphasort))) {
     return XCC_ERRNO_SYS;
   }
   for (i = 0; i < n; i++) {
-    snprintf(pathname, sizeof(pathname), "%s/%s",
-             xc_common_log_dir,
-             entry_list[i]->d_name);
+    snprintf(pathname, sizeof(pathname), "%s/%s", xc_common_log_dir, entry_list[i]->d_name);
 
     // unlink() C语言的库函数<unistd.h>，删除参数pathname指定的文件，如果该文件名为
     // 最后连接点, 但有其他进程打开了此文件, 则在所有关于此文件的文件描述词皆关闭后才会
@@ -301,8 +296,7 @@ static int xc_trace_write_header(int fd, uint64_t trace_time) {
     return r;
   }
 
-  return xcc_util_write_format(fd, "pid: %d  >>> %s <<<\n\n",
-                               xc_common_process_id, xc_common_process_name);
+  return xcc_util_write_format(fd, "pid: %d  >>> %s <<<\n\n", xc_common_process_id, xc_common_process_name);
 }
 
 /**
@@ -329,9 +323,9 @@ static void* xc_trace_dumper(void* arg) {
   // 上的线程调用AttachCurrentThread不会有任何影响。如果你的线程已经绑定到了JavaVM上，你还
   // 可以通过调用JavaVM::GetEnv获取JNIEnv，如果你的线程没有绑定，这个函数返回JNI_EDETACHED.
   JavaVMAttachArgs attach_args = {
-      .version = XC_JNI_VERSION,
-      .name    = "xcrash_trace_dp",
-      .group   = NULL
+    .version = XC_JNI_VERSION,
+    .name    = "xcrash_trace_dp",
+    .group   = NULL
   };
   if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
     goto exit;
@@ -368,8 +362,7 @@ static void* xc_trace_dumper(void* arg) {
     }
 
     // write trace info from ART runtime
-    if (0 != xcc_util_write_format(fd, XCC_UTIL_THREAD_SEP"Cmd line: %s\n",
-                                   xc_common_process_name))
+    if (0 != xcc_util_write_format(fd, XCC_UTIL_THREAD_SEP"Cmd line: %s\n", xc_common_process_name))
       goto end;
     if (0 != xcc_util_write_str(fd, "Mode: ART DumpForSigQuit\n")) {
       goto end;
@@ -425,8 +418,7 @@ static void* xc_trace_dumper(void* arg) {
       }
     }
     if (xc_trace_dump_network_info) { // dump网络信息
-      if (0 != xcc_util_record_network_info(fd, xc_common_process_id,
-                                            xc_common_api_level)) {
+      if (0 != xcc_util_record_network_info(fd, xc_common_process_id, xc_common_api_level)) {
         goto end;
       }
     }
@@ -450,9 +442,7 @@ static void* xc_trace_dumper(void* arg) {
     if (NULL == (j_pathname = (*env)->NewStringUTF(env, pathname)))
       continue;
 
-    (*env)->CallStaticVoidMethod(env, xc_common_cb_class,
-                                 xc_trace_cb_method,
-                                 j_pathname, NULL);
+    (*env)->CallStaticVoidMethod(env, xc_common_cb_class, xc_trace_cb_method, j_pathname, NULL);
 
     XC_JNI_IGNORE_PENDING_EXCEPTION();
     (*env)->DeleteLocalRef(env, j_pathname);
@@ -524,8 +514,7 @@ int xc_trace_init(JNIEnv* env,
   }
 
   //is Android Lollipop (5.x)?
-  xc_trace_is_lollipop = ((21 == xc_common_api_level
-                           || 22 == xc_common_api_level) ? 1 : 0);
+  xc_trace_is_lollipop = ((21 == xc_common_api_level || 22 == xc_common_api_level) ? 1 : 0);
 
   xc_trace_rethrow = rethrow;
   xc_trace_logcat_system_lines = logcat_system_lines;

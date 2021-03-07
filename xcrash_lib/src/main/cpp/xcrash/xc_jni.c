@@ -181,11 +181,8 @@ static jint xc_jni_init(JNIEnv* env,
         if (NULL != (c_crash_dump_all_threads_allowlist = calloc(len, sizeof(char*)))) {
           c_crash_dump_all_threads_allowlist_len = len;
           for (i = 0; i < len; i++) {
-            tmp_str = (jstring) ((*env)->GetObjectArrayElement(env,
-                                                               crash_dump_all_threads_allowlist, (jsize) i));
-
-            c_crash_dump_all_threads_allowlist[i] =
-                (tmp_str ? (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
+            tmp_str = (jstring) ((*env)->GetObjectArrayElement(env, crash_dump_all_threads_allowlist, (jsize) i));
+            c_crash_dump_all_threads_allowlist[i] = (tmp_str ? (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
           }
         }
       }
@@ -242,8 +239,7 @@ static jint xc_jni_init(JNIEnv* env,
 
   if (crash_dump_all_threads_allowlist && NULL != c_crash_dump_all_threads_allowlist) {
     for (i = 0; i < c_crash_dump_all_threads_allowlist_len; i++) {
-      tmp_str = (jstring) ((*env)->GetObjectArrayElement(env,
-                                                         crash_dump_all_threads_allowlist, (jsize) i));
+      tmp_str = (jstring) ((*env)->GetObjectArrayElement(env, crash_dump_all_threads_allowlist, (jsize) i));
 
       tmp_c_str = c_crash_dump_all_threads_allowlist[i];
       if (tmp_str && NULL != tmp_c_str) {
@@ -274,58 +270,58 @@ static void xc_jni_test_crash(JNIEnv* env, jobject thiz, jint run_in_new_thread)
 }
 
 static JNINativeMethod xc_jni_methods[] = {
-    {
-        "nativeInit",
-        "("
-        "I"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Ljava/lang/String;"
-        "Z"
-        "Z"
-        "I"
-        "I"
-        "I"
-        "Z"
-        "Z"
-        "Z"
-        "Z"
-        "Z"
-        "I"
-        "[Ljava/lang/String;"
-        "Z"
-        "Z"
-        "I"
-        "I"
-        "I"
-        "Z"
-        "Z"
-        ")"
-        "I",
-        (void*) xc_jni_init
-    },
-    {
-        "nativeNotifyJavaCrashed",
-        "("
-        ")"
-        "V",
-        (void*) xc_jni_notify_java_crashed
-    },
-    {
-        "nativeTestCrash",
-        "("
-        "I"
-        ")"
-        "V",
-        (void*) xc_jni_test_crash
-    }
+  {
+    "nativeInit",
+    "("
+    "I"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Ljava/lang/String;"
+    "Z"
+    "Z"
+    "I"
+    "I"
+    "I"
+    "Z"
+    "Z"
+    "Z"
+    "Z"
+    "Z"
+    "I"
+    "[Ljava/lang/String;"
+    "Z"
+    "Z"
+    "I"
+    "I"
+    "I"
+    "Z"
+    "Z"
+    ")"
+    "I",
+    (void*) xc_jni_init
+  },
+  {
+    "nativeNotifyJavaCrashed",
+    "("
+    ")"
+    "V",
+    (void*) xc_jni_notify_java_crashed
+  },
+  {
+    "nativeTestCrash",
+    "("
+    "I"
+    ")"
+    "V",
+    (void*) xc_jni_test_crash
+  }
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {

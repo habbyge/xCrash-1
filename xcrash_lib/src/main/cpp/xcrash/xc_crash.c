@@ -104,7 +104,7 @@ static char* xc_crash_dump_all_threads_allowlist = NULL;
 /**
  * fork一个新的进程
  */
-static int xc_crash_fork(int (* fn)(void*)) {
+static int xc_crash_fork(int (*fn) (void*)) {
 #ifndef __i386__
   return clone(fn, xc_crash_child_stack, CLONE_VFORK | CLONE_FS | CLONE_UNTRACED, NULL);
 #else
@@ -211,21 +211,43 @@ static int xc_crash_exec_dumper(void* arg) {
 
   //write args to pipe
   struct iovec iovs[12] = {
-      {.iov_base = &xc_crash_spot, .iov_len = sizeof(xcc_spot_t)},
-      {.iov_base = xc_crash_log_pathname, .iov_len = xc_crash_spot.log_pathname_len},
-      {.iov_base = xc_common_os_version, .iov_len = xc_crash_spot.os_version_len},
-      {.iov_base = xc_common_kernel_version, .iov_len = xc_crash_spot.kernel_version_len},
-      {.iov_base = xc_common_abi_list, .iov_len = xc_crash_spot.abi_list_len},
-      {.iov_base = xc_common_manufacturer, .iov_len = xc_crash_spot.manufacturer_len},
-      {.iov_base = xc_common_brand, .iov_len = xc_crash_spot.brand_len},
-      {.iov_base = xc_common_model, .iov_len = xc_crash_spot.model_len},
-      {.iov_base = xc_common_build_fingerprint, .iov_len = xc_crash_spot.build_fingerprint_len},
-      {.iov_base = xc_common_app_id, .iov_len = xc_crash_spot.app_id_len},
-      {.iov_base = xc_common_app_version, .iov_len = xc_crash_spot.app_version_len},
-      {
-          .iov_base = xc_crash_dump_all_threads_allowlist,
-          .iov_len = xc_crash_spot.dump_all_threads_allowlist_len
-      }
+    {
+      .iov_base = &xc_crash_spot, .iov_len = sizeof(xcc_spot_t)
+    },
+    {
+      .iov_base = xc_crash_log_pathname, .iov_len = xc_crash_spot.log_pathname_len
+    },
+    {
+      .iov_base = xc_common_os_version, .iov_len = xc_crash_spot.os_version_len
+    },
+    {
+      .iov_base = xc_common_kernel_version, .iov_len = xc_crash_spot.kernel_version_len
+    },
+    {
+      .iov_base = xc_common_abi_list, .iov_len = xc_crash_spot.abi_list_len
+    },
+    {
+      .iov_base = xc_common_manufacturer, .iov_len = xc_crash_spot.manufacturer_len
+    },
+    {
+      .iov_base = xc_common_brand, .iov_len = xc_crash_spot.brand_len
+    },
+    {
+      .iov_base = xc_common_model, .iov_len = xc_crash_spot.model_len
+    },
+    {
+      .iov_base = xc_common_build_fingerprint, .iov_len = xc_crash_spot.build_fingerprint_len
+    },
+    {
+      .iov_base = xc_common_app_id, .iov_len = xc_crash_spot.app_id_len
+    },
+    {
+      .iov_base = xc_common_app_version, .iov_len = xc_crash_spot.app_version_len
+    },
+    {
+      .iov_base = xc_crash_dump_all_threads_allowlist,
+      .iov_len = xc_crash_spot.dump_all_threads_allowlist_len
+    }
   };
 
   int iovs_cnt = (0 == xc_crash_spot.dump_all_threads_allowlist_len ? 11 : 12);

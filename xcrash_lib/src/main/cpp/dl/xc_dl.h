@@ -44,13 +44,8 @@
 typedef struct xc_dl xc_dl_t;
 
 xc_dl_t* xc_dl_open(const char* pathname, int flags);
-
 void xc_dl_close(xc_dl_t** self);
-
 void* xc_dl_dynsym_func(xc_dl_t* self, const char* sym_name);
-
 void* xc_dl_dynsym_object(xc_dl_t* self, const char* sym_name);
-
 void* xc_dl_symtab_func(xc_dl_t* self, const char* sym_name);
-
 void* xc_dl_symtab_object(xc_dl_t* self, const char* sym_name);
