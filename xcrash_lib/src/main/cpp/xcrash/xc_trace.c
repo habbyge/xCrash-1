@@ -188,8 +188,10 @@ static int xc_trace_load_symbols() { // TODO: ing......
     libart = xc_dl_open(XCC_UTIL_LIBART_Q, XC_DL_DYNSYM);
   if (NULL == libart && NULL == (libart = xc_dl_open(XCC_UTIL_LIBART, XC_DL_DYNSYM)))
     goto end;
-  if (NULL == (xc_trace_libart_runtime_instance = (void**)
-      xc_dl_dynsym_object(libart, XCC_UTIL_LIBART_RUNTIME_INSTANCE))) {
+
+  if (NULL == (xc_trace_libart_runtime_instance = (void**) xc_dl_dynsym_object(
+      libart, XCC_UTIL_LIBART_RUNTIME_INSTANCE))) {
+
     goto end;
   }
 
@@ -392,8 +394,7 @@ static void* xc_trace_dumper(void* arg) {
     // _ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
     // 也就是调用 dump 将对 SIGQUIT 的处理输出到cerr中。这里有一个细节，就是在dump节，其通过
     // dup2()函数将标准的错误输出重定向到了自己的fd中
-    xc_trace_libart_runtime_dump(*xc_trace_libart_runtime_instance,
-                                 xc_trace_libcpp_cerr);
+    xc_trace_libart_runtime_dump(*xc_trace_libart_runtime_instance, xc_trace_libcpp_cerr);
 
     if (xc_trace_is_lollipop) { // 这个版本的Android系统，则resume
       xc_trace_libart_dbg_resume();
