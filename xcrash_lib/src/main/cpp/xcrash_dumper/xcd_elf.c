@@ -123,7 +123,9 @@ int xcd_elf_step(xcd_elf_t* self, uintptr_t rel_pc, uintptr_t step_pc,
   }
 
   //try DWARF (.debug_frame and .eh_frame)
-  if (0 == xcd_elf_interface_dwarf_step(self->interface, step_pc, regs, finished)) return 0;
+  if (0 == xcd_elf_interface_dwarf_step(self->interface, step_pc, regs, finished)) {
+    return 0;
+  }
 
   //create GNU interface (only once)
   if (NULL == self->gnu_interface && 0 == self->gnu_interface_created) {
@@ -154,8 +156,9 @@ int xcd_elf_get_function_info(xcd_elf_t* self, uintptr_t addr, char** name, size
   int r;
 
   //try ELF interface
-  if (0 == (r = xcd_elf_interface_get_function_info(self->interface, addr, name, name_offset)))
+  if (0 == (r = xcd_elf_interface_get_function_info(self->interface, addr, name, name_offset))) {
     return 0;
+  }
 
   //create GNU interface (only once)
   if (NULL == self->gnu_interface && 0 == self->gnu_interface_created) {
@@ -165,9 +168,7 @@ int xcd_elf_get_function_info(xcd_elf_t* self, uintptr_t addr, char** name, size
 
   //try GNU interface
   if (NULL != self->gnu_interface) {
-    if (0 == (r = xcd_elf_interface_get_function_info(
-        self->gnu_interface, addr, name, name_offset))) {
-
+    if (0 == (r = xcd_elf_interface_get_function_info(self->gnu_interface, addr, name, name_offset))) {
       return 0;
     }
   }
@@ -186,3 +187,4 @@ int xcd_elf_get_build_id(xcd_elf_t* self, uint8_t* build_id, size_t build_id_len
 char* xcd_elf_get_so_name(xcd_elf_t* self) {
   return xcd_elf_interface_get_so_name(self->interface);
 }
+
