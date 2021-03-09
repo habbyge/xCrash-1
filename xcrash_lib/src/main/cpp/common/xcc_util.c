@@ -442,8 +442,9 @@ void xcc_util_get_process_name(pid_t pid, char* buf, size_t len) {
 
   xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
 
-  if (0 != xcc_util_get_process_thread_name(path, buf, len))
+  if (0 != xcc_util_get_process_thread_name(path, buf, len)) {
     strncpy(buf, "unknown", len);
+  }
 }
 
 void xcc_util_get_thread_name(pid_t tid, char* buf, size_t len) {

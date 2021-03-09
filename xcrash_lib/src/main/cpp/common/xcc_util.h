@@ -136,6 +136,33 @@ typedef struct {
 #define XCC_UTIL_LIBCPP_CERR             "_ZNSt3__14cerrE"
 #define XCC_UTIL_LIBART_RUNTIME_INSTANCE "_ZN3art7Runtime9instance_E"
 
+// art/runtime/runtime.cc 中的 DumpForSigQuit() 函数:
+// void Runtime::DumpForSigQuit(std::ostream& os) {
+//   GetClassLinker()->DumpForSigQuit(os);
+//   GetInternTable()->DumpForSigQuit(os);
+//   GetJavaVM()->DumpForSigQuit(os);
+//   GetHeap()->DumpForSigQuit(os);
+//   oat_file_manager_->DumpForSigQuit(os);
+//   if (GetJit() != nullptr) {
+//     GetJit()->DumpForSigQuit(os);
+//   } else {
+//     os << "Running non JIT\n";
+//   }
+//   DumpDeoptimizations(os);
+//   TrackedAllocators::Dump(os);
+//   GetMetrics()->DumpForSigQuit(os);
+//   os << "\n";
+//
+//   thread_list_->DumpForSigQuit(os);
+//   BaseMutex::DumpAll(os);
+//
+//   // Inform anyone else who is interested in SigQuit.
+//   {
+//     ScopedObjectAccess soa(Thread::Current());
+//     callbacks_->SigQuit();
+//   }
+// }
+// 可以看到这里起始是吧Art虚拟机中的运行时系统的Runtime对象中保存的数据全部写入到os中，这里传入的是cerr对象
 #define XCC_UTIL_LIBART_RUNTIME_DUMP \
         "_ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE"
 
@@ -150,53 +177,32 @@ typedef struct {
 #define XCC_UTIL_LIBART_DBG_SUSPEND      "_ZN3art3Dbg9SuspendVMEv"
 #define XCC_UTIL_LIBART_DBG_RESUME       "_ZN3art3Dbg8ResumeVMEv"
 
-typedef void  (* xcc_util_libc_set_abort_message_t)(const char* msg);
+typedef void  (*xcc_util_libc_set_abort_message_t)(const char* msg);
+typedef void  (*xcc_util_libart_runtime_dump_t)(void* runtime, void* ostream);
+typedef void* (*xcc_util_libart_thread_current_t)(void);
+typedef void  (*xcc_util_libart_thread_dump_t)(void* thread, void* ostream);
 
-typedef void  (* xcc_util_libart_runtime_dump_t)(void* runtime, void* ostream);
+typedef void  (*xcc_util_libart_thread_dump2_t)(void* thread, void* ostream,
+                                                int check_suspended, int dump_locks);
 
-typedef void* (* xcc_util_libart_thread_current_t)(void);
-
-typedef void  (* xcc_util_libart_thread_dump_t)(void* thread, void* ostream);
-
-typedef void  (* xcc_util_libart_thread_dump2_t)(void* thread,
-                                                 void* ostream,
-                                                 int check_suspended,
-                                                 int dump_locks);
-
-typedef void  (* xcc_util_libart_dbg_suspend_t)();
-
-typedef void  (* xcc_util_libart_dbg_resume_t)();
+typedef void  (*xcc_util_libart_dbg_suspend_t)(void);
+typedef void  (*xcc_util_libart_dbg_resume_t)(void);
 
 const char* xcc_util_get_signame(const siginfo_t* si);
-
 const char* xcc_util_get_sigcodename(const siginfo_t* si);
-
 int xcc_util_signal_has_si_addr(const siginfo_t* si);
-
 int xcc_util_signal_has_sender(const siginfo_t* si, pid_t caller_pid);
-
 char* xcc_util_trim(char* start);
-
 int xcc_util_atoi(const char* str, int* i);
-
 int xcc_util_write(int fd, const char* buf, size_t len);
-
 int xcc_util_write_str(int fd, const char* str);
-
 int xcc_util_write_format(int fd, const char* format, ...);
-
 int xcc_util_write_format_safe(int fd, const char* format, ...);
-
 char* xcc_util_gets(char* s, size_t size, int fd);
-
 int xcc_util_read_file_line(const char* path, char* buf, size_t len);
-
 void xcc_util_get_process_name(pid_t pid, char* buf, size_t len);
-
 void xcc_util_get_thread_name(pid_t tid, char* buf, size_t len);
-
-int xcc_util_record_sub_section_from(int log_fd, const char* path,
-                                     const char* title, size_t limit);
+int xcc_util_record_sub_section_from(int log_fd, const char* path, const char* title, size_t limit);
 
 int xcc_util_is_root(void);
 
