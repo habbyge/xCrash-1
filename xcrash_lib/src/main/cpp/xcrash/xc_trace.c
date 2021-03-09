@@ -61,9 +61,9 @@ static pid_t xc_trace_signal_catcher_tid = XC_TRACE_SIGNAL_CATCHER_TID_UNLOAD;
 
 // symbol address in libc++.so and libart.so
 // libc++.so中_ZNSt3__14cerr符号地址
-static void* xc_trace_libcpp_cerr = NULL; // c++的err函数地址
+static void* xc_trace_libcpp_cerr = NULL; // c++的err对象地址，这里保存的是Runtime处理信号退出时的上下文
 // libart.so中_ZN3art7Runtime9instance_E符号地址
-static void** xc_trace_libart_runtime_instance = NULL;
+static void** xc_trace_libart_runtime_instance = NULL; // 存储的是Runtime地址
 // art虚拟机中与err有关的符号地址
 static xcc_util_libart_runtime_dump_t xc_trace_libart_runtime_dump = NULL;
 static xcc_util_libart_dbg_suspend_t xc_trace_libart_dbg_suspend = NULL;
@@ -173,9 +173,7 @@ static int xc_trace_load_symbols() {
     goto end;
   }
   // 计算 so 中相应符号(函数)的虚拟地址
-  if (NULL == (xc_trace_libcpp_cerr = xc_dl_dynsym_object(
-      libcpp, XCC_UTIL_LIBCPP_CERR))) {
-
+  if (NULL == (xc_trace_libcpp_cerr = xc_dl_dynsym_object(libcpp, XCC_UTIL_LIBCPP_CERR))) {
     goto end;
   }
 
@@ -184,10 +182,12 @@ static int xc_trace_load_symbols() {
     libart = xc_dl_open(XCC_UTIL_LIBART_R, XC_DL_DYNSYM);
   }
 
-  if (NULL == libart && xc_common_api_level >= 29)
+  if (NULL == libart && xc_common_api_level >= 29) {
     libart = xc_dl_open(XCC_UTIL_LIBART_Q, XC_DL_DYNSYM);
-  if (NULL == libart && NULL == (libart = xc_dl_open(XCC_UTIL_LIBART, XC_DL_DYNSYM)))
+  }
+  if (NULL == libart && NULL == (libart = xc_dl_open(XCC_UTIL_LIBART, XC_DL_DYNSYM))) {
     goto end;
+  }
 
   if (NULL == (xc_trace_libart_runtime_instance = (void**) xc_dl_dynsym_object(
       libart, XCC_UTIL_LIBART_RUNTIME_INSTANCE))) {
@@ -195,19 +195,22 @@ static int xc_trace_load_symbols() {
     goto end;
   }
 
-  if (NULL == (xc_trace_libart_runtime_dump = (xcc_util_libart_runtime_dump_t)
-      xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_RUNTIME_DUMP))) {
+  if (NULL == (xc_trace_libart_runtime_dump = (xcc_util_libart_runtime_dump_t) xc_dl_dynsym_func(
+      libart, XCC_UTIL_LIBART_RUNTIME_DUMP))) {
+
     goto end;
   }
 
   if (xc_trace_is_lollipop) {
-    if (NULL == (xc_trace_libart_dbg_suspend = (xcc_util_libart_dbg_suspend_t)
-        xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_SUSPEND))) {
+    if (NULL == (xc_trace_libart_dbg_suspend = (xcc_util_libart_dbg_suspend_t) xc_dl_dynsym_func(
+        libart, XCC_UTIL_LIBART_DBG_SUSPEND))) {
+
       goto end;
     }
 
-    if (NULL == (xc_trace_libart_dbg_resume = (xcc_util_libart_dbg_resume_t)
-        xc_dl_dynsym_func(libart, XCC_UTIL_LIBART_DBG_RESUME))) {
+    if (NULL == (xc_trace_libart_dbg_resume = (xcc_util_libart_dbg_resume_t) xc_dl_dynsym_func(
+        libart, XCC_UTIL_LIBART_DBG_RESUME))) {
+
       goto end;
     }
   }
