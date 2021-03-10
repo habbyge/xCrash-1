@@ -162,7 +162,9 @@ typedef struct {
 //     callbacks_->SigQuit();
 //   }
 // }
-// 可以看到这里起始是吧Art虚拟机中的运行时系统的Runtime对象中保存的数据全部写入到os中，这里传入的是cerr对象
+// 这里是 art/runtime/runtime.h void DumpForSigQuit(std::ostream& os)
+// 可以看到这里其实是把Art中的运行时系统的Runtime对象中在信号SigQuit发生时，runtime退出前，
+// 保存Runtime中的数据到os中，这里传入的是cerr对象
 #define XCC_UTIL_LIBART_RUNTIME_DUMP \
         "_ZN3art7Runtime14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE"
 
