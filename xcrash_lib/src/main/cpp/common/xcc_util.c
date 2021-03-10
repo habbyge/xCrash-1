@@ -456,9 +456,7 @@ void xcc_util_get_thread_name(pid_t tid, char* buf, size_t len) {
     strncpy(buf, "unknown", len);
 }
 
-int xcc_util_record_sub_section_from(int fd, const char* path,
-                                     const char* title, size_t limit) {
-
+int xcc_util_record_sub_section_from(int fd, const char* path, const char* title, size_t limit) {
   FILE* fp = NULL;
   char line[512];
   char* p;
@@ -629,18 +627,19 @@ static int xcc_util_record_logcat_buffer(int fd, pid_t pid, int api_level,
                    "/system/bin/logcat -b %s -d -v threadtime -t %u %s*:%c",
                    buffer, lines, pid_filter, priority);
 
-  if (0 != (r = xcc_util_write_format_safe(fd,
-                                           "--------- tail end of log %s (%s)\n",
-                                           buffer, cmd))) {
+  if (0 != (r = xcc_util_write_format_safe(fd, "--------- tail end of log %s (%s)\n", buffer, cmd))) {
     return r;
   }
 
   if (NULL != (fp = popen(cmd, "r"))) {
     buf[sizeof(buf) - 1] = '\0';
-    while (NULL != fgets(buf, sizeof(buf) - 1, fp))
-      if (with_pid || NULL != strstr(buf, pid_label))
-        if (0 != (r = xcc_util_write_str(fd, buf)))
+    while (NULL != fgets(buf, sizeof(buf) - 1, fp)) {
+      if (with_pid || NULL != strstr(buf, pid_label)) {
+        if (0 != (r = xcc_util_write_str(fd, buf))) {
           break;
+        }
+      }
+    }
     pclose(fp);
   }
 
@@ -664,22 +663,19 @@ int xcc_util_record_logcat(int fd,
   }
 
   if (logcat_main_lines > 0) {
-    if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "main",
-                                                logcat_main_lines, 'D'))) {
+    if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "main", logcat_main_lines, 'D'))) {
       return r;
     }
   }
 
   if (logcat_system_lines > 0) {
-    if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "system",
-                                                logcat_system_lines, 'W'))) {
+    if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "system", logcat_system_lines, 'W'))) {
       return r;
     }
   }
 
   if (logcat_events_lines > 0) {
-    if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "events",
-                                                logcat_events_lines, 'I'))) {
+    if (0 != (r = xcc_util_record_logcat_buffer(fd, pid, api_level, "events", logcat_events_lines, 'I'))) {
       return r;
     }
   }
@@ -747,8 +743,7 @@ int xcc_util_record_fds(int fd, pid_t pid) {
       }
 
       // dump
-      if (0 != (r = xcc_util_write_format_safe(
-          fd, "    fd %d: %s\n", fd_num, fd_path))) {
+      if (0 != (r = xcc_util_write_format_safe(fd, "    fd %d: %s\n", fd_num, fd_path))) {
         goto clean;
       }
 
@@ -764,8 +759,7 @@ int xcc_util_record_fds(int fd, pid_t pid) {
     }
   }
 
-  if (0 != (r = xcc_util_write_format_safe(
-      fd, "    (number of FDs: %zu)\n", total))) {
+  if (0 != (r = xcc_util_write_format_safe(fd, "    (number of FDs: %zu)\n", total))) {
     goto clean;
   }
   r = xcc_util_write_str(fd, "\n");
@@ -791,56 +785,59 @@ int xcc_util_record_network_info(int fd, pid_t pid, int api_level) {
     }
   } else {
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " TCP over IPv4 (From: /proc/PID/net/tcp)\n", 1024))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " TCP over IPv4 (From: /proc/PID/net/tcp)\n", 1024))) {
+
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/tcp6", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " TCP over IPv6 (From: /proc/PID/net/tcp6)\n", 1024))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " TCP over IPv6 (From: /proc/PID/net/tcp6)\n", 1024))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/udp", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " UDP over IPv4 (From: /proc/PID/net/udp)\n", 1024))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " UDP over IPv4 (From: /proc/PID/net/udp)\n", 1024))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/udp6", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " UDP over IPv6 (From: /proc/PID/net/udp6)\n", 1024))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " UDP over IPv6 (From: /proc/PID/net/udp6)\n", 1024))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/icmp", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " ICMP in IPv4 (From: /proc/PID/net/icmp)\n", 256))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " ICMP in IPv4 (From: /proc/PID/net/icmp)\n", 256))) {
 
       return r;
     }
 
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/icmp6", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n", 256))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " ICMP in IPv6 (From: /proc/PID/net/icmp6)\n", 256))) {
 
       return r;
     }
 
     xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/net/unix", pid);
-    if (0 != (r = xcc_util_record_sub_section_from(fd, path,
-                                                   " UNIX domain (From: /proc/PID/net/unix)\n", 256))) {
+    if (0 != (r = xcc_util_record_sub_section_from(
+        fd, path, " UNIX domain (From: /proc/PID/net/unix)\n", 256))) {
 
       return r;
     }
   }
 
-  if (0 != (r = xcc_util_write_str(fd, "\n"))) return r;
+  if (0 != (r = xcc_util_write_str(fd, "\n"))) {
+    return r;
+  }
   return 0;
 }
 

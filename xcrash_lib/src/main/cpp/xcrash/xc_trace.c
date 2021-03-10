@@ -482,7 +482,9 @@ static void xc_trace_handler(int sig, siginfo_t* si, void* uc) {
  * 获取 Java 的 methodId
  */
 static void xc_trace_init_callback(JNIEnv* env) {
-  if (NULL == xc_common_cb_class) return;
+  if (NULL == xc_common_cb_class) {
+    return;
+  }
 
   // 获取Java中的callback函数id
   xc_trace_cb_method = (*env)->GetStaticMethodID(env, xc_common_cb_class,
@@ -492,7 +494,7 @@ static void xc_trace_init_callback(JNIEnv* env) {
   XC_JNI_CHECK_NULL_AND_PENDING_EXCEPTION(xc_trace_cb_method, err);
   return;
 
-  err:
+err:
   xc_trace_cb_method = NULL;
 }
 
