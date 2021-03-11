@@ -331,7 +331,10 @@ static void xc_xcrash_record_java_stacktrace() {
       libart, XCC_UTIL_LIBART_THREAD_DUMP))) {
 #ifndef __i386__
     if(NULL == (dump2 = (xcc_util_libart_thread_dump2_t)xc_dl_dynsym_func(
-            libart, XCC_UTIL_LIBART_THREAD_DUMP2))) goto end;
+            libart, XCC_UTIL_LIBART_THREAD_DUMP2))) {
+
+      goto end;
+    }
 #else
     goto end;
 #endif
@@ -375,9 +378,9 @@ static void* xc_crash_callback_thread(void* arg) {
   (void) arg;
 
   JavaVMAttachArgs attach_args = {
-      .version = XC_JNI_VERSION,
-      .name    = "xcrash_crash_cb",
-      .group   = NULL
+    .version = XC_JNI_VERSION,
+    .name    = "xcrash_crash_cb",
+    .group   = NULL
   };
   if (JNI_OK != (*xc_common_vm)->AttachCurrentThread(xc_common_vm, &env, &attach_args)) {
     return NULL;
@@ -513,7 +516,8 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
 
   // create and open log file TODO: 如何打开一个crash日志文件，并生成fd的？？
   if ((xc_crash_log_fd = xc_common_open_crash_log(xc_crash_log_pathname,
-                                                  sizeof(xc_crash_log_pathname), &xc_crash_log_from_placeholder)) < 0) {
+                                                  sizeof(xc_crash_log_pathname),
+                                                  &xc_crash_log_from_placeholder)) < 0) {
     goto end;
   }
 
@@ -627,10 +631,11 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
     if (WIFEXITED(status) && 0 != WEXITSTATUS(status)) {
       // terminated normally, but return / exit / _exit NON-zero
 
-      xcc_util_write_format_safe(xc_crash_log_fd,
-                                 XC_CRASH_ERR_TITLE"child terminated normally with non-zero exit status(%d), "
-                                 "dumper=%s\n\n", WEXITSTATUS(status),
-                                 xc_crash_dumper_pathname);
+      xcc_util_write_format_safe(
+          xc_crash_log_fd,
+          XC_CRASH_ERR_TITLE"child terminated normally with non-zero exit status(%d), "
+                            "dumper=%s\n\n", WEXITSTATUS(status),
+                            xc_crash_dumper_pathname);
 
       goto end;
     } else if (WIFSIGNALED(status)) {
@@ -641,9 +646,10 @@ static void xc_crash_signal_handler(int sig, siginfo_t* si, void* uc) {
 
       goto end;
     } else {
-      xcc_util_write_format_safe(xc_crash_log_fd,
-                                 XC_CRASH_ERR_TITLE"child terminated with other error status(%d), dumper=%s\n\n",
-                                 status, xc_crash_dumper_pathname);
+      xcc_util_write_format_safe(
+          xc_crash_log_fd,
+          XC_CRASH_ERR_TITLE"child terminated with other error status(%d), dumper=%s\n\n",
+          status, xc_crash_dumper_pathname);
 
       goto end;
     }
@@ -887,8 +893,7 @@ int xc_crash_init(JNIEnv* env,
 #ifndef __i386__
   if (NULL == (xc_crash_child_stack = calloc(XC_CRASH_CHILD_STACK_LEN, 1)))
       return XCC_ERRNO_NOMEM;
-  xc_crash_child_stack = (void*) (((uint8_t*)
-          xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
+  xc_crash_child_stack = (void*) (((uint8_t*) xc_crash_child_stack) + XC_CRASH_CHILD_STACK_LEN);
 #else
   // 每个进程各自有不同的用户地址空间，任何一个进程的全局变量在另一个进程中都看不到，所以进程之间
   // 要交换数据必须通过内核，在内核中开辟一块缓冲区，进程A把数据从用户空间拷到内核缓冲区，进程B再

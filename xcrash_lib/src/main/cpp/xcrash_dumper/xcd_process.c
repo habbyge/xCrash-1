@@ -132,10 +132,7 @@ static int process_load_all_threads(pid_t pid) {
   return 0;
 }
 
-int xcd_process_create(xcd_process_t** self, pid_t pid,
-                       pid_t crash_tid, siginfo_t* si,
-                       ucontext_t* uc) {
-
+int xcd_process_create(xcd_process_t** self, pid_t pid, pid_t crash_tid, siginfo_t* si, ucontext_t* uc) {
   int r;
   xcd_thread_info_t* thd;
 
@@ -277,8 +274,10 @@ static int xcd_process_get_abort_message_29(xcd_process_t* self, char* buf, size
   size -= (sizeof(uint64_t) * 2 + sizeof(size_t) + 1);
 
   //get p->msg
-  if (size > buf_len) size = buf_len;
-  if (0 != (r = xcd_util_ptrace_read_fully(self->pid, p + sizeof(size_t), buf, size))) return r;
+  if (size > buf_len)
+    size = buf_len;
+  if (0 != (r = xcd_util_ptrace_read_fully(self->pid, p + sizeof(size_t), buf, size)))
+    return r;
 
   return 0;
 }
@@ -445,7 +444,8 @@ int xcd_process_record(xcd_process_t* self,
       if (0 != (r = xcd_process_record_abort_message(self, log_fd, api_level))) return r;
       if (0 != (r = xcd_thread_record_regs(&(thd->t), log_fd))) return r;
       if (0 == xcd_thread_load_frames(&(thd->t), self->maps)) {
-        if (0 != (r = xcd_thread_record_backtrace(&(thd->t), log_fd))) return r;
+        if (0 != (r = xcd_thread_record_backtrace(&(thd->t), log_fd)))
+          return r;
 
         if (0 != (r = xcd_thread_record_buildid(&(thd->t), log_fd,
                                                 dump_elf_hash,
@@ -454,10 +454,16 @@ int xcd_process_record(xcd_process_t* self,
           return r;
         }
 
-        if (0 != (r = xcd_thread_record_stack(&(thd->t), log_fd))) return r;
-        if (0 != (r = xcd_thread_record_memory(&(thd->t), log_fd))) return r;
+        if (0 != (r = xcd_thread_record_stack(&(thd->t), log_fd)))
+          return r;
+        if (0 != (r = xcd_thread_record_memory(&(thd->t), log_fd)))
+          return r;
       }
-      if (dump_map) if (0 != (r = xcd_maps_record(self->maps, log_fd))) return r;
+      if (dump_map) {
+        if (0 != (r = xcd_maps_record(self->maps, log_fd))) {
+          return r;
+        }
+      }
 
       if (0 != (r = xcc_util_record_logcat(log_fd,
                                            self->pid,
@@ -468,18 +474,26 @@ int xcd_process_record(xcd_process_t* self,
         return r;
       }
 
-      if (dump_fds) if (0 != (r = xcc_util_record_fds(log_fd, self->pid))) return r;
-
-      if (dump_network_info)
-        if (0 != (r = xcc_util_record_network_info(log_fd, self->pid, api_level)))
+      if (dump_fds) {
+        if (0 != (r = xcc_util_record_fds(log_fd, self->pid))) {
           return r;
+        }
+      }
 
-      if (0 != (r = xcc_meminfo_record(log_fd, self->pid))) return r;
+      if (dump_network_info) {
+        if (0 != (r = xcc_util_record_network_info(log_fd, self->pid, api_level))) {
+          return r;
+        }
+      }
+
+      if (0 != (r = xcc_meminfo_record(log_fd, self->pid)))
+        return r;
 
       break;
     }
   }
-  if (!dump_all_threads) return 0;
+  if (!dump_all_threads)
+    return 0;
 
   //parse thread name allowlist regex
   re = xcd_process_build_allowlist_regex(dump_all_threads_allowlist, &re_cnt);
@@ -514,20 +528,24 @@ int xcd_process_record(xcd_process_t* self,
 
   end:
   if (self->nthds > 1) {
-    if (0 == thd_dumped)
-      if (0 != (r = xcc_util_write_str(log_fd, XCC_UTIL_THREAD_SEP)))
+    if (0 == thd_dumped) {
+      if (0 != (r = xcc_util_write_str(log_fd, XCC_UTIL_THREAD_SEP))) {
         goto ret;
+      }
+    }
 
     if (0 != (r = xcc_util_write_format(log_fd,
                                         "total threads (exclude the crashed thread): %zu\n",
-                                        self->nthds - 1)))
-      goto ret;
+                                        self->nthds - 1))) {
 
-    if (NULL != re && re_cnt > 0)
-      if (0 != (r = xcc_util_write_format(log_fd,
-                                          "threads matched allowlist: %d\n",
-                                          thd_matched_regex)))
+      goto ret;
+    }
+
+    if (NULL != re && re_cnt > 0) {
+      if (0 != (r = xcc_util_write_format(log_fd, "threads matched allowlist: %d\n", thd_matched_regex))) {
         goto ret;
+      }
+    }
 
     if (dump_all_threads_count_max > 0)
       if (0 != (r = xcc_util_write_format(log_fd,

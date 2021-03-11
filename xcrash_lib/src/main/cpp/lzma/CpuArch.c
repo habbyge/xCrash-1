@@ -123,19 +123,17 @@ Bool x86cpuid_CheckAndRead(Cx86cpuid* p) {
 }
 
 static const UInt32 kVendors[][3] =
-    {
-        {0x756E6547, 0x49656E69, 0x6C65746E},
-        {0x68747541, 0x69746E65, 0x444D4163},
-        {0x746E6543, 0x48727561, 0x736C7561}
-    };
+  {
+    {0x756E6547, 0x49656E69, 0x6C65746E},
+    {0x68747541, 0x69746E65, 0x444D4163},
+    {0x746E6543, 0x48727561, 0x736C7561}
+  };
 
 int x86cpuid_GetFirm(const Cx86cpuid* p) {
   unsigned i;
   for (i = 0; i < sizeof(kVendors) / sizeof(kVendors[i]); i++) {
     const UInt32* v = kVendors[i];
-    if (v[0] == p->vendor[0] &&
-        v[1] == p->vendor[1] &&
-        v[2] == p->vendor[2])
+    if (v[0] == p->vendor[0] && v[1] == p->vendor[1] && v[2] == p->vendor[2])
       return (int) i;
   }
   return -1;

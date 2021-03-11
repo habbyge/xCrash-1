@@ -181,8 +181,13 @@ static jint xc_jni_init(JNIEnv* env,
         if (NULL != (c_crash_dump_all_threads_allowlist = calloc(len, sizeof(char*)))) {
           c_crash_dump_all_threads_allowlist_len = len;
           for (i = 0; i < len; i++) {
-            tmp_str = (jstring) ((*env)->GetObjectArrayElement(env, crash_dump_all_threads_allowlist, (jsize) i));
-            c_crash_dump_all_threads_allowlist[i] = (tmp_str ? (*env)->GetStringUTFChars(env, tmp_str, 0) : NULL);
+            tmp_str = (jstring) ((*env)->GetObjectArrayElement(env,
+                                                               crash_dump_all_threads_allowlist,
+                                                               (jsize) i));
+
+            c_crash_dump_all_threads_allowlist[i] = (tmp_str ?
+                (*env)->GetStringUTFChars(env, tmp_str, 0) :
+                NULL);
           }
         }
       }
@@ -215,7 +220,7 @@ static jint xc_jni_init(JNIEnv* env,
                             trace_dump_network_info ? 1 : 0);
   }
 
-  clean:
+clean:
   if (os_version && c_os_version)
     (*env)->ReleaseStringUTFChars(env, os_version, c_os_version);
   if (abi_list && c_abi_list)
@@ -341,7 +346,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
   if (NULL == (cls = (*env)->FindClass(env, XC_JNI_CLASS_NAME)))
     return -1;
 
-  if ((*env)->RegisterNatives(env, cls, xc_jni_methods, sizeof(xc_jni_methods) / sizeof(xc_jni_methods[0]))) {
+  if ((*env)->RegisterNatives(env, cls, xc_jni_methods,
+                              sizeof(xc_jni_methods) / sizeof(xc_jni_methods[0]))) {
     return -1;
   }
 

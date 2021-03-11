@@ -226,6 +226,7 @@ size_t xc_fallback_get_emergency(siginfo_t* si,
                                          xc_common_brand,
                                          xc_common_model,
                                          xc_common_build_fingerprint);
+
   used += xc_fallback_get_process_thread(emergency + used, emergency_len - used, tid);
   used += xc_fallback_get_signal(emergency + used, emergency_len - used, si);
   used += xc_fallback_get_regs(emergency + used, emergency_len - used, uc);

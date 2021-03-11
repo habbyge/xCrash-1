@@ -45,9 +45,7 @@ static unsigned xcc_fmt_parse_decimal(const char* format, int* ppos) {
   return result;
 }
 
-static void xcc_fmt_format_unsigned(char* buf, size_t buf_size,
-                                    uint64_t value, int base, int caps) {
-
+static void xcc_fmt_format_unsigned(char* buf, size_t buf_size, uint64_t value, int base, int caps) {
   char* p = buf;
   char* end = buf + buf_size - 1;
 
@@ -83,9 +81,7 @@ static void xcc_fmt_format_unsigned(char* buf, size_t buf_size,
   }
 }
 
-static void xcc_fmt_format_integer(char* buf, size_t buf_size,
-                                   uint64_t value, char conversion) {
-
+static void xcc_fmt_format_integer(char* buf, size_t buf_size, uint64_t value, char conversion) {
   // Decode the conversion specifier.
   int is_signed = (conversion == 'd' || conversion == 'i' || conversion == 'o');
   int base = 10;
@@ -111,9 +107,7 @@ typedef struct {
   size_t avail;
 } xcc_fmt_stream_t;
 
-static void xcc_fmt_stream_init(xcc_fmt_stream_t* self,
-                                char* buffer, size_t buffer_size) {
-
+static void xcc_fmt_stream_init(xcc_fmt_stream_t* self, char* buffer, size_t buffer_size) {
   self->total = 0;
   self->pos = buffer;
   self->avail = buffer_size;
@@ -279,9 +273,7 @@ static void xcc_fmt_stream_vformat(xcc_fmt_stream_t* self, const char* format, v
       buffer[1] = 'x';
       xcc_fmt_format_integer(buffer + 2, sizeof(buffer) - 2, value, 'x');
 
-    } else if (c == 'd' || c == 'i' || c == 'o' ||
-               c == 'u' || c == 'x' || c == 'X') {
-
+    } else if (c == 'd' || c == 'i' || c == 'o' || c == 'u' || c == 'x' || c == 'X') {
       //integers - first read value from stack
       uint64_t value;
       int is_signed = (c == 'd' || c == 'i' || c == 'o');
@@ -336,9 +328,7 @@ static void xcc_fmt_stream_vformat(xcc_fmt_stream_t* self, const char* format, v
   }
 }
 
-size_t xcc_fmt_vsnprintf(char* buffer, size_t buffer_size,
-                         const char* format, va_list args) {
-
+size_t xcc_fmt_vsnprintf(char* buffer, size_t buffer_size, const char* format, va_list args) {
   xcc_fmt_stream_t stream;
   xcc_fmt_stream_init(&stream, buffer, buffer_size);
   xcc_fmt_stream_vformat(&stream, format, args);

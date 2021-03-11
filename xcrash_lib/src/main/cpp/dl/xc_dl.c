@@ -42,8 +42,9 @@
 #include "xc_dl_const.h"
 
 #define XC_DL_DYNSYM_IS_EXPORT_SYM(shndx) (SHN_UNDEF != (shndx))
+
 #define XC_DL_SYMTAB_IS_EXPORT_SYM(shndx) (SHN_UNDEF != (shndx) \
-                && !((shndx) >= SHN_LORESERVE && (shndx) <= SHN_HIRESERVE))
+    && !((shndx) >= SHN_LORESERVE && (shndx) <= SHN_HIRESERVE))
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -184,7 +185,9 @@ static int xc_dl_symtab_load(xc_dl_t* self, struct dl_phdr_info* info, ElfW(Shdr
     self->file_sz = (size_t) st.st_size;
 
     // mmap file
-    if (MAP_FAILED == (self->file = (uint8_t*) mmap(NULL, self->file_sz, PROT_READ, MAP_PRIVATE, self->file_fd, 0))) {
+    if (MAP_FAILED == (self->file = (uint8_t*) mmap(NULL, self->file_sz,
+                                                    PROT_READ, MAP_PRIVATE,
+                                                    self->file_fd, 0))) {
       return -1;
     }
 
@@ -366,10 +369,15 @@ static uint32_t xc_dl_gnu_hash(const uint8_t* name) {
   return h;
 }
 
-static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self, const char* sym_name, bool need_func) {
+static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self,
+                                                         const char* sym_name,
+                                                         bool need_func) {
+
   uint32_t hash = xc_dl_sysv_hash((const uint8_t*) sym_name);
 
-  for (uint32_t i = self->sysv_hash.buckets[hash % self->sysv_hash.buckets_cnt]; 0 != i; i = self->sysv_hash.chains[i]) {
+  for (uint32_t i = self->sysv_hash.buckets[hash % self->sysv_hash.buckets_cnt];
+      0 != i; i = self->sysv_hash.chains[i]) {
+
     ElfW(Sym)* sym = self->dynsym + i;
     if ((need_func ? STT_FUNC : STT_OBJECT) != ELF_ST_TYPE(sym->st_info))
       continue;
@@ -381,7 +389,10 @@ static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_sysv_hash(xc_dl_t* self, const ch
   return NULL;
 }
 
-static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self, const char* sym_name, bool need_func) {
+static ElfW(Sym)* xc_dl_dynsym_find_symbol_use_gnu_hash(xc_dl_t* self,
+                                                        const char* sym_name,
+                                                        bool need_func) {
+
   uint32_t hash = xc_dl_gnu_hash((const uint8_t*) sym_name);
 
   static uint32_t elfclass_bits = sizeof(ElfW(Addr)) * 8;

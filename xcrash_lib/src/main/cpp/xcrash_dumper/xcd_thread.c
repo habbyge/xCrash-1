@@ -300,8 +300,8 @@ int xcd_thread_record_memory(xcd_thread_t* self, int log_fd) {
   xcd_regs_get_labels(&labels, &labels_count);
 
   for (i = 0; i < labels_count; i++) {
-    if (0 != (r = xcd_thread_record_memory_by_addr(self, log_fd,
-                                                   labels[i].name, (uintptr_t) (self->regs.r[labels[i].idx])))) {
+    if (0 != (r = xcd_thread_record_memory_by_addr(self, log_fd, labels[i].name,
+                                                   (uintptr_t) (self->regs.r[labels[i].idx])))) {
 
       return r;
     }

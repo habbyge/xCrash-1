@@ -267,9 +267,7 @@ int xcc_util_atoi(const char* str, int* i) {
   val = strtol(str, &endptr, 10);
 
   //check
-  if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
-      || (errno != 0 && val == 0))
-
+  if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0))
     return XCC_ERRNO_INVAL;
   if (endptr == str)
     return XCC_ERRNO_INVAL;
@@ -347,7 +345,8 @@ int xcc_util_write_format(int fd, const char* format, ...) {
   len = vsnprintf(buf, sizeof(buf), format, ap);
   va_end(ap);
 
-  if (len <= 0) return 0;
+  if (len <= 0)
+    return 0;
 
   return xcc_util_write(fd, buf, (size_t) len);
 }
@@ -704,8 +703,7 @@ int xcc_util_record_fds(int fd, pid_t pid) {
   }
 
   xcc_fmt_snprintf(path, sizeof(path), "/proc/%d/fd", pid);
-  if ((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(
-      path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0) {
+  if ((fd2 = XCC_UTIL_TEMP_FAILURE_RETRY(open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC))) < 0) {
     goto end;
   }
 
@@ -778,9 +776,7 @@ int xcc_util_record_network_info(int fd, pid_t pid, int api_level) {
     return r;
 
   if (api_level >= 29) {
-    if (0 != (r = xcc_util_write_str(
-        fd, "Not supported on Android Q (API level 29) and later.\n"))) {
-
+    if (0 != (r = xcc_util_write_str(fd, "Not supported on Android Q (API level 29) and later.\n"))) {
       return r;
     }
   } else {
