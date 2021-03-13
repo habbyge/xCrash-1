@@ -347,22 +347,27 @@ static void xc_xcrash_record_java_stacktrace() {
   xc_crash_dump_java_stacktrace = 0;
 
   //dump java stacktrace
-  if (0 != xcc_util_write_str(xc_crash_log_fd, "\n\njava stacktrace:\n"))
+  if (0 != xcc_util_write_str(xc_crash_log_fd, "\n\njava stacktrace:\n")) {
     goto end;
-  if (dup2(xc_crash_log_fd, STDERR_FILENO) < 0)
+  }
+  if (dup2(xc_crash_log_fd, STDERR_FILENO) < 0) {
     goto end;
-  if (NULL != dump)
+  }
+  if (NULL != dump) {
     dump(thread, cerr);
-  else if (NULL != dump2)
+  } else if (NULL != dump2) {
     dump2(thread, cerr, 0, 0);
+  }
   dup2(xc_common_fd_null, STDERR_FILENO);
   xcc_util_write_str(xc_crash_log_fd, "\n");
 
   end:
-  if (NULL != libcpp)
+  if (NULL != libcpp) {
     xc_dl_close(&libcpp);
-  if (NULL != libart)
+  }
+  if (NULL != libart) {
     xc_dl_close(&libart);
+  }
 }
 
 static void* xc_crash_callback_thread(void* arg) {

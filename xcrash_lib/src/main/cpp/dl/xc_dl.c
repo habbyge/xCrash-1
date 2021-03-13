@@ -316,7 +316,7 @@ static int xc_dl_iterate_cb(struct dl_phdr_info* info, size_t size, void* arg) {
 }
 
 xc_dl_t* xc_dl_open(const char* pathname, int flags) {
-  if (NULL == pathname || 0 == flags) {
+  if (pathname == NULL || flags == 0) {
     return NULL;
   }
 

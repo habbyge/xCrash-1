@@ -124,10 +124,14 @@ typedef void (*xc_dl_util_lzma_crc64gen_t) (void);
 typedef void (*xc_dl_util_lzma_construct_t) (void*, ISzAllocPtr);
 typedef int  (*xc_dl_util_lzma_isfinished_t) (const void*);
 typedef void (*xc_dl_util_lzma_free_t) (void*);
+
 typedef int (*xc_dl_util_lzma_code_t)(void*, uint8_t*, size_t*, const uint8_t*,
                                       size_t*, ECoderFinishMode, ECoderStatus*);
-typedef int (*xc_dl_util_lzma_code_q_t)(void*, uint8_t*, size_t*, const uint8_t*,
-                                        size_t*, int, ECoderFinishMode, ECoderStatus*);
+
+typedef int (*xc_dl_util_lzma_code_q_t)(void*, uint8_t*, size_t*,
+                                        const uint8_t*, size_t*,
+                                        int, ECoderFinishMode,
+                                        ECoderStatus*);
 
 // LZMA function pointor
 static xc_dl_util_lzma_construct_t xc_dl_util_lzma_construct = NULL;
@@ -199,8 +203,9 @@ int xc_dl_util_lzma_decompress(uint8_t* src, size_t src_size, uint8_t** dst, siz
     xc_dl_util_lzma_init();
     inited = true;
   }
-  if (NULL == xc_dl_util_lzma_code)
+  if (NULL == xc_dl_util_lzma_code) {
     return -1;
+  }
 
   xc_dl_util_lzma_construct(&state, &alloc);
 
@@ -219,13 +224,24 @@ int xc_dl_util_lzma_decompress(uint8_t* src, size_t src_size, uint8_t** dst, siz
     int result;
     if (api_level >= __ANDROID_API_Q__) {
       xc_dl_util_lzma_code_q_t lzma_code_q = (xc_dl_util_lzma_code_q_t) xc_dl_util_lzma_code;
-      result = lzma_code_q(&state, *dst + dst_offset, &dst_remaining,
-                           src + src_offset, &src_remaining, 1, CODER_FINISH_ANY, &status);
+      result = lzma_code_q(&state,
+                           *dst + dst_offset,
+                           &dst_remaining,
+                           src + src_offset,
+                           &src_remaining,
+                           1,
+                           CODER_FINISH_ANY,
+                           &status);
     } else {
       xc_dl_util_lzma_code_t lzma_code = (xc_dl_util_lzma_code_t) xc_dl_util_lzma_code;
 
-      result = lzma_code(&state, *dst + dst_offset, &dst_remaining, src + src_offset,
-                         &src_remaining, CODER_FINISH_ANY, &status);
+      result = lzma_code(&state,
+                         *dst + dst_offset,
+                         &dst_remaining,
+                         src + src_offset,
+                         &src_remaining,
+                         CODER_FINISH_ANY,
+                         &status);
     }
     if (SZ_OK != result) {
       free(*dst);
